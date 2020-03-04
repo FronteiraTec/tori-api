@@ -1,0 +1,1 @@
+<!-- Configurações de sessões, desde a escolha do driver (como será armazenado), até tempo de expiração, criptografia da sessão e etc.  -->
