@@ -1,0 +1,27 @@
+{
+  "name": "monitoria_backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/fersasil/monitoria_backend.git"
+  },
+  "author": "fersasil <gfersasil@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  },
+  "scripts": {
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1"
+  },
+  "description": "## Instalação",
+  "bugs": {
+    "url": "https://github.com/fersasil/monitoria_backend/issues"
+  },
+  "homepage": "https://github.com/fersasil/monitoria_backend#readme"
+}
