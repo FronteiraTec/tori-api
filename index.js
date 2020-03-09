@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 
 //all routes should be imported here
-const exampleRoute = require("./app/routes/exampleRoute");
+const assistanceRoute = require("./app/routes/assistanceRoute");
 
 
 const app = express();
@@ -17,7 +17,7 @@ app.use(cors());
 
 
 //Routes
-app.use(exampleRoute);
+app.use(assistanceRoute);
 
 
 const server = "localhost";
