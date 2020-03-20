@@ -1,3 +1,4 @@
+/* eslint-disable new-cap */
 const express = require('express');
 
 const assistanceController = require('../controllers/AssistanceController');

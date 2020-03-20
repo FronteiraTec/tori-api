@@ -12,7 +12,7 @@ exports.getAllAssistance = async (req, res) => {
 };
 
 exports.getAssistance = async (req, res) => {
-  const { id } = req.params;
+  const {id} = req.params;
   try {
     const assistance = await assistanceModel.getAssistance(id);
     res.status(200).json(assistance[0]);

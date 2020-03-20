@@ -1,13 +1,11 @@
+/* eslint-disable require-jsdoc */
 /* eslint-disable no-async-promise-executor */
 const pool = require('./dbConnect');
 
 module.exports = class {
   constructor(table) {
     this.table = table;
-    this.tipe = 'exec'
-    this.operators = {
-      equal: '=',
-    }
+    this.tipe = 'exec';
   }
 
   async select(params) {
@@ -16,9 +14,12 @@ module.exports = class {
       try {
         conn = await pool.getConnection();
         let queryStr = `SELECT ${params.values.join(',')}`;
-        queryStr += ` FROM ${params.table} `
+        queryStr += ` FROM ${params.table} `;
         if (params.where.length !== 0) queryStr += `WHERE ${this.where(params.where)}`;
         if (params.orderBy.length !== 0) queryStr += `${this.orderBy(params.orderBy)}`;
+        queryStr += `LIMIT ${this.limit(params.limit)}`;
+        queryStr += ` OFFSET ${this.offset(params.offset)}`;
+        console.log(queryStr)
         const rows = await conn.query(queryStr);
         if (rows.length > 0) {
           const dataInRows = [...rows];
@@ -27,17 +28,17 @@ module.exports = class {
               status: true,
               data: dataInRows,
               orderBy: params.orderBy,
-              message: "Registro encontrados",
+              message: 'Registro encontrados',
 
-            }
-          ])
+            },
+          ]);
         } else {
           resolve([
             {
               status: false,
               data: [],
               orderBy: params.orderBy,
-              message: "Nenhum registro encontrado",
+              message: 'Nenhum registro encontrado',
             }
           ])
         }
@@ -48,19 +49,27 @@ module.exports = class {
     });
   }
 
-  where(options) {
-    let where = '';
-    options.forEach(element => {
-      where += `${element.field ? element.field : ''}  ${element.op ? element.op : ''}  ${element.value ? element.value : ''}  ${element.opCond ? element.opCond : ''} `
+  where(where) {
+    let result = '';
+    where.forEach((element) => {
+      result += `${element.field ? element.field : ''}  ${element.op ? element.op : ''}  ${element.value ? element.value : ''}  ${element.opCond ? element.opCond : ''} `;
     });
-    return where;
+    return result;
   }
 
-  orderBy(options) {
-    let orderBy = '';
-    options.forEach(element => {
-      orderBy += ` ${element.order ? 'ORDER BY ' + element.value + ' ' + element.sortValue : ''} `
+  orderBy(orderBy) {
+    let result = '';
+    orderBy.forEach((element) => {
+      result += ` ${element.order ? 'ORDER BY ' + element.value + ' ' + element.sortValue : ''} `;
     });
-    return orderBy;
+    return result;
+  }
+  limit(limit) {
+    return `${limit ? limit : 10}`;
+  }
+  offset(offset) {
+    console.log(`to aqui`);
+    console.log(offset);
+    return ` ${offset ? offset : 1}`;
   }
 };
