@@ -1,10 +1,10 @@
-const assistanceModel = require('../models/AssistanceModel');
+const model = require('../models/AssistanceModel');
 
 exports.getAll = async (req, res) => {
   try {
-    const allAssistance = await assistanceModel.getAllAssistance();
-
+    const allAssistance = await model.getAllAssistance();
     res.status(200).json(allAssistance);
+
   } catch (error) {
     error.statusCode = 400;
     throw error;
@@ -13,10 +13,11 @@ exports.getAll = async (req, res) => {
 
 exports.getByID = async (req, res) => {
   const { id } = req.params;
-  try {
-    const assistance = await assistanceModel.getAssistance(id);
 
-    res.status(200).json(assistance[0]);
+  try {
+    const assistance = await model.getAssistance(id);
+
+    res.status(200).json(assistance);
   } catch (error) {
     error.statusCode = 400;
     throw error;
