@@ -1,6 +1,6 @@
 const assistanceModel = require('../models/AssistanceModel');
 
-exports.getAllAssistance = async (req, res) => {
+exports.getAll = async (req, res) => {
   try {
     const allAssistance = await assistanceModel.getAllAssistance();
 
@@ -11,8 +11,8 @@ exports.getAllAssistance = async (req, res) => {
   }
 };
 
-exports.getAssistance = async (req, res) => {
-  const {id} = req.params;
+exports.getByID = async (req, res) => {
+  const { id } = req.params;
   try {
     const assistance = await assistanceModel.getAssistance(id);
 
