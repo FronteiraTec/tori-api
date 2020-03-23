@@ -19,19 +19,17 @@ module.exports = class {
         if (params.orderBy.length !== 0) queryStr += `${this.orderBy(params.orderBy)}`;
         queryStr += `LIMIT ${this.limit(params.limit)}`;
         queryStr += ` OFFSET ${this.offset(params.offset)}`;
-        console.log(queryStr)
         const rows = await conn.query(queryStr);
         if (rows.length > 0) {
           const dataInRows = [...rows];
-          resolve([
+          resolve(
             {
               status: true,
               data: dataInRows,
               orderBy: params.orderBy,
               message: 'Registro encontrados',
-
             },
-          ]);
+          );
         } else {
           resolve([
             {
@@ -40,7 +38,8 @@ module.exports = class {
               orderBy: params.orderBy,
               message: 'Nenhum registro encontrado',
             }
-          ])
+          ]);
+          conn.end();
         }
       } catch (error) {
         conn.end();
@@ -68,8 +67,6 @@ module.exports = class {
     return `${limit ? limit : 10}`;
   }
   offset(offset) {
-    console.log(`to aqui`);
-    console.log(offset);
-    return ` ${offset ? offset : 1}`;
+    return ` ${offset ? offset : 0}`;
   }
 };

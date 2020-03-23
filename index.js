@@ -8,7 +8,7 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use(assistanceRoute);
 
-const server = 'localhost';
+const server = '192.168.0.107';
 const port = '3001';
 
 app.listen(3001, server, () => {

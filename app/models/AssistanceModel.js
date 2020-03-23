@@ -11,8 +11,8 @@ module.exports = class {
           table: dbFunc.table,
           where: [],
           orderBy: [{'value': 'idAssistance', 'sortValue': 'DESC'}],
-          limit: '2',
-          page: '1',
+          limit: '',
+          page: '0',
         });
     return assistances;
   }
