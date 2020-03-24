@@ -37,7 +37,7 @@ module.exports = class {
         else
             where = `WHERE ${args[0]} = ${args[1]}`;
 
-        this.querySQL = this.querySQL.replace("$_e3g", where);
+        this.querySQL = this.querySQL.replace("$_e4g", where);
 
         return this;
     }
@@ -56,7 +56,7 @@ module.exports = class {
         else
             order = "ORDER BY " + args[0];
                 
-        this.querySQL = this.querySQL.replace("$_e4g", order);
+        this.querySQL = this.querySQL.replace("$_e5g", order);
         return this;
     }
 
@@ -64,8 +64,23 @@ module.exports = class {
         const lim = `LIMIT ${limit}`;
         const off = `OFFSET ${offset}`;
 
-        this.querySQL = this.querySQL.replace("$_e5g", lim);
-        this.querySQL = this.querySQL.replace("$_e6g", off);
+        this.querySQL = this.querySQL.replace("$_e6g", lim);
+        this.querySQL = this.querySQL.replace("$_e7g", off);
+
+        return this;
+    }
+
+    join(currentTable, toTable) {
+        // JOIN user ON assistance.idAssistant = user.id 
+
+        // JOIN ${argsTo[0]} ON ${currentTable} = ${toTable}
+
+        const argsTo = toTable.split(".");
+        // const currentTable = (this._from ? _this.currentTable : args[1]) + args[2];
+        // if(this._from)
+        let join = `JOIN ${argsTo[0]} ON ${currentTable} = ${toTable}`;
+        
+        this.querySQL = this.querySQL.replace("$_e3g", join);
 
         return this;
     }
@@ -77,15 +92,17 @@ module.exports = class {
         this.querySQL = this.querySQL.replace("$_e4g", "");
         this.querySQL = this.querySQL.replace("$_e5g", "");
         this.querySQL = this.querySQL.replace("$_e6g", "");
+        this.querySQL = this.querySQL.replace("$_e7g", "");
                 
         const sql = this.querySQL;
         
         this.clearQuery();
+        
         return this.query(sql);
     }
 
     clearQuery() {
-        this.querySQL = "$_e1g $_e2g $_e3g $_e4g $_e5g $_e6g";
+        this.querySQL = "$_e1g $_e2g $_e3g $_e4g $_e5g $_e6g $_e7g";
     }
 
     async query(query, args) {

@@ -1,11 +1,6 @@
 /* eslint-disable require-jsdoc */
 
-const DbHelper = require('./../../utils/dbFunctions');
-
-const dbFunc = new DbHelper('assistance');
-
 const dbHelper = require("../helpers/dbHelper");
-
 const db = new dbHelper();
 
 
@@ -17,20 +12,20 @@ module.exports = class {
 
   static async getAll(limit, offset, avaliable) {
     db.select().from("assistance").
-      orderBy("id", "DESC");
+      orderBy("assistance_id", "DESC");
 
-      if(avaliable != undefined){
-        db.where("avaliable", avaliable ? true: "");
-      }
+    if (avaliable != undefined) {
+      db.where("avaliable", avaliable ? true : "");
+    }
 
-      if(limit != undefined && offset != undefined)
-        db.pagination(limit, offset);
-      
+    if (limit != undefined && offset != undefined)
+      db.pagination(limit, offset);
 
-      const rowsAndInfos = await db.resolve();
-      const assistances = [... rowsAndInfos];
 
-      return assistances;
+    const rowsAndInfos = await db.resolve();
+    const assistances = [...rowsAndInfos];
+
+    return assistances;
   }
 
   /**
@@ -38,9 +33,13 @@ module.exports = class {
    * @param {*} idAssistance
    * @returns {assistance} returns an assistance 
    */
-  static async getByID(id) {    
-    const assistance = await db.select().from("assistance").where("id", id).resolve();
-
+  static async getByID(id) {
+    const assistance = await db.
+      select().
+      from("assistance").
+      where("assistance_id", id).
+      join("owner_id", "user.user_id").
+      resolve();
     return assistance[0];
   };
 
