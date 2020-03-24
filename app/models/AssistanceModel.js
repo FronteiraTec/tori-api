@@ -36,9 +36,9 @@ module.exports = class {
   static async getByID(id) {
     const assistance = await db.
       select().
-      from("assistance").
+      from("assistance as a").
       where("assistance_id", id).
-      join("owner_id", "user.user_id").
+      join("assistance_owner_id", "user.user_id").
       resolve();
     return assistance[0];
   };
