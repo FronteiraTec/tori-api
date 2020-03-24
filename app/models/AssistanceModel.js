@@ -15,7 +15,7 @@ module.exports = class {
       orderBy("assistance_id", "DESC");
 
     if (avaliable != undefined) {
-      db.where("avaliable", avaliable ? true : "");
+      db.where("assistance_avaliable", avaliable ? true : "");
     }
 
     if (limit != undefined && offset != undefined)
