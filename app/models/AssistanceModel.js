@@ -1,4 +1,5 @@
 /* eslint-disable require-jsdoc */
+
 const DbHelper = require('./../../utils/dbFunctions');
 
 const dbFunc = new DbHelper('assistance');
@@ -31,4 +32,5 @@ module.exports = class {
         });
     return assistance;
   };
+
 };

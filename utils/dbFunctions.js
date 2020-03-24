@@ -1,4 +1,3 @@
-/* eslint-disable require-jsdoc */
 /* eslint-disable no-async-promise-executor */
 const pool = require('./dbConnect');
 
@@ -47,7 +46,7 @@ module.exports = class {
       }
     });
   }
-
+  
   where(where) {
     let result = '';
     where.forEach((element) => {
