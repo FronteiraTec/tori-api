@@ -121,6 +121,7 @@ module.exports = class {
             } catch (err) {
                 conn.end();
                 if (reject) reject(err);
+                //TODO: implementar o helper de erro e o utilizar
                 errorHandler(err);
             }
         });

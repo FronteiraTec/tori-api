@@ -13,11 +13,11 @@ app.use(cors());
 //Routes
 app.use(assistanceRoutes);
 
-
 //Server settings
-const server = 'localhost';
+// const server = '192.168.0.106';
 const port = '3000';
 
-app.listen(port, server, () => {
-  console.log(`Server is listening on http://${server}:${port}`);
+app.listen(port, () => {
+  // console.log(`Server is listening on http://${server}:${port}`);
+  console.log(`Server is listening on http://localhost:${port}`);
 });
