@@ -4,6 +4,10 @@ const DbHelper = require('./../../utils/dbFunctions');
 
 const dbFunc = new DbHelper('assistance');
 
+const dbHelper = require("../helpers/dbHelper");
+
+const db = new dbHelper();
+
 
 module.exports = class {
   /**
@@ -11,15 +15,25 @@ module.exports = class {
    * @returns {[assistances]} List of all assistances  
    */
 
-  static async getAll() {
-    return await dbFunc.select({
-      values: ['*'],
-      table: dbFunc.table,
-      where: [],
-      orderBy: [{ 'value': 'idAssistance', 'sortValue': 'DESC' }],
-      limit: '',
-      page: '0',
-    });
+  static async getAll(limit, offset, avaliable) {
+    db.select().from("assistance").
+      orderBy("id", "DESC");
+
+      console.log(avaliable);
+
+      if(avaliable != undefined){
+        console.log("OOO")
+        db.where("avaliable", avaliable ? true: "");
+      }
+
+      if(limit != undefined && offset != undefined)
+        db.pagination(limit, offset);
+      
+
+      const rowsAndInfos = await db.resolve();
+      const assistances = [... rowsAndInfos];
+
+      return assistances;
   }
 
   /**
