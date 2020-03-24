@@ -1,4 +1,9 @@
 # Monitoria voluntaria backend
+## Endpoints
+
+[Monitorias](docs/assistances.md)
+
+
 
 ## Instalação
 
@@ -22,3 +27,7 @@ Caso não possua yarn utilze npm:
 ```
 
 Dê preferencia ao yarn caso possua ambos ou caso venha a ter que instalar um dos dois.
+
+PS: O banco de dados também deve ser instalado
+
+[Banco.sql](https://github.com/FronteiraTec/monitoria-voluntaria/extra)

@@ -1,28 +1,23 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
-//all routes should be imported here
-const exampleRoute = require("./app/routes/exampleRoute");
-
+const assistanceRoutes = require('./app/routes/assistanceRoutes');
 
 const app = express();
-
-
 
 //Middlewares
 app.use(bodyParser.json());
 app.use(cors());
 
-
-
 //Routes
-app.use(exampleRoute);
+app.use(assistanceRoutes);
 
 
-const server = "localhost";
-const port = "3000";
+//Server settings
+const server = 'localhost';
+const port = '3000';
 
-app.listen(3000, server, _ => {
-    console.log(`Server is listening on ${server}:${port}`);
+app.listen(port, server, () => {
+  console.log(`Server is listening on http://${server}:${port}`);
 });
