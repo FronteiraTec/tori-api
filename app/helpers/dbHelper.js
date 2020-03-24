@@ -80,8 +80,7 @@ module.exports = class {
                 
         const sql = this.querySQL;
         
-        this.clearQuery;
-
+        this.clearQuery();
         return this.query(sql);
     }
 

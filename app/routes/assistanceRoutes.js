@@ -5,9 +5,10 @@ const controller = require('../controllers/AssistanceController');
 
 const router = express.Router();
 
-router.get('/assistance', controller.getAll);
-router.get('/assistance/:id', controller.getByID);
 
+router.get('/assistance', controller.getAll);
+
+router.get('/assistance/:id', controller.getByID);
 
 
 module.exports = router;

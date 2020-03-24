@@ -19,10 +19,7 @@ module.exports = class {
     db.select().from("assistance").
       orderBy("id", "DESC");
 
-      console.log(avaliable);
-
       if(avaliable != undefined){
-        console.log("OOO")
         db.where("avaliable", avaliable ? true: "");
       }
 
@@ -41,17 +38,10 @@ module.exports = class {
    * @param {*} idAssistance
    * @returns {assistance} returns an assistance 
    */
-  static async getAssistance(idAssistance) {
-    return await dbFunc.select({
-      values: ['*'],
-      table: dbFunc.table,
-      where: [{
-        'field': 'idAssistance', 'op': '=', 'value': idAssistance
-      }],
-      orderBy: [],
-      limit: '1',
-      page: '1',
-    });
+  static async getByID(id) {    
+    const assistance = await db.select().from("assistance").where("id", id).resolve();
+
+    return assistance[0];
   };
 
 };

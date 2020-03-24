@@ -17,7 +17,7 @@ exports.getByID = async (req, res) => {
 
   try {
     const assistance = await model.getByID(id);
-
+    
     res.status(200).json(assistance);
   } catch (error) {
     error.statusCode = 400;
