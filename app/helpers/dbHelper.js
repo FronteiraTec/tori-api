@@ -70,17 +70,19 @@ module.exports = class {
         return this;
     }
 
+    /**
+     *
+     *
+     * @param {String} currentTable Nome da tabela e do campo que sofeream join ex: user.address_id PS: A TABELA DEVE TER SIDO REFERENCIADA ANTERIORMENTE 
+     * @param {String} toTable Nome da tabela e do campo que recebera o join. Ex:  address.address_id
+     * @returns Retorna um objeto que pode ser encadeado com novas queries
+     */
     join(currentTable, toTable) {
-        // JOIN user ON assistance.idAssistant = user.id 
-
-        // JOIN ${argsTo[0]} ON ${currentTable} = ${toTable}
-
         const argsTo = toTable.split(".");
-        // const currentTable = (this._from ? _this.currentTable : args[1]) + args[2];
-        // if(this._from)
+
         let join = `JOIN ${argsTo[0]} ON ${currentTable} = ${toTable}`;
         
-        this.querySQL = this.querySQL.replace("$_e3g", join);
+        this.querySQL = this.querySQL.replace("$_e3g", join + " $_e3g");
 
         return this;
     }
@@ -95,8 +97,11 @@ module.exports = class {
         this.querySQL = this.querySQL.replace("$_e7g", "");
                 
         const sql = this.querySQL;
+
+        console.log(sql);
         
         this.clearQuery();
+
         
         return this.query(sql);
     }
@@ -120,9 +125,10 @@ module.exports = class {
                 resolve(rows);
             } catch (err) {
                 conn.end();
-                if (reject) reject(err);
+                console.log(err);
+                // if (reject) reject(err);
                 //TODO: implementar o helper de erro e o utilizar
-                errorHandler(err);
+                // errorHandler(err);
             }
         });
     }
