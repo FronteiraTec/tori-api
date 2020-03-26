@@ -38,8 +38,16 @@ module.exports = class {
       select().
       from("assistance as a").
       where("assistance_id", id).
-      join("assistance_owner_id", "user.user_id").
+      join("a.assistance_owner_id", "user.user_id").
+      join("user.user_course_id", "course.course_id").
+      join("assistance_local_id", "address.address_id").
+      
       resolve();
+
+      /**
+       * tratar dados
+       */
+
     return assistance[0];
   };
 
