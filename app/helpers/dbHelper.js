@@ -1,7 +1,7 @@
 const pool = require("../../utils/dbConnect");
 
 module.exports = class {
-    #_from;
+    #_from = "";
     #_data = {};
 
     constructor(tableName) {
@@ -141,6 +141,25 @@ module.exports = class {
 
     }
 
+    delete(tableName = null) {
+        let deleteQuery;
+
+        if(tableName == null){
+            deleteQuery = `DELETE $_e1g`;
+
+            if(this.#_from != "")
+                deleteQuery = deleteQuery.replace("$_e1g", this.#_from);
+        }
+        
+        else {
+            deleteQuery = `DELETE FROM ${tableName}`; 
+        }
+        
+        this.querySQL = this.querySQL.replace("$_e1g", deleteQuery);
+
+        return this;
+    }
+
     resolve() {
         this.querySQL = this.querySQL.replace("$_e1g", "");
         this.querySQL = this.querySQL.replace("$_e2g", this.#_from);
@@ -156,8 +175,6 @@ module.exports = class {
 
         if (this.#_data.where !== undefined) args.push(this.#_data.where);
         if (this.#_data.insert !== undefined) args.push(...this.#_data.insert);
-
-        
 
         this.clearQuery();
 
