@@ -29,7 +29,7 @@ module.exports = class {
 
         if (this.from != null && string != "")
             from = `FROM ${string}`;
-        
+
         else from = this._from;
 
         this.querySQL = this.querySQL.replace("$_e2g", from);
@@ -41,11 +41,11 @@ module.exports = class {
 
         if (args.length == 1)
             where = `WHERE ${args[0]}`;
-        else{
+        else {
             where = `WHERE ${args[0]} = ?`;
             this.#_data.where = args[1];
         }
-            // where = `WHERE ${args[0]} = ${args[1]}`;
+        // where = `WHERE ${args[0]} = ${args[1]}`;
 
         this.querySQL = this.querySQL.replace("$_e4g", where);
 
@@ -65,22 +65,22 @@ module.exports = class {
         }
         else
             order = "ORDER BY " + args[0];
-                
+
         this.querySQL = this.querySQL.replace("$_e5g", order);
         return this;
     }
 
     pagination(limit, offset) {
-        if(isNaN(limit) || isNaN(offset)){
+        if (isNaN(limit) || isNaN(offset)) {
             //TODO implementar o erro;
             const error = new Error();
             error.statusCode = 400;
             throw error;
         }
-        
+
         const lim = `LIMIT ${limit}`;
         const off = `OFFSET ${offset}`;
-        
+
         this.querySQL = this.querySQL.replace("$_e6g", lim);
         this.querySQL = this.querySQL.replace("$_e7g", off);
 
@@ -98,10 +98,47 @@ module.exports = class {
         const argsTo = toTable.split(".");
 
         let join = `JOIN ${argsTo[0]} ON ${currentTable} = ${toTable}`;
-        
+
         this.querySQL = this.querySQL.replace("$_e3g", join + " $_e3g");
 
         return this;
+    }
+
+    insert(tableName, ...args) {
+        let insert;
+
+
+        const placeholders = args.map((val) => "?, ").join("").slice(0, -2);
+
+        insert = placeholders;
+
+        insert = `INSERT INTO ${tableName} VALUES (${insert})`;
+
+        this.#_data.insert = args;
+
+        this.querySQL = this.querySQL.replace("$_e1g", insert);
+
+        return this;
+    }
+
+
+    insertInto(tableName, args) {
+        const fieldNames = Object.keys(args);
+
+        const valuesArray = fieldNames.map((field) => args[field]);
+
+        const placeholders = valuesArray.map((_) => "?, ").join("").slice(0, -2);
+
+        const valuesString = fieldNames.map(name => `${name}, `).join("").slice(0, -2);
+
+        const insert = `INSERT INTO ${tableName} (${valuesString}) VALUES (${placeholders})`;
+
+        this.#_data.insert = valuesArray;
+
+        this.querySQL = this.querySQL.replace("$_e1g", insert);
+
+        return this;
+
     }
 
     resolve() {
@@ -112,21 +149,26 @@ module.exports = class {
         this.querySQL = this.querySQL.replace("$_e5g", "");
         this.querySQL = this.querySQL.replace("$_e6g", "");
         this.querySQL = this.querySQL.replace("$_e7g", "");
-                
+
         const sql = this.querySQL;
 
         const args = [];
 
-        if(this.#_data.where !== undefined ) args.push(this.#_data.where);
-        
-        this.clearQuery();
+        if (this.#_data.where !== undefined) args.push(this.#_data.where);
+        if (this.#_data.insert !== undefined) args.push(...this.#_data.insert);
 
         
+
+        this.clearQuery();
+
+
         return this.query(sql, args);
     }
 
     clearQuery() {
         this.querySQL = "$_e1g $_e2g $_e3g $_e4g $_e5g $_e6g $_e7g";
+        this.#_data = {};
+        this.#_from = "";
     }
 
     async query(query, args) {
@@ -144,7 +186,8 @@ module.exports = class {
                 resolve(rows);
             } catch (err) {
                 conn.end();
-                console.log(err);
+                // console.log(err);
+                throw err;
                 // if (reject) reject(err);
                 //TODO: implementar o helper de erro e o utilizar
                 // errorHandler(err);
