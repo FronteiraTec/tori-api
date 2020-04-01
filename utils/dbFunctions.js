@@ -87,7 +87,7 @@ module.exports = class {
   orderBy(orderBy) {
     let result = '';
     orderBy.forEach((element) => {
-      result += ` ${element.order ? 'ORDER BY ' + element.value + ' ' + element.sortValue : ''} `;
+      result += `${element.order ? 'ORDER BY ' + element.value + ' ' + element.sortValue : ''} `;
     });
     return result;
   }

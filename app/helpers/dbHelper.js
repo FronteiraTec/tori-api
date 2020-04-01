@@ -2,6 +2,7 @@ const pool = require("../../utils/dbConnect");
 
 module.exports = class {
     #_from;
+    #_data = {};
 
     constructor(tableName) {
         if (tableName != null)
@@ -17,12 +18,18 @@ module.exports = class {
         return this;
     }
 
+    /**
+     *
+     *
+     * @param {string} tableName nome da tabela
+     * 
+     */
     from(string = "") {
         let from;
 
         if (this.from != null && string != "")
             from = `FROM ${string}`;
-
+        
         else from = this._from;
 
         this.querySQL = this.querySQL.replace("$_e2g", from);
@@ -34,8 +41,11 @@ module.exports = class {
 
         if (args.length == 1)
             where = `WHERE ${args[0]}`;
-        else
-            where = `WHERE ${args[0]} = ${args[1]}`;
+        else{
+            where = `WHERE ${args[0]} = ?`;
+            this.#_data.where = args[1];
+        }
+            // where = `WHERE ${args[0]} = ${args[1]}`;
 
         this.querySQL = this.querySQL.replace("$_e4g", where);
 
@@ -61,9 +71,16 @@ module.exports = class {
     }
 
     pagination(limit, offset) {
+        if(isNaN(limit) || isNaN(offset)){
+            //TODO implementar o erro;
+            const error = new Error();
+            error.statusCode = 400;
+            throw error;
+        }
+        
         const lim = `LIMIT ${limit}`;
         const off = `OFFSET ${offset}`;
-
+        
         this.querySQL = this.querySQL.replace("$_e6g", lim);
         this.querySQL = this.querySQL.replace("$_e7g", off);
 
@@ -98,12 +115,14 @@ module.exports = class {
                 
         const sql = this.querySQL;
 
-        console.log(sql);
+        const args = [];
+
+        if(this.#_data.where !== undefined ) args.push(this.#_data.where);
         
         this.clearQuery();
 
         
-        return this.query(sql);
+        return this.query(sql, args);
     }
 
     clearQuery() {
