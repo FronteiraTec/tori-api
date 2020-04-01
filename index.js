@@ -6,6 +6,9 @@ const assistanceRoutes = require('./app/routes/assistanceRoutes');
 
 const app = express();
 
+//Static files
+app.use('/static', express.static('public'));
+
 //Middlewares
 app.use(bodyParser.json());
 app.use(cors());
@@ -18,6 +21,5 @@ app.use(assistanceRoutes);
 const port = '3000';
 
 app.listen(port, () => {
-  // console.log(`Server is listening on http://${server}:${port}`);
   console.log(`Server is listening on http://localhost:${port}`);
 });
