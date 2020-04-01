@@ -3,12 +3,12 @@ const pool = require("../../utils/dbConnect");
 module.exports = class {
     #_from = "";
     #_data = {};
+    querySQL = "$_e1g $_e2g $_e3g $_e4g $_e5g $_e6g $_e7g";
+
 
     constructor(tableName) {
         if (tableName != null)
-            this.#_from = `FROM ${tableName}`;
-
-        this.clearQuery();
+            this.#_from = tableName;
     }
 
     /**
@@ -33,10 +33,10 @@ module.exports = class {
     from(string = "") {
         let from;
 
-        if (this.from != null && string != "")
+        if (string != "")
             from = `FROM ${string}`;
 
-        else from = this._from;
+        else from = `FROM ${this.#_from}`;
 
         this.querySQL = this.querySQL.replace("$_e2g", from);
         return this;
@@ -130,12 +130,14 @@ module.exports = class {
      * Alem disso, é importante ressaltar que todos os valores devem ser adicionados
      * De acordo com a ordem que os mesmos estao alocados no banco de dados
      */
-    insert(tableName, ...args) {
+    insert(tableName = null, ...args) {
         let insert;
 
         const placeholders = args.map((val) => "?, ").join("").slice(0, -2);
 
         insert = placeholders;
+
+        if(tableName == null) tableName = this.#_from;
 
         insert = `INSERT INTO ${tableName} VALUES (${insert})`;
 
@@ -155,7 +157,7 @@ module.exports = class {
      * @param {object} args objeto onde a chave é o nome da tabela no campo e a key é o valor
      * {nome_campo: valor_a_ser_inserido}
      */
-    insertInto(tableName, args) {
+    insertInto(tableName = null, args) {
         const fieldNames = Object.keys(args);
 
         const valuesArray = fieldNames.map((field) => args[field]);
@@ -163,6 +165,8 @@ module.exports = class {
         const placeholders = valuesArray.map((_) => "?, ").join("").slice(0, -2);
 
         const valuesString = fieldNames.map(name => `${name}, `).join("").slice(0, -2);
+
+        if(tableName == null) tableName = this.#_from;
 
         const insert = `INSERT INTO ${tableName} (${valuesString}) VALUES (${placeholders})`;
 
@@ -189,7 +193,7 @@ module.exports = class {
             deleteQuery = `DELETE $_e1g`;
 
             if(this.#_from != "")
-                deleteQuery = deleteQuery.replace("$_e1g", this.#_from);
+                deleteQuery = deleteQuery.replace("$_e1g", `FROM ${this.#_from}`);
         }
         
         else {
@@ -213,13 +217,15 @@ module.exports = class {
      * The WHERE clause specifies which record(s) that should be updated. 
      * If you omit the WHERE clause, all records in the table will be updated!
      */
-    update(tableName, args){
+    update(tableName = null, args){
         const fieldNames = Object.keys(args);
 
         const setQuery = fieldNames.map((field) => `${field} = ?, `).join("").slice(0, -2); 
 
         const valuesArray = fieldNames.map((field) => args[field]);
-
+        
+        if(tableName == null) tableName = this.#_from;
+        
         const updateQuery = ` UPDATE ${tableName} SET ${setQuery}`;
 
         this.querySQL = this.querySQL.replace("$_e1g", updateQuery);
@@ -231,7 +237,7 @@ module.exports = class {
 
     resolve() {
         this.querySQL = this.querySQL.replace("$_e1g", "");
-        this.querySQL = this.querySQL.replace("$_e2g", this.#_from);
+        this.querySQL = this.querySQL.replace("$_e2g", "");
         this.querySQL = this.querySQL.replace("$_e3g", "");
         this.querySQL = this.querySQL.replace("$_e4g", "");
         this.querySQL = this.querySQL.replace("$_e5g", "");
@@ -249,13 +255,8 @@ module.exports = class {
         
         this.clearQuery();
 
-        return this.query(sql, args);
-    }
 
-    clearQuery() {
-        this.querySQL = "$_e1g $_e2g $_e3g $_e4g $_e5g $_e6g $_e7g";
-        this.#_data = {};
-        this.#_from = "";
+        return this.query(sql, args);
     }
 
     async query(query, args) {
@@ -273,10 +274,26 @@ module.exports = class {
                 resolve(rows);
             } catch (err) {
                 conn.end();
+                // console.log(err);
+                // throw err;
                 if (reject) reject(err);
                 //TODO: implementar o helper de erro e o utilizar
                 // errorHandler(err);
             }
         });
+    }
+
+    clearQuery() {
+        this.querySQL = "$_e1g $_e2g $_e3g $_e4g $_e5g $_e6g $_e7g";
+        this.#_data = {};
+        this.#_from = "";
+    }
+
+    clearTableName(){
+        this.#_from = "";
+    }
+
+    setTableName(tableName){
+        this.#_from = tableName;
     }
 }
