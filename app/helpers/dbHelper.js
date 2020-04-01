@@ -51,14 +51,20 @@ module.exports = class {
      */
     where(...args) {
         let where;
+        let key = args[0];
+        let val = args[1];
 
-        if (args.length == 1)
-            where = `WHERE ${args[0]}`;
-        else {
-            where = `WHERE ${args[0]} = ?`;
-            this.#_data.where = args[1];
+        if (args.length == 1){
+            const parameters = args[0].split("=");
+            const argsSplited = parameters.map((val) => val.trim());
+
+            key = argsSplited[0];
+            val = argsSplited[1];
         }
 
+        where = `WHERE ${key} = ?`;
+        this.#_data.where = val;
+        
         this.querySQL = this.querySQL.replace("$_e4g", where);
 
         return this;
@@ -267,9 +273,7 @@ module.exports = class {
                 resolve(rows);
             } catch (err) {
                 conn.end();
-                // console.log(err);
-                throw err;
-                // if (reject) reject(err);
+                if (reject) reject(err);
                 //TODO: implementar o helper de erro e o utilizar
                 // errorHandler(err);
             }
