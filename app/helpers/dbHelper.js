@@ -11,6 +11,13 @@ module.exports = class {
         this.clearQuery();
     }
 
+    /**
+     *
+     *
+     * @param {string} [string="*"] Por padrão retorna tudo, os campos que deveram ser
+     * retornado podem ser colocados aqui
+     * @returns
+     */
     select(string = "*") {
         const select = `SELECT ${string}`;
 
@@ -18,11 +25,10 @@ module.exports = class {
         return this;
     }
 
+    
     /**
-     *
-     *
-     * @param {string} tableName nome da tabela
-     * 
+     * @param {string} [string=""] nome da tabela que sera comparada.
+     * Pode ser deixado em branco caso a classe seja instanciada
      */
     from(string = "") {
         let from;
@@ -36,6 +42,13 @@ module.exports = class {
         return this;
     }
 
+    /**
+     * @param {string} args nome do campo a ser comparado ou query de comparação
+     * @param {string} args campo a ser comparado. Opcionado
+     * @example where("nome_campo", "valor_a_ser_encontrado")
+     * @example where("nome_campo = valor_a_ser_encontrado")
+     * @returns
+     */
     where(...args) {
         let where;
 
@@ -45,7 +58,6 @@ module.exports = class {
             where = `WHERE ${args[0]} = ?`;
             this.#_data.where = args[1];
         }
-        // where = `WHERE ${args[0]} = ${args[1]}`;
 
         this.querySQL = this.querySQL.replace("$_e4g", where);
 
@@ -90,7 +102,7 @@ module.exports = class {
     /**
      *
      *
-     * @param {String} currentTable Nome da tabela e do campo que sofeream join ex: user.address_id PS: A TABELA DEVE TER SIDO REFERENCIADA ANTERIORMENTE 
+     * @param {String} currentTable Nome da tabela e do campo que seram utilizadas no join ex: user.address_id PS: A TABELA DEVE TER SIDO REFERENCIADA ANTERIORMENTE 
      * @param {String} toTable Nome da tabela e do campo que recebera o join. Ex:  address.address_id
      * @returns Retorna um objeto que pode ser encadeado com novas queries
      */
@@ -104,9 +116,16 @@ module.exports = class {
         return this;
     }
 
+    /**
+     *
+     *
+     * @param {*} tableName nome da tabela
+     * @param {*} args valores que seram inseridos no banco. PS: cada valor é posicional
+     * Alem disso, é importante ressaltar que todos os valores devem ser adicionados
+     * De acordo com a ordem que os mesmos estao alocados no banco de dados
+     */
     insert(tableName, ...args) {
         let insert;
-
 
         const placeholders = args.map((val) => "?, ").join("").slice(0, -2);
 
@@ -122,6 +141,14 @@ module.exports = class {
     }
 
 
+    /**
+     *
+     *
+     * @param {string} tableName nome da tabela da qual se deseja realizar a busca. Caso o nome seja null,
+     * a tabela precisa ser instanciada
+     * @param {object} args objeto onde a chave é o nome da tabela no campo e a key é o valor
+     * {nome_campo: valor_a_ser_inserido}
+     */
     insertInto(tableName, args) {
         const fieldNames = Object.keys(args);
 
@@ -141,6 +168,14 @@ module.exports = class {
 
     }
 
+    /**
+     *
+     *
+     * @param {string} [tableName=null] Nome da tabela. Caso o nome da tabela seja deixado em branco
+     * O metodo "from" deve ser utilizado. ou a classe deve ser instanciada com o
+     * nome da sua respectiva tabela
+     * @returns
+     */
     delete(tableName = null) {
         let deleteQuery;
 
