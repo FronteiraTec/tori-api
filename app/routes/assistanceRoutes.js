@@ -11,5 +11,4 @@ router.get('/assistance', controller.getAll);
 router.get('/assistance/:id', controller.getByID);
 
 
-
 module.exports = router;

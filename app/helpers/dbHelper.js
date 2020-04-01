@@ -160,6 +160,34 @@ module.exports = class {
         return this;
     }
 
+    
+    /**
+     *
+     *
+     * @param {String} tableName nome da tabela
+     * @param {Object} args nome campo a ser atualizado e seu novo valor. PS: o nome do campo
+     * deve ser o mesmo no do banco
+     * @description Be careful when updating records in a table! 
+     * Notice the WHERE clause in the UPDATE statement.
+     * The WHERE clause specifies which record(s) that should be updated. 
+     * If you omit the WHERE clause, all records in the table will be updated!
+     */
+    update(tableName, args){
+        const fieldNames = Object.keys(args);
+
+        const setQuery = fieldNames.map((field) => `${field} = ?, `).join("").slice(0, -2); 
+
+        const valuesArray = fieldNames.map((field) => args[field]);
+
+        const updateQuery = ` UPDATE ${tableName} SET ${setQuery}`;
+
+        this.querySQL = this.querySQL.replace("$_e1g", updateQuery);
+
+        this.#_data.update = valuesArray;
+
+        return this;
+    }
+
     resolve() {
         this.querySQL = this.querySQL.replace("$_e1g", "");
         this.querySQL = this.querySQL.replace("$_e2g", this.#_from);
@@ -173,11 +201,12 @@ module.exports = class {
 
         const args = [];
 
-        if (this.#_data.where !== undefined) args.push(this.#_data.where);
         if (this.#_data.insert !== undefined) args.push(...this.#_data.insert);
-
+        if (this.#_data.update !== undefined) args.push(...this.#_data.update);
+        
+        if (this.#_data.where !== undefined) args.push(this.#_data.where);
+        
         this.clearQuery();
-
 
         return this.query(sql, args);
     }
