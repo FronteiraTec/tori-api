@@ -21,6 +21,11 @@ module.exports = class {
     if (limit != undefined && offset != undefined)
       db.pagination(limit, offset);
 
+    db.
+      join("assistance_owner_id", "user.user_id").
+      join("user.user_course_id", "course.course_id").
+      join("assistance_local_id", "address.address_id")
+
 
     const rowsAndInfos = await db.resolve();
     const assistances = [...rowsAndInfos];
@@ -41,12 +46,12 @@ module.exports = class {
       join("a.assistance_owner_id", "user.user_id").
       join("user.user_course_id", "course.course_id").
       join("assistance_local_id", "address.address_id").
-      
+
       resolve();
 
-      /**
-       * tratar dados
-       */
+    /**
+     * tratar dados
+     */
 
     return assistance[0];
   };
