@@ -23,8 +23,8 @@ module.exports = class {
 
     db.
       join("assistance_owner_id", "user.user_id").
-      join("user.user_course_id", "course.course_id").
-      join("assistance_local_id", "address.address_id")
+      join("assistance.assistance_course_id", "course.course_id").
+      join("assistance_local_id", "address.address_id");
 
 
     const rowsAndInfos = await db.resolve();
