@@ -58,7 +58,7 @@ module.exports = class {
         let val = args[1];
 
         if (args.length == 1) {
-            if (key.find("=") >= 0) {
+            if (args[0].search("=") >= 0) {
                 const parameters = key.split("=");
                 const argsSplited = parameters.map((val) => val.trim());
 
@@ -119,6 +119,12 @@ module.exports = class {
         
         this.querySQL = this.querySQL.replace("$_e4.1g", and);
 
+        return this;
+    }
+
+    like(pattern){
+        const like = `LIKE '${pattern}'`;
+        this.querySQL = this.querySQL.replace("$_e4.1g", like);
         return this;
     }
 
@@ -322,6 +328,8 @@ module.exports = class {
         const args = { ...data.insert, ...data.update, ...data.where, ...data.or, ...data.and}
 
         this.clearQuery();
+
+        console.log(sql);
 
 
         return this.query(sql, args);
