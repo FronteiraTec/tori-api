@@ -62,8 +62,8 @@ module.exports = class {
             val = argsSplited[1];
         }
 
-        where = `WHERE ${key} = ?`;
-        this.#_data.where = val;
+        where = `WHERE ${key} = :where`;
+        this.#_data.where = {where: val};
         
         this.querySQL = this.querySQL.replace("$_e4g", where);
 
@@ -133,7 +133,7 @@ module.exports = class {
     insert(tableName = null, ...args) {
         let insert;
 
-        const placeholders = args.map((val) => "?, ").join("").slice(0, -2);
+        const placeholders = args.map((val, i) => `:insert${i}, `).join("").slice(0, -2);
 
         insert = placeholders;
 
@@ -141,7 +141,13 @@ module.exports = class {
 
         insert = `INSERT INTO ${tableName} VALUES (${insert})`;
 
-        this.#_data.insert = args;
+        const argsObjectList = args.map((val, i) => {
+            return {
+                [`:insert${i}`]: val
+            }
+        });
+
+        this.#_data.insert = Object.assign({}, ...argsObjectList);
 
         this.querySQL = this.querySQL.replace("$_e1g", insert);
 
@@ -160,9 +166,13 @@ module.exports = class {
     insertInto(tableName = null, args) {
         const fieldNames = Object.keys(args);
 
-        const valuesArray = fieldNames.map((field) => args[field]);
 
-        const placeholders = valuesArray.map((_) => "?, ").join("").slice(0, -2);
+        const insertDataObject = fieldNames.map((field, i) => {
+            return {[`insert${i}`] : args[field]}
+        });
+
+        const placeholders = insertDataObject.map((_, i) => `:insert${i}, `).join("").slice(0, -2);
+
 
         const valuesString = fieldNames.map(name => `${name}, `).join("").slice(0, -2);
 
@@ -170,7 +180,7 @@ module.exports = class {
 
         const insert = `INSERT INTO ${tableName} (${valuesString}) VALUES (${placeholders})`;
 
-        this.#_data.insert = valuesArray;
+        this.#_data.insert = Object.assign({}, ...insertDataObject);
 
         this.querySQL = this.querySQL.replace("$_e1g", insert);
 
@@ -212,6 +222,7 @@ module.exports = class {
      * @param {String} tableName nome da tabela
      * @param {Object} args nome campo a ser atualizado e seu novo valor. PS: o nome do campo
      * deve ser o mesmo no do banco
+     * @example update("tag", {tag_name: newName})
      * @description Be careful when updating records in a table! 
      * Notice the WHERE clause in the UPDATE statement.
      * The WHERE clause specifies which record(s) that should be updated. 
@@ -220,9 +231,11 @@ module.exports = class {
     update(tableName = null, args){
         const fieldNames = Object.keys(args);
 
-        const setQuery = fieldNames.map((field) => `${field} = ?, `).join("").slice(0, -2); 
+        const setQuery = fieldNames.map((field, i) => `${field} = :update${i}, `).join("").slice(0, -2); 
 
-        const valuesArray = fieldNames.map((field) => args[field]);
+        const valuesArray = fieldNames.map((field, i) => {
+            return {[`update${i}`]: args[field]}
+        });
         
         if(tableName == null) tableName = this.#_from;
         
@@ -230,7 +243,7 @@ module.exports = class {
 
         this.querySQL = this.querySQL.replace("$_e1g", updateQuery);
 
-        this.#_data.update = valuesArray;
+        this.#_data.update = Object.assign({}, ...valuesArray);
 
         return this;
     }
@@ -246,13 +259,16 @@ module.exports = class {
 
         const sql = this.querySQL;
 
-        const args = [];
+        const data = this.#_data;
 
-        if (this.#_data.insert !== undefined) args.push(...this.#_data.insert);
-        if (this.#_data.update !== undefined) args.push(...this.#_data.update);
+        // if (this.#_data.insert !== undefined) args.push(...this.#_data.insert);
+        // if (this.#_data.update !== undefined) args.push(...this.#_data.update);
         
-        if (this.#_data.where !== undefined) args.push(this.#_data.where);
-        
+        // if (this.#_data.where !== undefined) args.push(this.#_data.where);
+        console.log(data.insert);
+
+        const args = {...data.insert, ...data.update, ...data.where}
+
         this.clearQuery();
 
 
@@ -268,7 +284,7 @@ module.exports = class {
 
             try {
                 conn = await pool.getConnection();
-                const rows = await conn.query(queryStr, queryVar);
+                const rows = await conn.query({sql:queryStr, namedPlaceholders: true}, queryVar);
 
                 conn.end();
                 resolve(rows);
