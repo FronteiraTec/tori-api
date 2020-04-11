@@ -1,6 +1,9 @@
-const model = require('../models/AssistanceModel');
+import {Request, Response} from 'express';
 
-exports.getAll = async (req, res) => {
+import model from '../models/AssistanceModel';
+
+export const getAll = async (req: Request, res: Response) => {
+
   const {limit, offset, avaliable} = req.query;
 
   try {
@@ -8,22 +11,21 @@ exports.getAll = async (req, res) => {
     return res.status(200).json(allAssistance);
   } catch (error) {
     error.statusCode = 400;
+    res.json(error);
     throw error;
   }
 };
 
-exports.getByID = async (req, res) => {
+export const getByID = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-    const assistance = await model.getByID(id);
-    
+    const assistance = await model.getByID(Number(id));
+
     res.status(200).json(assistance);
   } catch (error) {
     error.statusCode = 400;
+    res.json(error);
     throw error;
   }
 };
-
-
-
