@@ -1,6 +1,14 @@
-/* eslint-disable require-jsdoc */
+import { db } from "../helpers/dbHelper";
 
-import {db} from "../helpers/dbHelper";
+interface FilterOptions {
+  filter?: string,
+  limit?: number,
+  offset?: number,
+  filterData?: string,
+  orderBy?: string,
+  orderByData?: string,
+  avaliable?: boolean
+};
 
 export default class AssistanceModel {
   assistanceId: number;
@@ -21,66 +29,113 @@ export default class AssistanceModel {
    * @returns {[assistances]} List of all assistances
    */
 
-  static async getAll(limit: number, offset: number, avaliable: boolean) {
-    db.select(`
-      a.*,
-      u.user_id,
-      u.user_full_name,
-      u.user_created_at,
-      u.user_assistant_stars,
-      u.user_email,
-      u.user_verified_assistant,
-      u.user_course_id,
-      assc.course_name,
-      assc.course_description,
-      assc.course_id,
-      ad.address_id,
-      ad.address_cep,
-      ad.address_street,
-      ad.address_number,
-      ad.address_complement,
-      ad.address_reference,
-      ad.address_nickname,
-      ad.address_latitude,
-      ad.address_logintude,
-      owc.course_id,
-      owc.course_name,
-      owc.course_description,
-      sub.subject_id,
-      sub.subject_name,
-      sub.subject_description
-    `).
-    from("assistance as a").
+  static async getAll(limit: number, offset: number, avaliable: boolean): Promise<object[]> {
+    this.defaultSearch().
       orderBy("assistance_id", "DESC");
 
     if (avaliable !== undefined) {
-      db.where("assistance_avaliable", String(avaliable));
+      if (Boolean(avaliable) === true)
+        db.where("assistance_avaliable", String(1));
     }
 
     if (limit !== undefined && offset !== undefined)
       db.pagination(limit, offset);
 
-    db.
-      join("a.assistance_owner_id", "user as u u.user_id").
-      join("a.assistance_course_id", "course as assc assc.course_id").
-      join("a.assistance_local_id", "address as ad ad.address_id").
-      join("u.user_course_id", "course as owc owc.course_id").
-      join("a.assistance_subject_id", "subject as sub sub.subject_id");
 
-
-    try{
+    try {
       const rowsAndInfos = await db.resolve();
-      // const assistances = [...rowsAndInfos];
-      return this.parseDataGetAll(rowsAndInfos);
-
-      // return assistances;
+      return this.parseDefaultData(rowsAndInfos);
     }
-    catch(err) {
+    catch (err) {
       throw err;
     }
   }
 
-  static parseDataGetAll(data: any): object[]{
+  /**
+   * @static
+   * @param {*} idAssistance
+   * @returns {assistance} returns an assistance
+   */
+  static async searchByID(id: number): Promise<DefaultResponse> {
+
+    this.defaultSearch().where("assistance_id", String(id));
+
+    try {
+      const assistance = await db.resolve();
+      const parsedData = this.parseDefaultData(assistance);
+
+      return parsedData[0];
+    }
+    catch (err) {
+      throw err;
+    }
+  };
+
+  static async searchByName(name: string, args: FilterOptions = null): Promise<DefaultResponse[]> {
+    // TODO: protec from sql injection
+    this.defaultSearch().
+      where("assistance_title").
+      like(`%${name}%`);
+
+    defaultFilters(args);
+
+    try {
+      const assistance = await db.resolve();
+      const parsedData = this.parseDefaultData(assistance);
+
+      return parsedData;
+    }
+    catch (err) {
+      throw err;
+    }
+  };
+
+  static async searchByTag(name: string, args: FilterOptions = null): Promise<DefaultResponse[]> {
+    // TODO: protec from sql injection
+    this.defaultSearch().
+      leftJoin("assistance_tag as at at.assistance_id", "a.assistance_id").
+      leftJoin("tag.tag_id", "at.tag_id").
+      where("tag.tag_name").
+      like(`%${name}%`);
+
+    defaultFilters(args);
+
+    try {
+      const assistance = await db.resolve();
+      const parsedData = this.parseDefaultData(assistance);
+
+      return parsedData;
+    }
+    catch (err) {
+      throw err;
+    }
+  };
+
+  static async searchByNameTagDescription(name: string, args: FilterOptions = null): Promise<DefaultResponse[]> {
+    // TODO: protec from sql injection
+    this.defaultSearch().
+      leftJoin("assistance_tag as at at.assistance_id", "a.assistance_id").
+      leftJoin("tag.tag_id", "at.tag_id").
+      where("(tag.tag_name").
+      like(`%${name}%`).
+      or("a.assistance_title").like(`%${name}%`).
+      or("a.assistance_description").like(`%${name}%`, ')');
+
+    defaultFilters(args);
+
+    try {
+      const assistance = await db.resolve();
+      const parsedData = this.parseDefaultData(assistance);
+
+      return parsedData;
+    }
+    catch (err) {
+      throw err;
+    }
+  };
+
+
+  private static parseDefaultData(data: any): DefaultResponse[] {
     return data.map((value: any) => {
       return {
         assistance: {
@@ -125,58 +180,109 @@ export default class AssistanceModel {
       }
     });
   }
-  /**
-   * @static
-   * @param {*} idAssistance
-   * @returns {assistance} returns an assistance
-   */
-  static async getByID(id: number) {
-      db.
+  private static defaultSearch() {
+    db.
       from("assistance as a").
       select(`
-      a.*,
-      u.user_id,
-      u.user_full_name,
-      u.user_created_at,
-      u.user_assistant_stars,
-      u.user_email,
-      u.user_verified_assistant,
-      u.user_course_id,
-      assc.course_name,
-      assc.course_description,
-      assc.course_id,
-      ad.address_id,
-      ad.address_cep,
-      ad.address_street,
-      ad.address_number,
-      ad.address_complement,
-      ad.address_reference,
-      ad.address_nickname,
-      ad.address_latitude,
-      ad.address_logintude,
-      owc.course_id,
-      owc.course_name,
-      owc.course_description,
-      sub.subject_id,
-      sub.subject_name,
-      sub.subject_description
-    `).
-    join("a.assistance_owner_id", "user as u u.user_id").
+        a.*,
+        u.user_id,
+        u.user_full_name,
+        u.user_created_at,
+        u.user_assistant_stars,
+        u.user_email,
+        u.user_verified_assistant,
+        u.user_course_id,
+        assc.course_name,
+        assc.course_description,
+        assc.course_id,
+        ad.address_id,
+        ad.address_cep,
+        ad.address_street,
+        ad.address_number,
+        ad.address_complement,
+        ad.address_reference,
+        ad.address_nickname,
+        ad.address_latitude,
+        ad.address_logintude,
+        owc.course_id,
+        owc.course_name,
+        owc.course_description,
+        sub.subject_id,
+        sub.subject_name,
+        sub.subject_description
+      `).
+      join("a.assistance_owner_id", "user as u u.user_id").
       join("a.assistance_course_id", "course as assc assc.course_id").
       join("a.assistance_local_id", "address as ad ad.address_id").
       join("u.user_course_id", "course as owc owc.course_id").
-      join("a.assistance_subject_id", "subject as sub sub.subject_id").
-      where("assistance_id", String(id));
+      join("a.assistance_subject_id", "subject as sub sub.subject_id");
 
-      try{
-        const assistance = await db.resolve();
-        const parsedData = this.parseDataGetAll(assistance);
-
-        return parsedData[0];
-      }
-      catch(err) {
-        throw err;
-      }
-  };
+    return db;
+  }
 
 };
+
+function defaultFilters(args: FilterOptions) {
+  if (args.limit !== undefined && args.offset !== undefined)
+    db.pagination(args.limit, args.offset);
+  if (args.filter !== undefined) {
+    if (args.filter.search("course") >= 0) {
+      const field = args.filter.split("-")[1];
+      const query = `assc.course_${field}`;
+      db.and(query, args.filterData);
+    }
+  }
+
+  if (args.avaliable !== undefined) {
+    if(Boolean(args.avaliable) === true)
+      db.and("assistance_avaliable", String(1));
+  }
+
+  if (args.orderBy !== undefined) {
+    const sortOrder = args.orderByData === undefined ? "ASC" : args.orderByData;
+    db.orderBy(`a.assistance_${args.orderBy}`, sortOrder);
+  }
+}
+
+
+interface DefaultResponse {
+  assistance: {
+    id: number,
+    title: string,
+    description: string,
+    avaliable: boolean,
+    total_vacancies: number,
+    avalible_vacancies: number,
+    date: Date,
+    subjectName: string,
+    course: {
+      id: number,
+      name: string,
+      description: string,
+    },
+    owner: {
+      id: number,
+      fullName: string,
+      createdAt: Date,
+      stars: number,
+      email: string,
+      verifiedAssistant: boolean,
+      course: {
+        id: number,
+        name: string,
+        description: string,
+      },
+    },
+    address: {
+      id: number,
+      cep: string,
+      street: string,
+      number: number,
+      complement: string,
+      reference: string,
+      nickname: string,
+      latitude: string,
+      logintude: string,
+    }
+  }
+}

@@ -1,12 +1,14 @@
 Retorna todas as monitorias
 
+## GET /assistance
+## GET /assistance/search
+
+
+
+## Documentação:
+
+
 ### GET /assistance
-### GET /assistance/{id}
-
-
-
-
-#### GET /assistance
 
 Possíveis parametros
 {
@@ -20,7 +22,7 @@ GET /assistance?avaliable=true
 
 Retorno:
 
-``` json
+``` ts
 {
   assistance: {
     id: int,
@@ -64,11 +66,46 @@ Retorno:
 }
 ```
 
+### GET /assistance/search
 
-#### GET /assistance/{id}
+### Possíveis argumentos. q e data são obrigatórios
+/assistance/search?
+{q}&
+{data}&
+{limit}&
+{offset}&
+{filter}&
+{filterData}&
+{orderBy}&
+{orderByData}&
+{avaliable}
 
-Exemplo: 
+#### q Possíveis argumentos:
+q = id, name, tag, all
+data = "id", "nome", "tagNome", "texto a ser pesquisado"
 
-GET /assistance/5
+q e data são utilizados em conjunto.
 
-Retorno: Os mesmos campos que /assistance
+#### limit e offset:
+limit: number
+offset: number
+
+limit e offset são utilizados em conjunto.
+
+#### filter Possíveis argumentos:
+filter = course-id, course-name
+filterData = "courseID", "courseName"
+
+filter e filterData são utilizados em conjunto.
+
+#### orderBY Possíveis argumentos:
+orderBy = created_at, id, date
+orderByData = DESC, ASC
+orderBy e orderByData são utilizados em conjunto.
+
+
+#### avaliable Possíveis argumentos:
+avaliable = true, 1
+
+### Exemplo:
+assistance/search?q=id&data=5&limit=1&offset=0&filter=course-id&filterData=6&orderBy=id&orderByData=desc&avaliable=1

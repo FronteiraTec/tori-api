@@ -18,7 +18,6 @@ export default class DbHelper {
     private _whereCount = 0;
     private _orCount = 0;
     private _andCount = 0;
-    private _likeCount = 0;
 
     public constructor(tableName: string = null) {
         if (tableName != null)
@@ -105,7 +104,7 @@ export default class DbHelper {
             }
         }
         else {
-            or = `OR (${args[0]} $_e4.1g)`;
+            or = `OR (${args[0]}) $_e4.1g`;
         }
 
         this.querySQL = this.querySQL.replace("$_e4.1g", or);
@@ -126,7 +125,7 @@ export default class DbHelper {
             }
         }
         else {
-            and = `AND (${args[0]} $_e4.1g)`;
+            and = `AND (${args[0]}) $_e4.1g`;
         }
 
         this.querySQL = this.querySQL.replace("$_e4.1g", and);
@@ -134,8 +133,13 @@ export default class DbHelper {
         return this;
     }
 
-    like(pattern: string): this{
-        const like = `LIKE '${pattern}'`;
+    like(...pattern: string[]): this{
+        let like = `LIKE '${pattern[0]}' `;
+
+        if(pattern.length > 1)
+            like += pattern[1];
+        like +=  " $_e4.1g";
+
         this.querySQL = this.querySQL.replace("$_e4.1g", like);
         return this;
     }
@@ -182,17 +186,32 @@ export default class DbHelper {
      * @param {String} toTable Nome da tabela e do campo que recebera o join. Ex:  address.address_id
      * @returns Retorna um objeto que pode ser encadeado com novas queries
      */
-    // join(currentTable: string, toTable: string): this {
-    //     const argsTo = toTable.split(".");
-
-    //     const join = `INNER JOIN ${argsTo[0]} ON ${currentTable} = ${toTable}`;
-
-    //     this.querySQL = this.querySQL.replace("$_e3g", join + " $_e3g");
-
-    //     return this;
-    // }
 
     join(table1: string, table2: string): this {
+        const join = this.joinQueryBuilder("JOIN", table1, table2);
+
+        this.querySQL = this.querySQL.replace("$_e3g", join + " $_e3g");
+
+        return this;
+    }
+
+    leftJoin(table1: string, table2: string): this {
+        const join = this.joinQueryBuilder("LEFT JOIN", table1, table2);
+
+        this.querySQL = this.querySQL.replace("$_e3g", join + " $_e3g");
+
+        return this;
+    }
+
+    rightJoin(table1: string, table2: string): this {
+        const join = this.joinQueryBuilder("RIGHT JOIN", table1, table2);
+
+        this.querySQL = this.querySQL.replace("$_e3g", join + " $_e3g");
+
+        return this;
+    }
+
+    private joinQueryBuilder(joinType: string, table1: string, table2: string){
         interface JoinField {
             alias?: string,
             tableName: string,
@@ -203,7 +222,7 @@ export default class DbHelper {
             const searchQuery = " as ";
             const hasAlias = table.toLowerCase().search(searchQuery);
 
-            if (hasAlias > 0) { // Possui alias
+            if (hasAlias > 0) {
                 const splitedAliasSearch = table.substring(hasAlias + searchQuery.length).split(" ");
 
                 const alias: string = splitedAliasSearch[0];
@@ -239,23 +258,21 @@ export default class DbHelper {
         let join: string;
 
         if (objTable1.alias === null && objTable2.alias === null)
-            join = `JOIN ${objTable1.tableName} ON ${objTable1.unionField} = ${objTable2.unionField}`;
+            join = `${joinType} ${objTable1.tableName} ON ${objTable1.unionField} = ${objTable2.unionField}`;
 
         // Pick the first one and use the alias of the second
         else if (objTable1.alias !== null && objTable2.alias !== null)
-            join = `JOIN ${objTable1.tableName} AS ${objTable1.alias} ON ${objTable1.unionField} = ${objTable2.unionField}`;
+            join = `${joinType} ${objTable1.tableName} AS ${objTable1.alias} ON ${objTable1.unionField} = ${objTable2.unionField}`;
 
         // First one do has an alias, second one no
         else if (objTable1.alias !== null && objTable2.alias === null)
-            join = `JOIN ${objTable1.tableName} AS ${objTable1.alias} ON ${objTable1.unionField} = ${objTable2.unionField}`;
+            join = `${joinType} ${objTable1.tableName} AS ${objTable1.alias} ON ${objTable1.unionField} = ${objTable2.unionField}`;
 
         // First one has no alias at all, second one got one
         else if (objTable1.alias === null && objTable2.alias !== null)
-            join = `JOIN ${objTable2.tableName} AS ${objTable2.alias} ON ${objTable2.unionField} = ${objTable1.unionField}`;
+            join = `${joinType} ${objTable2.tableName} AS ${objTable2.alias} ON ${objTable2.unionField} = ${objTable1.unionField}`;
 
-        this.querySQL = this.querySQL.replace("$_e3g", join + " $_e3g");
-
-        return this;
+        return join;
     }
 
     /**
@@ -342,9 +359,9 @@ export default class DbHelper {
                 deleteQuery = deleteQuery.replace("$_e1g", `FROM ${this._from}`);
         }
 
-        else {
+        else
             deleteQuery = `DELETE FROM ${tableName}`;
-        }
+
 
         this.querySQL = this.querySQL.replace("$_e1g", deleteQuery);
 
@@ -396,13 +413,6 @@ export default class DbHelper {
 
         const sql = this.querySQL;
 
-        // const data = this._data;
-
-        // if (this._data.insert !== undefined) args.push(...this._data.insert);
-        // if (this._data.update !== undefined) args.push(...this._data.update);
-
-        // if (this._data.where !== undefined) args.push(this._data.where);
-
         const data = {};
 
         if(this._data.insert !== undefined) Object.assign(data, this._data.insert);
@@ -411,12 +421,7 @@ export default class DbHelper {
         if (this._data.or !== undefined) Object.assign(data, this._data.or);
         if (this._data.and !== undefined) Object.assign(data, this._data.and);
 
-        // const args = { ...data.insert, ...data.update, ...data.where, ...data.or, ...data.and}
-
         this.clearQuery();
-
-        // console.log(sql);
-
 
         return this.query(sql, data);
     }
@@ -436,10 +441,7 @@ export default class DbHelper {
                 resolve(rows);
             } catch (err) {
                 conn.end();
-                // throw err;
                 if (reject) reject(err);
-                // TODO: implementar o helper de erro e o utilizar
-                // errorHandler(err);
             }
         });
     }
@@ -451,7 +453,6 @@ export default class DbHelper {
         this._whereCount = 0;
         this._orCount = 0;
         this._andCount = 0;
-        this._likeCount = 0;
     }
 
     clearTableName() {
