@@ -1,6 +1,6 @@
 import { HTTPError } from "./customError";
 
-import pool from "../../utils/dbConnect";
+import pool from "./dbConnect";
 
 interface Data {
         where?: {},
@@ -19,8 +19,8 @@ export default class DbHelper {
     private _orCount = 0;
     private _andCount = 0;
 
-    public constructor(tableName: string = null) {
-        if (tableName != null)
+    public constructor(tableName: string = "") {
+        if (tableName != "")
             this._from = tableName;
 
     }
@@ -242,7 +242,6 @@ export default class DbHelper {
                 const unionField = table;
 
                 const res: JoinField = {
-                    alias: null,
                     tableName,
                     unionField
                 };
@@ -255,21 +254,21 @@ export default class DbHelper {
         const objTable1 = parseJoin(table1);
         const objTable2 = parseJoin(table2);
 
-        let join: string;
+        let join = "";
 
-        if (objTable1.alias === null && objTable2.alias === null)
+        if (objTable1.alias === undefined && objTable2.alias === undefined)
             join = `${joinType} ${objTable1.tableName} ON ${objTable1.unionField} = ${objTable2.unionField}`;
 
         // Pick the first one and use the alias of the second
-        else if (objTable1.alias !== null && objTable2.alias !== null)
+        else if (objTable1.alias !== undefined && objTable2.alias !== undefined)
             join = `${joinType} ${objTable1.tableName} AS ${objTable1.alias} ON ${objTable1.unionField} = ${objTable2.unionField}`;
 
         // First one do has an alias, second one no
-        else if (objTable1.alias !== null && objTable2.alias === null)
+        else if (objTable1.alias !== undefined && objTable2.alias === undefined)
             join = `${joinType} ${objTable1.tableName} AS ${objTable1.alias} ON ${objTable1.unionField} = ${objTable2.unionField}`;
 
         // First one has no alias at all, second one got one
-        else if (objTable1.alias === null && objTable2.alias !== null)
+        else if (objTable1.alias === undefined && objTable2.alias !== undefined)
             join = `${joinType} ${objTable2.tableName} AS ${objTable2.alias} ON ${objTable2.unionField} = ${objTable1.unionField}`;
 
         return join;
@@ -283,14 +282,14 @@ export default class DbHelper {
      * Alem disso, é importante ressaltar que todos os valores devem ser adicionados
      * De acordo com a ordem que os mesmos estao alocados no banco de dados
      */
-    insert(tableName: string = null, ...args: string[]):this {
+    insert(tableName: string = "", ...args: string[]):this {
         let insert;
 
         const placeholders = args.map((val, i) => `:insert${i}, `).join("").slice(0, -2);
 
         insert = placeholders;
 
-        if (tableName == null) tableName = this._from;
+        if (tableName === "") tableName = this._from;
 
         insert = `INSERT INTO ${tableName} VALUES (${insert})`;
 
@@ -316,7 +315,7 @@ export default class DbHelper {
      * @param {object} args objeto onde a chave é o nome da tabela no campo e a key é o valor
      * {nome_campo: valor_a_ser_inserido}
      */
-    insertInto(tableName: string = null, args: string[]): this {
+    insertInto(tableName: string = "", args: string[]): this {
         const fieldNames = Object.keys(args);
 
 
@@ -329,7 +328,7 @@ export default class DbHelper {
 
         const valuesString = fieldNames.map(name => `${name}, `).join("").slice(0, -2);
 
-        if (tableName == null) tableName = this._from;
+        if (tableName === "") tableName = this._from;
 
         const insert = `INSERT INTO ${tableName} (${valuesString}) VALUES (${placeholders})`;
 
@@ -349,10 +348,10 @@ export default class DbHelper {
      * nome da sua respectiva tabela
      * @returns
      */
-    delete(tableName: string = null): this {
+    delete(tableName: string = ""): this {
         let deleteQuery;
 
-        if (tableName == null) {
+        if (tableName === "") {
             deleteQuery = `DELETE $_e1g`;
 
             if (this._from !== "")
@@ -381,7 +380,7 @@ export default class DbHelper {
      * The WHERE clause specifies which record(s) that should be updated.
      * If you omit the WHERE clause, all records in the table will be updated!
      */
-    update(tableName: string = null, args: string[]): this {
+    update(tableName: string = "", args: string[]): this {
         const fieldNames = Object.keys(args);
 
         const setQuery = fieldNames.map((field, i) => `${field} = :update${i}, `).join("").slice(0, -2);
@@ -390,7 +389,7 @@ export default class DbHelper {
             return { [`update${i}`]: args[field] }
         });
 
-        if (tableName == null) tableName = this._from;
+        if (tableName === "") tableName = this._from;
 
         const updateQuery = ` UPDATE ${tableName} SET ${setQuery}`;
 
@@ -423,24 +422,21 @@ export default class DbHelper {
 
         this.clearQuery();
 
-        return this.query(sql, data);
+        return this.query({ query: sql, args: data });
     }
 
-    async query(query: string, args: object): Promise<object[]> {
+    async query({ query, args }: { query: string; args: object; }): Promise<object[]> {
         return new Promise(async (resolve, reject) => {
 
             const queryVar = args;
             const queryStr = query;
-            let conn;
-
             try {
-                conn = await pool.getConnection();
+                const conn = await pool.getConnection();
                 const rows = await conn.query({ sql: queryStr, namedPlaceholders: true, nestTables: true}, queryVar);
 
                 conn.end();
                 resolve(rows);
             } catch (err) {
-                conn.end();
                 if (reject) reject(err);
             }
         });

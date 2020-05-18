@@ -11,18 +11,18 @@ interface FilterOptions {
 };
 
 export default class AssistanceModel {
-  assistanceId: number;
-  assistanceOwnerId: number;
-  assistanceTitle: string;
-  assistanceTotalVacancies: number;
-  assistanceAvaliableVacancies: number;
-  assistandeAvaliable: boolean;
-  assistanceLocalId: number;
-  assistanceDescription: string;
-  assistanceDate: string;
-  assisstanceCreateAt: string;
-  assistanceCourseId: number;
-  assistanceSubjectId: number;
+  // assistanceId: number;
+  // assistanceOwnerId: number;
+  // assistanceTitle: string;
+  // assistanceTotalVacancies: number;
+  // assistanceAvaliableVacancies: number;
+  // assistandeAvaliable: boolean;
+  // assistanceLocalId: number;
+  // assistanceDescription: string;
+  // assistanceDate: string;
+  // assisstanceCreateAt: string;
+  // assistanceCourseId: number;
+  // assistanceSubjectId: number;
 
   /**
    * @static
@@ -32,10 +32,10 @@ export default class AssistanceModel {
   static async getAll(limit: number, offset: number, avaliable: boolean): Promise<object[]> {
     this.defaultSearch().
       orderBy("assistance_id", "DESC");
-
+    
     if (avaliable !== undefined) {
       if (Boolean(avaliable) === true)
-        db.where("assistance_avaliable", String(1));
+        db.where("assistance_avaliable", String(avaliable));
     }
 
     if (limit !== undefined && offset !== undefined)
@@ -71,7 +71,7 @@ export default class AssistanceModel {
     }
   };
 
-  static async searchByName(name: string, args: FilterOptions = null): Promise<DefaultResponse[]> {
+  static async searchByName(name: string, args: FilterOptions): Promise<DefaultResponse[]> {
     // TODO: protec from sql injection
     this.defaultSearch().
       where("assistance_title").
@@ -90,7 +90,7 @@ export default class AssistanceModel {
     }
   };
 
-  static async searchByTag(name: string, args: FilterOptions = null): Promise<DefaultResponse[]> {
+  static async searchByTag(name: string, args: FilterOptions): Promise<DefaultResponse[]> {
     // TODO: protec from sql injection
     this.defaultSearch().
       leftJoin("assistance_tag as at at.assistance_id", "a.assistance_id").
@@ -111,7 +111,7 @@ export default class AssistanceModel {
     }
   };
 
-  static async searchByNameTagDescription(name: string, args: FilterOptions = null): Promise<DefaultResponse[]> {
+  static async searchByNameTagDescription(name: string, args: FilterOptions): Promise<DefaultResponse[]> {
     // TODO: protec from sql injection
     this.defaultSearch().
       leftJoin("assistance_tag as at at.assistance_id", "a.assistance_id").
@@ -229,7 +229,9 @@ function defaultFilters(args: FilterOptions) {
     if (args.filter.search("course") >= 0) {
       const field = args.filter.split("-")[1];
       const query = `assc.course_${field}`;
-      db.and(query, args.filterData);
+
+      const filterData = args.filterData === undefined ? "" : args.filterData;
+      db.and(query, filterData);
     }
   }
 
