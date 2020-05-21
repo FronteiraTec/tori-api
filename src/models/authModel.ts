@@ -16,9 +16,9 @@ export const signUp = async ({ name, cpf, email, password }: { name: string; cpf
       .resolve() as { insertId: string }[];
 
     return {
-      id: newUser[0].insertId,
+      id: Number(newUser[0].insertId),
       name
-    } as { id: string, name: string }
+    } as { id: number, name: string }
   } catch (err) {
     throw err;
   }
@@ -28,8 +28,29 @@ export const signUp = async ({ name, cpf, email, password }: { name: string; cpf
 
 }
 
+export const signIn = async ({ email, password }: { email: string; password: string; }) => {
+  const hashedPassword = hashPassword(password);
 
-export const signIn = async () => { }
+
+  try {
+    const user = await db.select("user_full_name, user_id")
+      .from("user")
+      .where("user_email", email)
+      .and("user_password", hashedPassword)
+      .resolve() as { user: UserInterface }[];
+
+    if (user[0] !== undefined)
+      return {
+        name: user[0].user.user_full_name,
+        id: user[0].user.user_id
+      };
+
+    return null;
+
+  } catch (err) {
+    throw err;
+  }
+}
 export const signInUFFS = async () => { }
 
 function hashPassword(password: string) {
