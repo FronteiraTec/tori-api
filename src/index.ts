@@ -38,7 +38,7 @@ app.use(indexRoute);
 
 // Server settings
 // const server = '192.168.0.106';
-const port = '3000';
+const port = process.env.PORT;
 
 app.listen(port, () => {
   // tslint:disable-next-line:no-console

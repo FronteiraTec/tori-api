@@ -1,0 +1,57 @@
+version: '3.3'
+
+services:
+  db:
+    # image: mariadb
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile_mariadb
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123
+      # MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      # MYSQL_USER: user
+      # MYSQL_PASSWORD: 123 command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      LANG: C.UTF-8
+    networks:
+      - net-backend
+  web:
+    restart: always
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile_node
+    ports:
+      - "3000:3000"
+    
+    depends_on:
+      - "db"
+    links: 
+      - "db"
+    networks:
+      - net-backend
+    environment:
+      PMA_HOST: db:3306
+    
+  phpmyadmin:
+    depends_on:
+      - db
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    networks:
+      - net-backend
+    ports:
+      - 80:80
+    environment:
+      PMA_HOST: db:3306
+      MYSQL_ROOT_PASSWORD: 123
+  
+networks:
+  net-backend:
+
+volumes:
+    db_data:
+#     wp_data:
