@@ -11,15 +11,24 @@ import { updateOnlyNullFields } from 'src/models/userModel';
 export const signIn = async (req: Request, res: Response) => {
   const { authenticator, password } = req.body;
 
-  const validateResult = validate({ data: authenticator, type: "email", message: "authenticator not valid" });
+  const validateResult = multiValidate([
+    { data: authenticator, type: "email", message: "authenticator not valid" },
+    { data: password, type: "not-empty", message: "password not valid" },
+  ]);
 
-  if (validateResult !== true) {
-    res.status(httpCode["Not Acceptable"]).json(validateResult.message);
-    return;
+  if (validateResult.length > 0) {
+    return res.status(httpCode["Not Acceptable"]).json({
+      error: {
+        reason: validateResult
+      }
+    });
   }
 
   try {
-    const possibleUser = await model.signIn({ authenticator, password });
+    const possibleUser = await model.signIn({
+      authenticator,
+      password: password.toString()
+    });
 
     if (possibleUser === null) {
       res.status(httpCode.Unauthorized).json("authenticator or password invalid");
@@ -29,6 +38,7 @@ export const signIn = async (req: Request, res: Response) => {
     return defaultLoginResponse(possibleUser as { name: string, id: number }, res);
 
   } catch (err) {
+    console.log(err)
     res.status(httpCode["Internal Server Error"]).json(err);
   }
 };
@@ -37,12 +47,11 @@ export const signUp = async (req: Request, res: Response) => {
   const { name, cpf, authenticator, password }:
     { name: string, cpf: string, authenticator: string, password: string } = req.body;
 
-  // TODO: Alterar algoritmo de validador de CPf, falha para alguns
   const allValidations = [
     { data: cpf, type: "cpf", message: "CPF invalid" },
     { data: name, type: "name", mustHas: " ", len: 6, message: "Name invalid" },
     { data: password, type: "password", message: "Password invalid" },
-    { data: authenticator, type: "authenticator", message: "authenticator invalid" }
+    { data: authenticator, type: "email", message: "authenticator invalid" }
   ];
 
   const validationResult = multiValidate(allValidations);

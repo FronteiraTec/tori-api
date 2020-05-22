@@ -2,11 +2,11 @@ import { db } from "../helpers/dbHelper";
 import { user as UserInterface } from "../helpers/dbNamespace";
 import crypto from "crypto";
 
-import { 
-  getTokenFromStudentPortal, 
-  getIdUFFS, 
-  getUserInfo, 
-  getUserPictureFromMoodle 
+import {
+  getTokenFromStudentPortal,
+  getIdUFFS,
+  getUserInfo,
+  getUserPictureFromMoodle
 } from 'src/helpers/loginUffsHelper';
 
 
@@ -62,19 +62,14 @@ const getAuthenticatorType = (authenticator: string) => {
     return AuthenticatorType.idUFFS;
 }
 
-export const signIn = async ({ authenticator, password }: 
+export const signIn = async ({ authenticator, password }:
   { authenticator: string; password?: string; }) => {
-  const authType = getAuthenticatorType(authenticator);
 
+  const authType = getAuthenticatorType(authenticator);
 
   try {
     db.select("user_full_name, user_id")
       .from("user");
-
-    if (password) {
-      const hashedPassword = hashPassword(password);
-      db.and("user_password", hashedPassword);
-    }
 
     if (authType === AuthenticatorType.email)
       db.where("user_email", authenticator);
@@ -85,6 +80,10 @@ export const signIn = async ({ authenticator, password }:
     else if (authType === AuthenticatorType.idUFFS)
       db.where("user_idUFFS", authenticator);
 
+    if (password !== undefined) {
+      const hashedPassword = hashPassword(password);
+      db.and("user_password", hashedPassword);
+    }
 
     const user = await db.resolve() as { user: UserInterface }[];
 
@@ -102,7 +101,7 @@ export const signIn = async ({ authenticator, password }:
   }
 }
 
-export const tryUffsLogin = async ({ authenticator, password }: 
+export const tryUffsLogin = async ({ authenticator, password }:
   { authenticator: string, password: string }): Promise<string | null> => {
   try {
     const { tokenId } = await getTokenFromStudentPortal({ authenticator, password });
@@ -112,7 +111,7 @@ export const tryUffsLogin = async ({ authenticator, password }:
   }
 }
 
-export const getDataFromStudentPortal = async ({ authenticator, token }: 
+export const getDataFromStudentPortal = async ({ authenticator, token }:
   { authenticator: string; token: string; }) => {
   const authType = getAuthenticatorType(authenticator);
   let idUFFS = "";
