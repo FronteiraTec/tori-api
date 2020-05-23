@@ -72,7 +72,6 @@ export default class AssistanceModel {
   };
 
   static async searchByName(name: string, args: FilterOptions): Promise<DefaultResponse[]> {
-    // TODO: protec from sql injection
     this.defaultSearch().
       where("assistance_title").
       like(`%${name}%`);
@@ -91,7 +90,6 @@ export default class AssistanceModel {
   };
 
   static async searchByTag(name: string, args: FilterOptions): Promise<DefaultResponse[]> {
-    // TODO: protec from sql injection
     this.defaultSearch().
       leftJoin("assistance_tag as at at.assistance_id", "a.assistance_id").
       leftJoin("tag.tag_id", "at.tag_id").
@@ -112,7 +110,6 @@ export default class AssistanceModel {
   };
 
   static async searchByNameTagDescription(name: string, args: FilterOptions): Promise<DefaultResponse[]> {
-    // TODO: protec from sql injection
     this.defaultSearch().
       leftJoin("assistance_tag as at at.assistance_id", "a.assistance_id").
       leftJoin("tag.tag_id", "at.tag_id").
