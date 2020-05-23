@@ -8,7 +8,7 @@ const router = Router();
 
 router.post('/sign-in', controller.signIn);
 router.post('/sign-up', controller.signUp);
-router.post('/idUFFS', controller.loginIdUFFS);
+router.post('/id-uffs', controller.loginIdUFFS);
 
 
 export default router;

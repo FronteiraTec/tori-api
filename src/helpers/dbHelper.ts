@@ -1,5 +1,3 @@
-import { HTTPError } from "./customError";
-
 import pool from "./dbConnect";
 
 interface Data {
@@ -164,9 +162,7 @@ export default class DbHelper {
 
   pagination(limit: number, offset: number): this {
     if (isNaN(limit) || isNaN(offset)) {
-      // TODO implementar o erro;
-      const error = new HTTPError("Error message");
-      error.statusCode = 400;
+      const error = new Error("Limit or offset are not numbers!");
       throw error;
     }
 
@@ -380,18 +376,50 @@ export default class DbHelper {
    * The WHERE clause specifies which record(s) that should be updated.
    * If you omit the WHERE clause, all records in the table will be updated!
    */
-  update(tableName: string = "", args: string[]): this {
-    const fieldNames = Object.keys(args);
+  update(tableName: string = "", args: Object): this {
+    const fieldNames = Object.keys(args) as Array<keyof typeof args>;
 
-    const setQuery = fieldNames.map((field, i) => `${field} = :update${i}, `).join("").slice(0, -2);
+    const setQuery = fieldNames.map((field: keyof typeof args, i) => `${field} = :update${i}, `).join("").slice(0, -2);
 
-    const valuesArray = fieldNames.map((field: any, i: number) => {
+    const valuesArray = fieldNames.map((field:  keyof typeof args, i: number) => {
       return { [`update${i}`]: args[field] }
     });
 
     if (tableName === "") tableName = this._from;
 
     const updateQuery = ` UPDATE ${tableName} SET ${setQuery}`;
+
+    this.querySQL = this.querySQL.replace("$_e1g", updateQuery);
+
+    this._data.update = Object.assign({}, ...valuesArray);
+
+    return this;
+  }
+
+  /**
+   *
+   *
+   * @param {String} tableName nome da tabela
+   * @param {Object} args nome campo a ser atualizado e seu novo valor. PS: o nome do campo
+   * deve ser o mesmo no do banco
+   * @example update("tag", {tag_name: newName})
+   * @description Be careful when updating records in a table!
+   * Notice the WHERE clause in the UPDATE statement.
+   * The WHERE clause specifies which record(s) that should be updated.
+   * If you omit the WHERE clause, all records in the table will be updated!
+   */
+  updateOnlyNullFields(tableName: string = "", args: object): this {
+    const fieldNames = Object.keys(args) as Array<keyof typeof args>;
+
+    const setQuery = fieldNames.map((field: keyof typeof args, i) => `\`${field}\` = COALESCE(\`${field}\`, :update${i}), `).join("").slice(0, -2);
+
+    const valuesArray = fieldNames.map((field: keyof typeof args, i: number) => {
+      return { [`update${i}`]: args[field] }
+    });
+
+    if (tableName === "") tableName = this._from;
+
+    const updateQuery = ` UPDATE \`${tableName}\` SET ${setQuery}`;
 
     this.querySQL = this.querySQL.replace("$_e1g", updateQuery);
 

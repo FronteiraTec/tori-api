@@ -21,6 +21,10 @@ function multiValidate(objs: ValidationFields[]) {
 
 function validate({ data, type, len, mustHas, message }: ValidationFields) {
   // const defaultMessage = "Unknow field incomplete";
+  if (data === undefined)
+    return {
+      message: message ? message : "Unknow field incomplete"
+    };
 
   if (type === "cpf") {
     if (cpfValidator(data as string) === true)
@@ -39,6 +43,12 @@ function validate({ data, type, len, mustHas, message }: ValidationFields) {
   if (type === "email") {
 
     if (emailValidator(String(data)) === true)
+      return true;
+  }
+
+  if (type === "not-empty") {
+
+    if (!(data === undefined || data === null || data === ""))
       return true;
   }
 
@@ -81,54 +91,30 @@ function nameValidator(string: string, mustHas?: string, len?: number) {
 }
 
 function cpfValidator(cpf: string) {
-
   let sum = 0;
-  let remain;
-  let verifier = true;
+  let reminer;
 
-  [0, 9].forEach(letter => {
-    verifier = verifier && verifySameLetter(String(letter), cpf);
-  });
+  if (cpf === "00000000000") return false;
 
-  function verifySameLetter(letter: string, cpf: string) {
-    if (letter.repeat(11) === cpf)
-      return false;
+  for (let i = 1; i <= 9; i++)
+    sum += parseInt(cpf.substring(i - 1, i)) * (11 - i);
 
-    return true;
-  }
+  reminer = (sum * 10) % 11;
 
-  if (!verifier) return false;
+  if ((reminer == 10) || (reminer == 11)) reminer = 0;
 
-  for (let i = 1; i <= 9; i++) {
-    sum = sum + parseInt(cpf.substring(i - 1, i)) * (11 - i);
-  }
-
-  remain = sum % 11;
-
-  if (remain === 10 || remain === 11 || remain < 2) {
-    remain = 0;
-  } else {
-    remain = 11 - remain;
-  }
-
-  if (remain !== Number(cpf.substring(9, 10)))
-    return false;
+  if (reminer != parseInt(cpf.substring(9, 10))) return false;
 
   sum = 0;
 
   for (let i = 1; i <= 10; i++)
-    sum = sum + Number(cpf.substring(i - 1, i)) * (12 - i);
+    sum += parseInt(cpf.substring(i - 1, i)) * (12 - i);
 
-  remain = sum % 11;
+  reminer = (sum * 10) % 11;
 
-  if (remain === 10 || remain === 11 || remain < 2)
-    remain = 0;
-  else
-    remain = 11 - remain;
+  if ((reminer == 10) || (reminer == 11)) reminer = 0;
 
-
-  if (remain !== Number(cpf.substring(10, 11)))
-    return false;
+  if (reminer != parseInt(cpf.substring(10, 11))) return false;
 
   return true;
 }
