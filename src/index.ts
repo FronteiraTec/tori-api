@@ -24,13 +24,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 
-
-
 // Static files
-app.use('/static', express.static('public'));
+app.use("/public", express.static('src/public'));
 
-// Middlewares
-app.use(bodyParser.json());
+// Middleware
+app.use(bodyParser.json({ limit: '10mb' }));
 app.use(cors());
 
 // Routes

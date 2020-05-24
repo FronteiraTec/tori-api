@@ -1,4 +1,7 @@
+/* spell-checker: disable */
+
 import pool from "./dbConnect";
+
 
 interface Data {
   where?: {},
@@ -382,6 +385,13 @@ export default class DbHelper {
     const setQuery = fieldNames.map((field: keyof typeof args, i) => `${field} = :update${i}, `).join("").slice(0, -2);
 
     const valuesArray = fieldNames.map((field:  keyof typeof args, i: number) => {
+      if(args[field] as any === true){
+        return { [`update${i}`]: "1" } 
+      }
+      if(args[field] as any === false){
+        return { [`update${i}`]: "0" } 
+      }
+
       return { [`update${i}`]: args[field] }
     });
 
