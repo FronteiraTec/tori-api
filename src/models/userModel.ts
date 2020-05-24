@@ -18,46 +18,72 @@ export const updateOnlyNullFields = async (userId: number, user: UserInterface |
 }
 
 
-export const getById = async ({ userId }: { userId: number }) => {
+export const getById = async ({ userId, fields }: { userId: number, fields?: string }) => {
+  try {
 
-  // try {
-  //   const result = await
-  //   db.updateOnlyNullFields("user", user)
-  //   .where("user_id", String(userId))
-  //   .resolve();
+    if (fields !== undefined)
+      db.select(fields);
+    else
+      db.select(defaultReturn());
 
-  //   return result;
-  // } catch (err) {
-  //   throw err;
-  // }
+    db.from("user");
+
+    db.where("user_id", String(userId));
+
+    const result = await db.resolve() as { user: UserInterface }[];
+
+    const parsedResult = parseResponse(result);
+
+    return parseResponse.length == 1 ? parsedResult[0] : parsedResult;
+  } catch (err) {
+    throw err;
+  }
+
 }
 
-export const getByEmail = async ({ email }: { email: string }) => {
+export const getByEmail = async ({ email, fields }: { email: string, fields?: string }) => {
+  try {
 
-  // try {
-  //   const result = await
-  //   db.updateOnlyNullFields("user", user)
-  //   .where("user_id", String(userId))
-  //   .resolve();
+    if (fields !== undefined)
+      db.select(fields);
+    else
+      db.select(defaultReturn());
 
-  //   return result;
-  // } catch (err) {
-  //   throw err;
-  // }
+    db.from("user");
+
+    db.where("user_email", email);
+
+    const result = await db.resolve() as { user: UserInterface }[];
+
+    const parsedResult = parseResponse(result);
+
+    return parseResponse.length == 1 ? parsedResult[0] : parsedResult;
+  } catch (err) {
+    throw err;
+  }
 }
 
-export const getByName = async ({ name }: { name: string }) => {
+export const getByName = async ({ name, fields }: { name: string, fields?: string }) => {
+  try {
 
-  // try {
-  //   const result = await
-  //   db.updateOnlyNullFields("user", user)
-  //   .where("user_id", String(userId))
-  //   .resolve();
+    if (fields !== undefined)
+      db.select(fields);
+    else
+      db.select(defaultReturn());
 
-  //   return result;
-  // } catch (err) {
-  //   throw err;
-  // }
+    db.from("user");
+
+    db.where("user_full_name").like(`%${name}%`);
+
+    const result = await db.resolve() as { user: UserInterface }[];
+
+    const parsedResult = parseResponse(result);
+
+    return parsedResult;
+
+  } catch (err) {
+    throw err;
+  }
 }
 
 export const getAll = async ({ assistant, limit, offset, fields }:
@@ -68,7 +94,7 @@ export const getAll = async ({ assistant, limit, offset, fields }:
     if (fields !== undefined)
       db.select(fields);
     else
-      db.select(defaulReturn());
+      db.select(defaultReturn());
 
     db.from("user");
 
@@ -78,11 +104,56 @@ export const getAll = async ({ assistant, limit, offset, fields }:
     if (assistant !== undefined)
       db.where("user_is_assistant", toBoolean(assistant) ? "1" : "0");
 
-    // console.log(db.query)
-
-    const result = await db.resolve() as {user: UserInterface} [];
+    const result = await db.resolve() as { user: UserInterface }[];
 
     return parseResponse(result);
+  } catch (err) {
+    throw err;
+  }
+}
+
+export const update = async (userId: number, user: UserInterface | any) => {
+
+  if (user.user_is_assistant)
+    user.user_is_assistant = booleanToString(user.user_is_assistant);
+  if (user.user_verified_assistant)
+    user.user_verified_assistant = booleanToString(user.user_verified_assistant);
+
+  try {
+    const result = await
+      db.update("user", user)
+        .where("user_id", String(userId))
+        .resolve();
+
+    return result;
+  } catch (err) {
+    throw err;
+  }
+}
+
+export const deleteById = async (userId: number) => {
+  try {
+    const result = await
+      db.delete()
+        .from("user")
+        .where("user_id", String(userId))
+        .resolve();
+
+    return result;
+  } catch (err) {
+    // console.log(err);
+    throw err;
+  }
+}
+
+export const updateProfilePicture = async ({ userId, imagePath }: { userId: number, imagePath: string }) => {
+  try {
+    const result = await
+      db.update("user", { user_profile_photo: imagePath })
+        .where("user_id", String(userId))
+        .resolve();
+
+    return result;
   } catch (err) {
     throw err;
   }
@@ -94,10 +165,21 @@ function hashPassword(password: string) {
 }
 
 
-function toBoolean(string: string) {
+function booleanToString(string?: string) {
+  if (string === undefined) return undefined;
+
+  if (string === "false") return "0";
+  if (string === "0") return "0";
+
+  return "1";
+}
+
+function toBoolean(string?: string) {
+  if (string === undefined) return undefined;
+
   if (string === "false") return false;
   if (string === "0") return false;
-  if (string === undefined) return false;
+
   return true;
 }
 
@@ -123,16 +205,7 @@ function parseResponse(data: { user: UserInterface }[]) {
   });
 }
 
-interface DefaultResponse {
-  id: number,
-  fullName: string,
-  createdAt: Date,
-  stars: number,
-  email: string,
-  verifiedAssistant: boolean,
-}
-
-function defaulReturn(){
+function defaultReturn() {
   return `
     user_id,
     user_full_name,

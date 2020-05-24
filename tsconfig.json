@@ -13,9 +13,6 @@
     "target": "es6",
     "moduleResolution": "node",
     "paths": {
-      "@daos/*": [
-        "src/daos/*"
-      ],
       "@entities/*": [
         "src/entities/*"
       ],
@@ -30,7 +27,8 @@
       "node"
     ],
     "typeRoots": [
-      "node_modules/@types"
+      "types.d.ts",
+      // "node_modules/@types"
     ]
   },
   "include": [
@@ -39,5 +37,5 @@
   ],
   "exclude": [
     "src/public/"
-  ]
+  ],
 }

@@ -30,6 +30,7 @@ export const signIn = async (req: Request, res: Response) => {
       password: password.toString()
     });
 
+
     if (possibleUser === null) {
       res.status(httpCode.Unauthorized).json("authenticator or password invalid");
       return;
@@ -38,7 +39,6 @@ export const signIn = async (req: Request, res: Response) => {
     return defaultLoginResponse(possibleUser as { name: string, id: number }, res);
 
   } catch (err) {
-    console.log(err)
     res.status(httpCode["Internal Server Error"]).json(err);
   }
 };
@@ -199,7 +199,7 @@ export const loginIdUFFS = async (req: Request, res: Response) => {
 async function defaultLoginResponse(user: { id: number; name: string; profilePhoto?: string; idUffs?: string }, res: Response<any>) {
   const { token, expiresIn } = await generateJWT({
     id: String(user.id),
-    expireTime: "1d"
+    // expireTime: "1d"
   });
   res.json({
     ...user,
