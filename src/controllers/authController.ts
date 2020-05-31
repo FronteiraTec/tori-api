@@ -6,7 +6,7 @@ import { multiValidate, validate } from '../helpers/validation';
 import { generateJWT } from '../helpers/jwtHelper';
 import { updateOnlyNullFields } from 'src/models/userModel';
 
-// // import { HTTPError as Error } from "../helpers/customError";
+
 
 export const signIn = async (req: Request, res: Response) => {
   const { authenticator, password } = req.body;
@@ -44,8 +44,8 @@ export const signIn = async (req: Request, res: Response) => {
 };
 
 export const signUp = async (req: Request, res: Response) => {
-  const { name, cpf, authenticator, password }:
-    { name: string, cpf: string, authenticator: string, password: string } = req.body;
+  const { name, cpf, email: authenticator, password }:
+    { name: string, cpf: string, email: string, password: string } = req.body;
 
   const allValidations = [
     { data: cpf, type: "cpf", message: "CPF invalid" },
@@ -68,12 +68,12 @@ export const signUp = async (req: Request, res: Response) => {
 
     return defaultLoginResponse(newUser, res);
   } catch (err) {
-
+    console.log(err);
     res.status(httpCode.Conflict).json(err);
   }
 };
 
-export const loginIdUFFS = async (req: Request, res: Response) => {
+export const signInUFFS = async (req: Request, res: Response) => {
   const { authenticator, password } = req.body;
 
   // vValida os inputs
