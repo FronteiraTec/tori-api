@@ -67,10 +67,12 @@ function emailValidator(email: string) {
 
 function passwordValidator(password: string) {
   // need to have numbers and numbers and at least one special character
+  // if (password.search(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/) === -1)
+  //TODO fix password regex
   // "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 
-  if (password.search(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/) === -1)
-    return false;
+  // if (password.search(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/) === -1)
+  //   return false;
 
   return true
 }
