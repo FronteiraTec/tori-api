@@ -1,14 +1,18 @@
 import { Request, Response } from 'express';
 
-import model from '../models/AssistanceModel';
+import * as assistanceModel from '../models/AssistanceModel';
+import * as addressModel from '../models/addressModel';
+import * as tagModel from '../models/tagModel';
 import { HTTPError as Error } from "../helpers/customError";
+import { errorResponse } from 'src/helpers/responseHelper';
+import { httpCode } from 'src/helpers/statusCode';
 
 export const getAll = async (req: Request, res: Response) => {
 
-  const { limit, offset, avaliable } = req.query;
+  const { limit, offset, available } = req.query;
 
   try {
-    const allAssistance = await model.getAll(limit, offset, avaliable);
+    const allAssistance = await assistanceModel.getAll(limit, offset, available);
     return res.status(200).json(allAssistance);
   } catch (error) {
     error.statusCode = 400;
@@ -21,7 +25,7 @@ export const getByID = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-    const assistance = await model.searchByID(Number(id));
+    const assistance = await assistanceModel.searchByID(Number(id));
 
     res.status(200).json(assistance);
   } catch (error) {
@@ -39,7 +43,7 @@ enum QueryOptions {
 };
 
 export const searchQuery = async (req: Request, res: Response) => {
-  const { q, data, filter, filterData, orderBy, orderByData, limit, offset, avaliable } = req.query;
+  const { q, data, filter, filterData, orderBy, orderByData, limit, offset, available } = req.query;
 
   // q stands for query option, may be better to change its name to queryOption and data to queryData
 
@@ -50,47 +54,47 @@ export const searchQuery = async (req: Request, res: Response) => {
   try {
     switch (q) {
       case QueryOptions.all: {
-        const assistance = await model.searchByNameTagDescription(data, {
+        const assistance = await assistanceModel.searchByNameTagDescription(data, {
           filter,
           filterData,
           limit,
           offset,
           orderBy,
           orderByData,
-          avaliable
+          available
         });
         response(assistance);
         break;
       }
       case QueryOptions.id: {
-        const assistance = await model.searchByID(Number(data));
+        const assistance = await assistanceModel.searchByID(Number(data));
         response(assistance);
         break;
       }
 
       case QueryOptions.name: {
-        const assistance = await model.searchByName(data, {
+        const assistance = await assistanceModel.searchByName(data, {
           filter,
           filterData,
           limit,
           offset,
           orderBy,
           orderByData,
-          avaliable
+          available
         });
         response(assistance);
         break;
       }
 
       case QueryOptions.tag: {
-        const assistance = await model.searchByTag(data, {
+        const assistance = await assistanceModel.searchByTag(data, {
           filter,
           filterData,
           limit,
           offset,
           orderBy,
           orderByData,
-          avaliable
+          available
         });
         response(assistance);
         break;
@@ -110,3 +114,138 @@ export const searchQuery = async (req: Request, res: Response) => {
   }
 
 };
+
+export const create = async (req: Request, res: Response) => {
+  const userId = (req as any).user;
+
+  const {
+    assistance_available_vacancies,
+    assistance_course_id,
+    assistance_date,
+    assistance_description,
+    assistance_subject_id,
+    assistance_title,
+    assistance_total_vacancies,
+    tags,
+    address_cep,
+    address_complement,
+    address_latitude,
+    address_longitude,
+    address_number,
+    address_reference,
+    address_street,
+    address_nickname,
+  } = req.body;
+
+  const newAddress = await (async () => {
+    try {
+      return await addressModel.create({
+        address_cep,
+        address_complement,
+        address_latitude,
+        address_longitude,
+        address_number,
+        address_reference,
+        address_street,
+        address_nickname
+      });
+    } catch (error) {
+      return new Error(error);
+    }
+  })();
+
+  if (newAddress instanceof Error || newAddress.affectedRows === undefined) {
+    return errorResponse({
+      message: "An error occurred while creating the address",
+      code: httpCode["Internal Server Error"],
+      res
+    });
+  }
+
+  const addressId = newAddress.insertId;
+
+  //Try to create the monitoring  
+
+  try {
+    const newAssistance = await assistanceModel.create({
+      assistance_available_vacancies,
+      assistance_course_id,
+      assistance_date,
+      assistance_description,
+      assistance_subject_id,
+      assistance_title,
+      assistance_total_vacancies,
+      assistance_local_id: addressId,
+      assistance_owner_id: userId,
+    });
+
+    if (tags.length > 0)
+      addTags(tags);
+    
+    res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
+  }
+  catch (err) {
+    if (addressId)
+      addressModel.deleteById(addressId);
+    
+      return errorResponse({
+      message: "An error occurred while creating the the assistance",
+      code: httpCode["Internal Server Error"],
+      res,
+      error: err
+    });
+  }
+}
+
+
+// export const create = async (req: Request, res: Response) => {
+// }
+// export const create = async (req: Request, res: Response) => {
+// }
+// export const create = async (req: Request, res: Response) => {
+// }
+// export const create = async (req: Request, res: Response) => {
+// }
+
+
+async function addTags(tags: Array<string>) {
+  const tagsId = [];
+
+  for (const i in tags) {
+    try {
+      const tag = await tagModel.create({
+        tag_name: tags[i].toLowerCase()
+      });
+
+      tagsId.push(tag.insertId);
+    } catch (error) {
+      if (error.code === "ER_DUP_ENTRY") {
+        // Search ids in database.
+        const tagIdObject = await tagModel.findByName(tags[i].toLowerCase());
+        tagsId.push(tagIdObject.tag_id);
+      }
+
+      else {
+        // return errorResponse({
+        //     message: "An error occurred while creating the address",
+        //     code: httpCode["Internal Server Error"],
+        //     res
+        //   });
+      }
+    }
+  }
+
+  for (const i in tagsId) {
+    try {
+      await assistanceModel.createTag({
+        assistance_id: 1,
+        tag_id: tagsId[i]
+      });
+    } catch (error) {
+      throw error;
+      // TODO: Save on database error log
+      return;
+    }
+
+  }
+}

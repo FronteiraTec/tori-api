@@ -1,15 +1,16 @@
 import { Router } from 'express';
 import * as controller from '../controllers/AssistanceController';
+import { userAuthenticated } from 'src/middleware/auth';
 
 const assistanceRouter: Router = Router();
 
 
+assistanceRouter.post('/', userAuthenticated, controller.create);
+
+//Fix: refactor this to works like it should on documentation
 assistanceRouter.get('/', controller.getAll);
+//Fix: refactor this to works like it should on documentation
 assistanceRouter.get('/search', controller.searchQuery);
-
-
-//TODO: create assistance
-assistanceRouter.post('/', controller.searchQuery);
 //TODO: delete assistance
 assistanceRouter.delete('/', controller.searchQuery);
 
