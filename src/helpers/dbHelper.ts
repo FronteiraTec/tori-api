@@ -315,6 +315,11 @@ export default class DbHelper {
    * {nome_campo: valor_a_ser_inserido}
    */
   insert(tableName: string = "", fieldsObject: Object): this {
+    for (const i in fieldsObject)
+      if (typeof fieldsObject[i as keyof typeof fieldsObject] === 'undefined')
+        delete fieldsObject[i as keyof typeof fieldsObject];
+
+
     const fieldNames = Object.keys(fieldsObject) as Array<keyof typeof fieldsObject>;
 
 
@@ -380,16 +385,20 @@ export default class DbHelper {
    * If you omit the WHERE clause, all records in the table will be updated!
    */
   update(tableName: string = "", args: Object): this {
+    for (const i in args)
+      if (typeof args[i as keyof typeof args] === 'undefined')
+        delete args[i as keyof typeof args];
+
     const fieldNames = Object.keys(args) as Array<keyof typeof args>;
 
     const setQuery = fieldNames.map((field: keyof typeof args, i) => `${field} = :update${i}, `).join("").slice(0, -2);
 
-    const valuesArray = fieldNames.map((field:  keyof typeof args, i: number) => {
-      if(args[field] as any === true){
-        return { [`update${i}`]: "1" } 
+    const valuesArray = fieldNames.map((field: keyof typeof args, i: number) => {
+      if (args[field] as any === true) {
+        return { [`update${i}`]: "1" }
       }
-      if(args[field] as any === false){
-        return { [`update${i}`]: "0" } 
+      if (args[field] as any === false) {
+        return { [`update${i}`]: "0" }
       }
 
       return { [`update${i}`]: args[field] }
@@ -419,6 +428,10 @@ export default class DbHelper {
    * If you omit the WHERE clause, all records in the table will be updated!
    */
   updateOnlyNullFields(tableName: string = "", args: object): this {
+    for (const i in args)
+      if (typeof args[i as keyof typeof args] === 'undefined')
+        delete args[i as keyof typeof args];
+        
     const fieldNames = Object.keys(args) as Array<keyof typeof args>;
 
     const setQuery = fieldNames.map((field: keyof typeof args, i) => `\`${field}\` = COALESCE(\`${field}\`, :update${i}), `).join("").slice(0, -2);

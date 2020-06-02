@@ -19,8 +19,8 @@ export namespace addressFields {
     export type address_reference = string | null;
     export type address_nickname = string;
     export type address_latitude = number | null;
-    export type address_logintude = number | null;
-
+    export type address_longitude = number | null;
+    export type address_assistance_id = number | null;
 }
 
 export interface address {
@@ -32,8 +32,8 @@ export interface address {
     address_reference: addressFields.address_reference;
     address_nickname: addressFields.address_nickname;
     address_latitude: addressFields.address_latitude;
-    address_logintude: addressFields.address_logintude;
-
+    address_longitude: addressFields.address_longitude;
+    address_assistance_id: addressFields.address_assistance_id;
 }
 
 export namespace assistanceFields {
@@ -41,14 +41,16 @@ export namespace assistanceFields {
     export type assistance_owner_id = number;
     export type assistance_title = string;
     export type assistance_total_vacancies = number;
-    export type assistance_avaliable = boolean;
-    export type assistance_avaliable_vacancies = number;
+    export type assistance_available = boolean;
+    export type assistance_available_vacancies = number;
     export type assistance_local_id = number;
     export type assistance_description = string;
     export type assistance_date = Date;
     export type assistance_created_at = Date;
     export type assistance_course_id = number | null;
     export type assistance_subject_id = number | null;
+    export type assistance_suspended = number | null;
+    export type assistance_suspended_date = Date | null;
 
 }
 
@@ -57,19 +59,20 @@ export interface assistance {
     assistance_owner_id: assistanceFields.assistance_owner_id;
     assistance_title: assistanceFields.assistance_title;
     assistance_total_vacancies: assistanceFields.assistance_total_vacancies;
-    assistance_avaliable: assistanceFields.assistance_avaliable;
-    assistance_avaliable_vacancies: assistanceFields.assistance_avaliable_vacancies;
+    assistance_available: assistanceFields.assistance_available;
+    assistance_available_vacancies: assistanceFields.assistance_available_vacancies;
     assistance_local_id: assistanceFields.assistance_local_id;
     assistance_description: assistanceFields.assistance_description;
     assistance_date: assistanceFields.assistance_date;
     assistance_created_at: assistanceFields.assistance_created_at;
     assistance_course_id: assistanceFields.assistance_course_id;
     assistance_subject_id: assistanceFields.assistance_subject_id;
-
+    assistance_suspended: assistanceFields.assistance_suspended;
+    assistance_suspended_date: assistanceFields.assistance_suspended_date;
 }
 
 export namespace assistance_tagFields {
-    export type assistances_tags_id = number;
+    export type assistance_tags_id = number;
     export type assistance_id = number;
     export type tag_id = number;
     export type created_at = Date;
@@ -77,7 +80,7 @@ export namespace assistance_tagFields {
 }
 
 export interface assistance_tag {
-    assistances_tags_id: assistance_tagFields.assistances_tags_id;
+    assistance_tags_id: assistance_tagFields.assistance_tags_id;
     assistance_id: assistance_tagFields.assistance_id;
     tag_id: assistance_tagFields.tag_id;
     created_at: assistance_tagFields.created_at;
@@ -105,8 +108,8 @@ export namespace presence_listFields {
     export type aided_student_id = number;
     export type presence_list_owner_id = number;
     export type assistance_id = number;
-    export type presence_list_assistant_avaliation = number;
-    export type presence_list_aided_student_avaliation = number;
+    export type presence_list_assistant_rating = number;
+    export type presence_list_aided_student_rating = number;
     export type presence_list_aided_student_presence = boolean;
 
 }
@@ -116,8 +119,8 @@ export interface presence_list {
     aided_student_id: presence_listFields.aided_student_id;
     presence_list_owner_id: presence_listFields.presence_list_owner_id;
     assistance_id: presence_listFields.assistance_id;
-    presence_list_assistant_avaliation: presence_listFields.presence_list_assistant_avaliation;
-    presence_list_aided_student_avaliation: presence_listFields.presence_list_aided_student_avaliation;
+    presence_list_assistant_rating: presence_listFields.presence_list_assistant_rating;
+    presence_list_aided_student_rating: presence_listFields.presence_list_aided_student_rating;
     presence_list_aided_student_presence: presence_listFields.presence_list_aided_student_presence;
 
 }

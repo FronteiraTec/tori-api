@@ -1,9 +1,9 @@
 import { db } from "../helpers/dbHelper";
 import { address as AddressInterface } from "../helpers/dbNamespace";
+import { InsertResponse } from 'src/helpers/dbResponses';
 
 
 export const update = async (addressId: number, address: AddressInterface | Object) => {
-
   try {
     const result = await
       db.update("address", address)
@@ -16,14 +16,25 @@ export const update = async (addressId: number, address: AddressInterface | Obje
   }
 }
 
+export const create = async (address: AddressInterface | Object) => {
+  try {
+    const result = await
+      db.insert("address", address).resolve();
 
+    return result[0] as InsertResponse;
+  } catch (err) {
+    throw err;
+  }
+}
 
-
-function defaultReturn() {
-  return `
-    user_id,
-    user_full_name,
-    user_created_at,
-    user_email
-  `;
+export const deleteById = async (addressId: number) => {
+  try {
+      const res = await db.from("address")
+      .delete()
+      .where("address_id", addressId.toString())
+      .resolve();
+    return res;
+  } catch (err) {
+    throw err;
+  }
 }
