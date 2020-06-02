@@ -20,7 +20,7 @@ export namespace addressFields {
     export type address_nickname = string;
     export type address_latitude = number | null;
     export type address_longitude = number | null;
-
+    export type address_assistance_id = number | null;
 }
 
 export interface address {
@@ -33,7 +33,7 @@ export interface address {
     address_nickname: addressFields.address_nickname;
     address_latitude: addressFields.address_latitude;
     address_longitude: addressFields.address_longitude;
-
+    address_assistance_id: addressFields.address_assistance_id;
 }
 
 export namespace assistanceFields {
@@ -49,6 +49,8 @@ export namespace assistanceFields {
     export type assistance_created_at = Date;
     export type assistance_course_id = number | null;
     export type assistance_subject_id = number | null;
+    export type assistance_suspended = number | null;
+    export type assistance_suspended_date = Date | null;
 
 }
 
@@ -65,7 +67,8 @@ export interface assistance {
     assistance_created_at: assistanceFields.assistance_created_at;
     assistance_course_id: assistanceFields.assistance_course_id;
     assistance_subject_id: assistanceFields.assistance_subject_id;
-
+    assistance_suspended: assistanceFields.assistance_suspended;
+    assistance_suspended_date: assistanceFields.assistance_suspended_date;
 }
 
 export namespace assistance_tagFields {
@@ -77,7 +80,7 @@ export namespace assistance_tagFields {
 }
 
 export interface assistance_tag {
-    assistances_tags_id: assistance_tagFields.assistance_tags_id;
+    assistance_tags_id: assistance_tagFields.assistance_tags_id;
     assistance_id: assistance_tagFields.assistance_id;
     tag_id: assistance_tagFields.tag_id;
     created_at: assistance_tagFields.created_at;

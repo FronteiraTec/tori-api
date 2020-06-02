@@ -6,6 +6,7 @@ import * as tagModel from '../models/tagModel';
 import { HTTPError as Error } from "../helpers/customError";
 import { errorResponse } from 'src/helpers/responseHelper';
 import { httpCode } from 'src/helpers/statusCode';
+import { assistance as Assistance } from "../helpers/dbNamespace";
 
 export const getAll = async (req: Request, res: Response) => {
 
@@ -25,7 +26,7 @@ export const getByID = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-    const assistance = await assistanceModel.searchByID(Number(id));
+    const assistance = await assistanceModel.searchByID({ id: Number(id) });
 
     res.status(200).json(assistance);
   } catch (error) {
@@ -67,7 +68,7 @@ export const searchQuery = async (req: Request, res: Response) => {
         break;
       }
       case QueryOptions.id: {
-        const assistance = await assistanceModel.searchByID(Number(data));
+        const assistance = await assistanceModel.searchByID({ id: Number(data) });
         response(assistance);
         break;
       }
@@ -137,32 +138,7 @@ export const create = async (req: Request, res: Response) => {
     address_nickname,
   } = req.body;
 
-  const newAddress = await (async () => {
-    try {
-      return await addressModel.create({
-        address_cep,
-        address_complement,
-        address_latitude,
-        address_longitude,
-        address_number,
-        address_reference,
-        address_street,
-        address_nickname
-      });
-    } catch (error) {
-      return new Error(error);
-    }
-  })();
 
-  if (newAddress instanceof Error || newAddress.affectedRows === undefined) {
-    return errorResponse({
-      message: "An error occurred while creating the address",
-      code: httpCode["Internal Server Error"],
-      res
-    });
-  }
-
-  const addressId = newAddress.insertId;
 
   //Try to create the monitoring  
 
@@ -175,20 +151,47 @@ export const create = async (req: Request, res: Response) => {
       assistance_subject_id,
       assistance_title,
       assistance_total_vacancies,
-      assistance_local_id: addressId,
       assistance_owner_id: userId,
     });
 
+    const newAddress = await (async () => {
+      try {
+        return await addressModel.create({
+          address_cep,
+          address_complement,
+          address_latitude,
+          address_longitude,
+          address_number,
+          address_reference,
+          address_street,
+          address_nickname,
+          address_assistance_id: newAssistance.insertId
+        });
+      } catch (error) {
+        return new Error(error);
+      }
+    })();
+
+    if (newAddress instanceof Error || newAddress.affectedRows === undefined) {
+      return errorResponse({
+        message: "An error occurred while creating the address",
+        code: httpCode["Internal Server Error"],
+        res
+      });
+    }
+
+    // const addressId = newAddress.insertId;
+
     if (tags.length > 0)
       addTags(tags);
-    
+
     res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
   }
   catch (err) {
-    if (addressId)
-      addressModel.deleteById(addressId);
-    
-      return errorResponse({
+    // if (addressId)
+    //   addressModel.deleteById(addressId);
+
+    return errorResponse({
       message: "An error occurred while creating the the assistance",
       code: httpCode["Internal Server Error"],
       res,
@@ -197,9 +200,95 @@ export const create = async (req: Request, res: Response) => {
   }
 }
 
+export const deleteById = async (req: Request, res: Response) => {
+  // const userId = (req as any).user;
+  const userId = 20;
+  const { assistanceId } = req.params;
 
-// export const create = async (req: Request, res: Response) => {
-// }
+  const assistanceInfo = await assistanceModel.searchByID({
+    id: Number(assistanceId),
+    select: "assistance_owner_id"
+  }) as Assistance;
+
+  if (assistanceInfo === undefined) {
+    return errorResponse({
+      message: "Assistance does not found",
+      code: httpCode["Bad Request"],
+      res
+    });
+  }
+
+  if (assistanceInfo.assistance_owner_id !== userId) {
+    return errorResponse({
+      message: "User has no permission to complete this operation",
+      code: httpCode.Unauthorized,
+      res
+    })
+  }
+
+  try {
+    const response = await assistanceModel.deleteById(Number(assistanceId));
+    res.json("Success");
+  }
+  catch (err) {
+    return errorResponse({
+      message: "An unknown error ocurred, try again",
+      code: httpCode["Internal Server Error"],
+      error: err,
+      res
+    });
+  }
+
+
+}
+
+export const disableById = async (req: Request, res: Response) => {
+  // const userId = (req as any).user;
+  const userId = 20;
+  const { assistanceId } = req.params;
+
+  const assistanceInfo = await assistanceModel.searchByID({
+    id: Number(assistanceId),
+    select: "assistance_owner_id"
+  }) as Assistance;
+
+  if (assistanceInfo === undefined) {
+    return errorResponse({
+      message: "Assistance does not found",
+      code: httpCode["Bad Request"],
+      res
+    });
+  }
+
+  if (assistanceInfo.assistance_owner_id !== userId) {
+    return errorResponse({
+      message: "User has no permission to complete this operation",
+      code: httpCode.Unauthorized,
+      res
+    })
+  }
+
+  try {
+    const response = await assistanceModel.update(Number(assistanceId), {
+      assistance_suspended: 1,
+      assistance_suspended_date: currentDate()
+    });
+
+    // console.log(response);
+    res.json("Success");
+  }
+  catch (err) {
+    console.log(err);
+    return errorResponse({
+      message: "An unknown error ocurred, try again",
+      code: httpCode["Internal Server Error"],
+      error: err,
+      res
+    });
+  }
+
+
+}
 // export const create = async (req: Request, res: Response) => {
 // }
 // export const create = async (req: Request, res: Response) => {
@@ -248,4 +337,17 @@ async function addTags(tags: Array<string>) {
     }
 
   }
+}
+
+
+function currentDate() {
+
+
+  const date = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).replace(/[\/]/g, "-").replace(",", "").trim()
+    .split("-")
+
+  const time = date[2].split(" ");
+
+  return `${time[0]}-${date[0]}-${date[1]} ${time[1]}`
+
 }

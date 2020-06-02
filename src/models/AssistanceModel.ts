@@ -34,17 +34,28 @@ export const getAll = async (limit: number, offset: number, available: boolean):
   }
 }
 
-export const searchByID = async (id: number): Promise<DefaultResponse> => {
+export const searchByID = async ({ id, select }: { id: number, select?: string }) => {
 
-  defaultSearch().where("assistance_id", String(id));
+  if (select !== undefined)
+    db.select(select).from("assistance");
+  else
+    defaultSearch();
+
+  db.where("assistance_id", String(id));
 
   try {
-    const assistance = await db.resolve();
+    const assistance = await db.resolve() as { assistance: Assistance }[];
+
+
+    if (select !== undefined) 
+      return assistance[0] !== undefined ? assistance[0].assistance : undefined;
+
     const parsedData = parseDefaultData(assistance);
 
     return parsedData[0];
   }
   catch (err) {
+
     throw err;
   }
 };
@@ -109,8 +120,17 @@ export const searchByNameTagDescription = async (name: string, args: FilterOptio
   }
 };
 
+export const deleteById = async (id: number) => {
+  db.delete("assistance")
+    .where("assistance_id", id.toString());
 
-
+    try {
+      return db.resolve();
+    }
+    catch(err) {
+      throw err;
+    }
+};
 
 export const create = async (assistanceData: Assistance | Object): Promise<InsertResponse> => {
   try {
@@ -122,6 +142,19 @@ export const create = async (assistanceData: Assistance | Object): Promise<Inser
   }
 };
 
+export const update = async (assistanceId: number, assistanceFields: Assistance | Object) => {
+
+  try {
+    const result = await
+      db.update("assistance", assistanceFields)
+        .where("assistance_id", String(assistanceId))
+        .resolve();
+
+    return result;
+  } catch (err) {
+    throw err;
+  }
+};
 
 
 
