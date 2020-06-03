@@ -4,7 +4,7 @@ import {
   assistance_tag as AssistanceTag ,
   assistance_presence_list as AssistancePresenceList
 } from "../helpers/dbNamespace";
-import { InsertResponse } from 'src/helpers/dbResponses';
+import { InsertResponse, DeleteResponse } from 'src/helpers/dbResponses';
 
 interface FilterOptions {
   filter?: string,
@@ -186,13 +186,13 @@ export const subscribeUser = async (presenceList: AssistancePresenceList | Objec
   }
 };
 
-export const findSubscribedUsersByID = async ({ userId, assistance_id }: { userId: number; assistance_id: number; }) => {
+export const findSubscribedUsersByID = async ({ userId, assistanceId }: { userId: number; assistanceId: number; }) => {
   try {
     const user = await db
     .select()
     .from("assistance_presence_list")
     .where("student_id", userId.toString())
-    .and("assistance_id", assistance_id.toString())
+    .and("assistance_id", assistanceId.toString())
     .resolve() as {assistance_presence_list: AssistancePresenceList}[];
 
     return user.length > 0 ? user[0].assistance_presence_list : undefined;
@@ -202,7 +202,20 @@ export const findSubscribedUsersByID = async ({ userId, assistance_id }: { userI
   }
 };
 
+export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: number; assistanceId: number; }) => {
+  try {
+    const user = await db
+    .delete("assistance_presence_list")
+    .where("student_id", userId.toString())
+    .and("assistance_id", assistanceId.toString())
+    .resolve() as DeleteResponse[];
 
+    return user.length > 0 ? user[0] : undefined;
+  }
+  catch (err) {
+    throw err;
+  }
+};
 
 
 

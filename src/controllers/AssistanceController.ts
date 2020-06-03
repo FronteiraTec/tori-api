@@ -333,7 +333,7 @@ export const subscribeUser = async (req: Request, res: Response) => {
 
     const isSubscribed = await assistanceModel.findSubscribedUsersByID({
       userId: userId,
-      assistance_id: Number(assistanceId)
+      assistanceId: Number(assistanceId)
     });
 
     if (isSubscribed !== undefined)
@@ -351,12 +351,54 @@ export const subscribeUser = async (req: Request, res: Response) => {
     res.json("User subscribed successfully");
 
   } catch (error) {
-    console.error(error)
+    return errorResponse({
+      message: "An error occurred while creating the the assistance",
+      code: httpCode["Internal Server Error"],
+      res,
+      error
+    });
   }
 
 }
 
 export const unsubscribeUser = async (req: Request, res: Response) => {
+  const userId = (req as any).user as number;
+  const { assistanceId } = req.params;
+
+
+  try {
+    const result = await assistanceModel.unsubscribeUsersByID({
+      userId,
+      assistanceId: Number(assistanceId)
+    });
+
+
+    if (result === undefined)
+      return errorResponse({
+        message: "An error occurred while creating the the assistance",
+        code: httpCode["Internal Server Error"],
+        res,
+      });
+
+
+    if (result.affectedRows === 0)
+      return errorResponse({
+        message: "User was not subscribed in this assistance",
+        code: httpCode["I\"m a teapot"],
+        res,
+      });
+
+    return res.json("User unsubscribed successfully");
+
+  }
+  catch (err) {
+    return errorResponse({
+      message: "An error occurred while creating the the assistance",
+      code: httpCode["Internal Server Error"],
+      res,
+      error: err
+    });
+  }
 }
 
 
