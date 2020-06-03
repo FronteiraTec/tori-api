@@ -21,7 +21,7 @@ export const create = async (address: AddressInterface | Object) => {
     const result = await
       db.insert("address", address).resolve();
 
-    return result[0] as InsertResponse;
+    return result.length > 0 ? result[0] as InsertResponse : undefined;
   } catch (err) {
     throw err;
   }

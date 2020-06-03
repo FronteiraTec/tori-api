@@ -1,5 +1,9 @@
 import { db } from "../helpers/dbHelper";
-import { assistance as Assistance, assistance_tag as AssistanceTag } from "../helpers/dbNamespace";
+import { 
+  assistance as Assistance, 
+  assistance_tag as AssistanceTag ,
+  assistance_presence_list as AssistancePresenceList
+} from "../helpers/dbNamespace";
 import { InsertResponse } from 'src/helpers/dbResponses';
 
 interface FilterOptions {
@@ -168,6 +172,37 @@ export const createTag = async (assistanceTag: AssistanceTag | Object): Promise<
     throw err;
   }
 };
+
+
+export const subscribeUser = async (presenceList: AssistancePresenceList | Object): Promise<InsertResponse> => {
+  try {
+    const newPresenceList = await db
+    .insert("assistance_presence_list", presenceList)
+    .resolve() as InsertResponse;
+    return newPresenceList;
+  }
+  catch (err) {
+    throw err;
+  }
+};
+
+export const findSubscribedUsersByID = async ({ userId, assistance_id }: { userId: number; assistance_id: number; }) => {
+  try {
+    const user = await db
+    .select()
+    .from("assistance_presence_list")
+    .where("student_id", userId.toString())
+    .and("assistance_id", assistance_id.toString())
+    .resolve() as {assistance_presence_list: AssistancePresenceList}[];
+
+    return user.length > 0 ? user[0].assistance_presence_list : undefined;
+  }
+  catch (err) {
+    throw err;
+  }
+};
+
+
 
 
 

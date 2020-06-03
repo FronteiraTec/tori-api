@@ -6,7 +6,14 @@ import * as tagModel from '../models/tagModel';
 import { HTTPError as Error } from "../helpers/customError";
 import { errorResponse } from 'src/helpers/responseHelper';
 import { httpCode } from 'src/helpers/statusCode';
-import { assistance as Assistance } from "../helpers/dbNamespace";
+import { assistance as Assistance, address as Address } from "../helpers/dbNamespace";
+
+enum QueryOptions {
+  all = "all",
+  name = "name",
+  id = "id",
+  tag = "tag"
+};
 
 export const getAll = async (req: Request, res: Response) => {
 
@@ -34,13 +41,6 @@ export const getByID = async (req: Request, res: Response) => {
     res.json(error);
     throw error;
   }
-};
-
-enum QueryOptions {
-  all = "all",
-  name = "name",
-  id = "id",
-  tag = "tag"
 };
 
 export const searchQuery = async (req: Request, res: Response) => {
@@ -172,7 +172,7 @@ export const create = async (req: Request, res: Response) => {
       }
     })();
 
-    if (newAddress instanceof Error || newAddress.affectedRows === undefined) {
+    if (newAddress instanceof Error || newAddress === undefined || newAddress.affectedRows === undefined) {
       return errorResponse({
         message: "An error occurred while creating the address",
         code: httpCode["Internal Server Error"],
@@ -180,17 +180,12 @@ export const create = async (req: Request, res: Response) => {
       });
     }
 
-    // const addressId = newAddress.insertId;
-
     if (tags.length > 0)
       addTags(tags);
 
     res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
   }
   catch (err) {
-    // if (addressId)
-    //   addressModel.deleteById(addressId);
-
     return errorResponse({
       message: "An error occurred while creating the the assistance",
       code: httpCode["Internal Server Error"],
@@ -201,30 +196,13 @@ export const create = async (req: Request, res: Response) => {
 }
 
 export const deleteById = async (req: Request, res: Response) => {
-  // const userId = (req as any).user;
-  const userId = 20;
+  const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
-  const assistanceInfo = await assistanceModel.searchByID({
-    id: Number(assistanceId),
-    select: "assistance_owner_id"
-  }) as Assistance;
+  const assistanceInfo = await getAssistanceOwnerId(assistanceId);
 
-  if (assistanceInfo === undefined) {
-    return errorResponse({
-      message: "Assistance does not found",
-      code: httpCode["Bad Request"],
-      res
-    });
-  }
-
-  if (assistanceInfo.assistance_owner_id !== userId) {
-    return errorResponse({
-      message: "User has no permission to complete this operation",
-      code: httpCode.Unauthorized,
-      res
-    })
-  }
+  verifyIfUserHasPermission(userId, assistanceInfo.assistance_owner_id, res);
+  verifyIfAssistanceExists(assistanceInfo, res);
 
   try {
     const response = await assistanceModel.deleteById(Number(assistanceId));
@@ -243,30 +221,13 @@ export const deleteById = async (req: Request, res: Response) => {
 }
 
 export const disableById = async (req: Request, res: Response) => {
-  // const userId = (req as any).user;
-  const userId = 20;
+  const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
-  const assistanceInfo = await assistanceModel.searchByID({
-    id: Number(assistanceId),
-    select: "assistance_owner_id"
-  }) as Assistance;
+  const assistanceInfo = await getAssistanceOwnerId(assistanceId);
 
-  if (assistanceInfo === undefined) {
-    return errorResponse({
-      message: "Assistance does not found",
-      code: httpCode["Bad Request"],
-      res
-    });
-  }
-
-  if (assistanceInfo.assistance_owner_id !== userId) {
-    return errorResponse({
-      message: "User has no permission to complete this operation",
-      code: httpCode.Unauthorized,
-      res
-    })
-  }
+  verifyIfUserHasPermission(userId, assistanceInfo.assistance_owner_id, res);
+  verifyIfAssistanceExists(assistanceInfo, res);
 
   try {
     const response = await assistanceModel.update(Number(assistanceId), {
@@ -289,12 +250,120 @@ export const disableById = async (req: Request, res: Response) => {
 
 
 }
-// export const create = async (req: Request, res: Response) => {
-// }
-// export const create = async (req: Request, res: Response) => {
-// }
-// export const create = async (req: Request, res: Response) => {
-// }
+
+export const update = async (req: Request, res: Response) => {
+  const userId = (req as any).user as number;
+  const { assistanceId } = req.params;
+
+  const assistance = req.body as Assistance & Address;
+
+  const assistanceInfo = await getAssistanceOwnerId(assistanceId);
+
+  verifyIfUserHasPermission(userId, assistanceInfo.assistance_owner_id, res)
+  verifyIfAssistanceExists(assistanceInfo, res);
+
+  try {
+    const response = await assistanceModel.update(Number(assistanceId), {
+      ...assistance, assistance_id: undefined
+    });
+
+    // console.log(response);
+    res.json("Success");
+  }
+  catch (err) {
+    return errorResponse({
+      message: "An unknown error ocurred, try again",
+      code: httpCode["Internal Server Error"],
+      error: err,
+      res
+    });
+  }
+
+
+}
+export const getSubscribers = async (req: Request, res: Response) => {
+  const userId = (req as any).user as number;
+  const { assistanceId } = req.params;
+
+  const assistanceInfo = await getAssistanceOwnerId(assistanceId);
+
+  verifyIfUserHasPermission(userId, assistanceInfo.assistance_owner_id, res);
+  verifyIfAssistanceExists(assistanceInfo, res);
+
+
+  // procurar na tabela...
+}
+
+export const subscribeUser = async (req: Request, res: Response) => {
+  const userId = (req as any).user as number;
+  const { assistanceId } = req.params;
+
+  try {
+    const assistanceInfo = await assistanceModel.searchByID({
+      id: Number(assistanceId),
+      select: "assistance_owner_id,	assistance_available_vacancies, assistance_suspended, assistance_available"
+
+    }) as Assistance;
+
+    if (assistanceInfo === undefined || assistanceInfo.assistance_suspended === 1)
+      return errorResponse({
+        message: "This assistance no longer exists",
+        code: httpCode["Bad Request"],
+        res
+      });
+
+    if (assistanceInfo.assistance_owner_id === Number(userId))
+      return errorResponse({
+        message: "This user can not subscribe onto his own assistance",
+        code: httpCode["Bad Request"],
+        res
+      });
+
+    if (assistanceInfo.assistance_available_vacancies === 0)
+      return errorResponse({
+        message: "This assistance has no empty vacancies",
+        code: httpCode["Bad Request"],
+        res
+      });
+
+
+    // Criar a tabela 
+    //TODO: verificar se o usuário ja esta inscrito
+
+
+    const isSubscribed = await assistanceModel.findSubscribedUsersByID({
+      userId: userId,
+      assistance_id: Number(assistanceId)
+    });
+
+    if (isSubscribed !== undefined)
+      return errorResponse({
+        message: "This user already is subscribed in this assistance",
+        code: httpCode["Not Acceptable"],
+        res
+      });
+
+    const subscribe = await assistanceModel.subscribeUser({
+      assistance_id: assistanceId,
+      student_id: userId,
+    });
+
+    res.json("User subscribed successfully");
+
+  } catch (error) {
+    console.error(error)
+  }
+
+}
+
+export const unsubscribeUser = async (req: Request, res: Response) => {
+}
+
+
+
+
+
+
 
 
 async function addTags(tags: Array<string>) {
@@ -306,12 +375,16 @@ async function addTags(tags: Array<string>) {
         tag_name: tags[i].toLowerCase()
       });
 
-      tagsId.push(tag.insertId);
+      if (tag !== undefined)
+        tagsId.push(tag.insertId);
+
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY") {
         // Search ids in database.
         const tagIdObject = await tagModel.findByName(tags[i].toLowerCase());
-        tagsId.push(tagIdObject.tag_id);
+
+        if (tagIdObject !== undefined)
+          tagsId.push(tagIdObject.tag_id);
       }
 
       else {
@@ -350,4 +423,31 @@ function currentDate() {
 
   return `${time[0]}-${date[0]}-${date[1]} ${time[1]}`
 
+}
+
+function verifyIfUserHasPermission(userId: number, assistanceOwnerId: number, res: Response) {
+  if (assistanceOwnerId !== userId) {
+    return errorResponse({
+      message: "User has no permission to complete this operation",
+      code: httpCode.Unauthorized,
+      res
+    })
+  }
+}
+
+async function getAssistanceOwnerId(assistanceId: string) {
+  return await assistanceModel.searchByID({
+    id: Number(assistanceId),
+    select: "assistance_owner_id"
+  }) as Assistance;
+}
+
+function verifyIfAssistanceExists(assistanceInfo: Object, res: Response) {
+  if (assistanceInfo === undefined) {
+    return errorResponse({
+      message: "Assistance does not found",
+      code: httpCode["Bad Request"],
+      res
+    });
+  }
 }

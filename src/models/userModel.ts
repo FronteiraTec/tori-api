@@ -34,7 +34,7 @@ export const getById = async ({ userId, fields }: { userId: number, fields?: str
 
     const parsedResult = parseResponse(result);
 
-    return parseResponse.length == 1 ? parsedResult[0] : parsedResult;
+    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
   } catch (err) {
     throw err;
   }
@@ -57,7 +57,8 @@ export const getByEmail = async ({ email, fields }: { email: string, fields?: st
 
     const parsedResult = parseResponse(result);
 
-    return parseResponse.length == 1 ? parsedResult[0] : parsedResult;
+    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+
   } catch (err) {
     throw err;
   }
@@ -79,7 +80,7 @@ export const getByName = async ({ name, fields }: { name: string, fields?: strin
 
     const parsedResult = parseResponse(result);
 
-    return parsedResult;
+    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
 
   } catch (err) {
     throw err;
@@ -106,7 +107,9 @@ export const getAll = async ({ assistant, limit, offset, fields }:
 
     const result = await db.resolve() as { user: UserInterface }[];
 
-    return parseResponse(result);
+    const parsedResult = parseResponse(result);
+    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+
   } catch (err) {
     throw err;
   }

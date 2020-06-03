@@ -5,6 +5,11 @@ import { userAuthenticated } from "src/middleware/auth";
 const assistanceRouter: Router = Router();
 
 
+//TODO: document disable route
+//TODO: update assistance address
+//TODO: get latitude and longitude from cep
+
+
 assistanceRouter.post("/", userAuthenticated, controller.create);
 
 //Fix: refactor this to works like it should on documentation
@@ -12,23 +17,15 @@ assistanceRouter.get("/", controller.getAll);
 //Fix: refactor this to works like it should on documentation
 assistanceRouter.get("/search", controller.searchQuery);
 
+assistanceRouter.delete("/:assistanceId", userAuthenticated, controller.deleteById);
+assistanceRouter.patch("/disable/:assistanceId", userAuthenticated, controller.disableById);
+assistanceRouter.patch("/:assistanceId", userAuthenticated, controller.update);
 
-assistanceRouter.delete("/:assistanceId", controller.deleteById);
-//TODO: Document this on .yaml
-assistanceRouter.patch("/:assistanceId", controller.disableById);
 
 
-//TODO: Update this assistance
-assistanceRouter.patch("/", controller.searchQuery);
-
-//TODO: get assistance subscribers
-assistanceRouter.get("/subscribers", controller.searchQuery);
-
-//TODO: subscribe to assistance
-assistanceRouter.post("/subscribe/:assistanceId", controller.searchQuery);
-
-//TODO: unsubscribe to assistance
-assistanceRouter.patch("/unsubscribe/:assistanceId", controller.searchQuery);
+assistanceRouter.post("/subscribe/:assistanceId", userAuthenticated, controller.subscribeUser);
+assistanceRouter.patch("/unsubscribe/:assistanceId", userAuthenticated, controller.unsubscribeUser);
+assistanceRouter.get("/subscribers/:assistanceId", userAuthenticated, controller.getSubscribers);
 
 
 
