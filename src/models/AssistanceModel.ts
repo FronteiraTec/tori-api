@@ -1,8 +1,9 @@
 import { db } from "../helpers/dbHelper";
-import { 
-  assistance as Assistance, 
-  assistance_tag as AssistanceTag ,
-  assistance_presence_list as AssistancePresenceList
+import {
+  assistance as Assistance,
+  assistance_tag as AssistanceTag,
+  assistance_presence_list as AssistancePresenceList,
+  user as User
 } from "../helpers/dbNamespace";
 import { InsertResponse, DeleteResponse } from 'src/helpers/dbResponses';
 
@@ -51,7 +52,7 @@ export const searchByID = async ({ id, select }: { id: number, select?: string }
     const assistance = await db.resolve() as { assistance: Assistance }[];
 
 
-    if (select !== undefined) 
+    if (select !== undefined)
       return assistance[0] !== undefined ? assistance[0].assistance : undefined;
 
     const parsedData = parseDefaultData(assistance);
@@ -128,12 +129,12 @@ export const deleteById = async (id: number) => {
   db.delete("assistance")
     .where("assistance_id", id.toString());
 
-    try {
-      return db.resolve();
-    }
-    catch(err) {
-      throw err;
-    }
+  try {
+    return db.resolve();
+  }
+  catch (err) {
+    throw err;
+  }
 };
 
 export const create = async (assistanceData: Assistance | Object): Promise<InsertResponse> => {
@@ -177,8 +178,8 @@ export const createTag = async (assistanceTag: AssistanceTag | Object): Promise<
 export const subscribeUser = async (presenceList: AssistancePresenceList | Object): Promise<InsertResponse> => {
   try {
     const newPresenceList = await db
-    .insert("assistance_presence_list", presenceList)
-    .resolve() as InsertResponse;
+      .insert("assistance_presence_list", presenceList)
+      .resolve() as InsertResponse;
     return newPresenceList;
   }
   catch (err) {
@@ -186,14 +187,31 @@ export const subscribeUser = async (presenceList: AssistancePresenceList | Objec
   }
 };
 
+export const findAllSubscribedUsers = async (assistanceId: number, select: string) => {
+  try {
+    const res = await db
+      .select(select)
+      .from("assistance_presence_list")
+      .join("user.user_id", "assistance_presence_list.student_id")
+      .where("assistance_presence_list.assistance_id", assistanceId.toString())
+      .resolve() as { user: User, assistance_presence_list: AssistancePresenceList }[];
+
+    return res.length > 0 ? [...res] : undefined;
+  }
+  catch (err) {
+    throw err;
+  }
+};
+
+
 export const findSubscribedUsersByID = async ({ userId, assistanceId }: { userId: number; assistanceId: number; }) => {
   try {
     const user = await db
-    .select()
-    .from("assistance_presence_list")
-    .where("student_id", userId.toString())
-    .and("assistance_id", assistanceId.toString())
-    .resolve() as {assistance_presence_list: AssistancePresenceList}[];
+      .select()
+      .from("assistance_presence_list")
+      .where("student_id", userId.toString())
+      .and("assistance_id", assistanceId.toString())
+      .resolve() as { assistance_presence_list: AssistancePresenceList }[];
 
     return user.length > 0 ? user[0].assistance_presence_list : undefined;
   }
@@ -205,10 +223,10 @@ export const findSubscribedUsersByID = async ({ userId, assistanceId }: { userId
 export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: number; assistanceId: number; }) => {
   try {
     const user = await db
-    .delete("assistance_presence_list")
-    .where("student_id", userId.toString())
-    .and("assistance_id", assistanceId.toString())
-    .resolve() as DeleteResponse[];
+      .delete("assistance_presence_list")
+      .where("student_id", userId.toString())
+      .and("assistance_id", assistanceId.toString())
+      .resolve() as DeleteResponse[];
 
     return user.length > 0 ? user[0] : undefined;
   }

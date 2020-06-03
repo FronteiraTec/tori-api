@@ -281,18 +281,6 @@ export const update = async (req: Request, res: Response) => {
 
 
 }
-export const getSubscribers = async (req: Request, res: Response) => {
-  const userId = (req as any).user as number;
-  const { assistanceId } = req.params;
-
-  const assistanceInfo = await getAssistanceOwnerId(assistanceId);
-
-  verifyIfUserHasPermission(userId, assistanceInfo.assistance_owner_id, res);
-  verifyIfAssistanceExists(assistanceInfo, res);
-
-
-  // procurar na tabela...
-}
 
 export const subscribeUser = async (req: Request, res: Response) => {
   const userId = (req as any).user as number;
@@ -401,10 +389,59 @@ export const unsubscribeUser = async (req: Request, res: Response) => {
   }
 }
 
+export const getSubscribers = async (req: Request, res: Response) => {
+  const userId = (req as any).user as number;
+  const { assistanceId } = req.params;
+  const { fields } = req.query;
 
+  const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId: Number(assistanceId) });
 
+  if (user === undefined)
+    return errorResponse({
+      message: "User was not subscribed in this assistance",
+      code: httpCode["I\"m a teapot"],
+      res,
+    });
 
+  if (fields === undefined) {
+    return errorResponse({
+      message: "Fields must be filled",
+      res,
+      code: httpCode["Bad Request"]
+    });
+  }
 
+  const parsedFields = fields.replace(/[\[\]]/g, "")
+    .trim()
+    .split(",")
+    .map((field: string) => `${field.trim()}`);
+
+  if (notAllowedFieldsSearch(parsedFields))
+    return errorResponse({
+      message: "You has no authorization to search on of these fields",
+      res,
+      code: httpCode.Unauthorized
+    });
+
+  try {
+    const users = await assistanceModel.findAllSubscribedUsers(Number(assistanceId), parsedFields.join(","));
+    res.json(users);
+
+  } catch (error) {
+    if (error.code === "ER_BAD_FIELD_ERROR")
+      return errorResponse({
+        message: "One field does not exist",
+        res,
+        code: httpCode["Bad Request"],
+      });
+
+    return errorResponse({
+      message: "An internal error has ocurred",
+      res,
+      code: httpCode["Internal Server Error"],
+    });
+  }
+}
 
 
 
@@ -491,5 +528,26 @@ function verifyIfAssistanceExists(assistanceInfo: Object, res: Response) {
       code: httpCode["Bad Request"],
       res
     });
+  }
+}
+
+
+function notAllowedFieldsSearch(fields: string[]) {
+  const notAllowedFields = [
+    "user_id",
+    "user_created_at",
+    "user_matricula",
+    "user_idUFFS",
+    "user_email",
+    "user_phone_number",
+    "user_password",
+    "user_cpf"
+  ];
+
+  for (const field of fields) {
+    for (const notAllowed of notAllowedFields) {
+      if (field === notAllowed || `user.${notAllowed}` === notAllowed)
+        return true;
+    }
   }
 }
