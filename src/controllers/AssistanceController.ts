@@ -17,10 +17,30 @@ enum QueryOptions {
 
 export const getAll = async (req: Request, res: Response) => {
 
-  const { limit, offset, available } = req.query;
+  const { limit, offset, available, order, fields } = req.query;
+
+  const parsedFields = parseQueryField(fields);
+  console.log(parsedFields)
+  if (parsedFields !== undefined)
+  console.log(allowedFields(parsedFields));
+
+  if (parsedFields !== undefined)
+    if (!allowedFields(parsedFields))
+      return errorResponse({
+        message: "You has no authorization to search on of these fields",
+        res,
+        code: httpCode.Unauthorized
+      });
+
 
   try {
-    const allAssistance = await assistanceModel.getAll(limit, offset, available);
+    const allAssistance = await assistanceModel.getAll({
+      limit,
+      offset,
+      available,
+      order,
+      fields: parsedFields
+    });
     return res.status(200).json(allAssistance);
   } catch (error) {
     error.statusCode = 400;
@@ -315,10 +335,6 @@ export const subscribeUser = async (req: Request, res: Response) => {
       });
 
 
-    // Criar a tabela 
-    //TODO: verificar se o usuário ja esta inscrito
-
-
     const isSubscribed = await assistanceModel.findSubscribedUsersByID({
       userId: userId,
       assistanceId: Number(assistanceId)
@@ -445,6 +461,15 @@ export const getSubscribers = async (req: Request, res: Response) => {
 
 
 
+function parseQueryField(fields: string) {
+  if (fields === undefined || fields === "") return undefined
+
+  return fields.replace(/[\[\]]/g, "")
+    .trim()
+    .split(",")
+    .map((field: string) => `${field.trim()}`);
+}
+
 async function addTags(tags: Array<string>) {
   const tagsId = [];
 
@@ -494,7 +519,7 @@ async function addTags(tags: Array<string>) {
 
 function currentDate() {
 
-
+  /* cspell: disable-next-line */
   const date = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).replace(/[\/]/g, "-").replace(",", "").trim()
     .split("-")
 
@@ -531,12 +556,64 @@ function verifyIfAssistanceExists(assistanceInfo: Object, res: Response) {
   }
 }
 
+function allowedFields(fields: string[]) {
+  const availableSearchFields = [
+    "assistance.assistance_id",
+    "assistance.assistance_title",
+    "assistance.assistance_description",
+    "assistance.assistance_available",
+    "assistance.assistance_total_vacancies",
+    "assistance.assistance_available_vacancies",
+    "assistance.assistance_date",
+    "assistanceCourse.course_name",
+    "assistanceCourse.course_description",
+    "assistanceCourse.course_id",
+    "subject.subject_id",
+    "subject.subject_name",
+    "subject.subject_description",
+    "assistant.user_id",
+    "assistant.user_full_name",
+    "assistant.user_created_at",
+    "assistant.user_assistant_stars",
+    "assistant.user_email",
+    "assistant.user_course_id",
+    "assistantCourse.course_id",
+    "assistantCourse.course_name",
+    "assistantCourse.course_description",
+    "address.address_cep",
+    "address.address_street",
+    "address.address_number",
+    "address.address_complement",
+    "address.address_reference",
+    "address.address_nickname",
+    "address.address_latitude",
+    "address.address_longitude",
+    "address.address_assistance_id",
+  ];
+
+
+
+  for (const field of fields) {
+    let verifier = false;
+   
+    for (const allowed of availableSearchFields)
+        verifier = verifier || (allowed === field)
+    
+    if(verifier === false) return false;
+  }
+
+  return true;
+}
+
+
 
 function notAllowedFieldsSearch(fields: string[]) {
   const notAllowedFields = [
     "user_id",
     "user_created_at",
+    /* cspell: disable-next-line */
     "user_matricula",
+    /* cspell: disable-next-line */
     "user_idUFFS",
     "user_email",
     "user_phone_number",
@@ -550,4 +627,6 @@ function notAllowedFieldsSearch(fields: string[]) {
         return true;
     }
   }
+
+  return false;
 }
