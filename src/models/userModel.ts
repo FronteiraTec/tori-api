@@ -1,6 +1,7 @@
 import { db } from "../helpers/dbHelper";
 import { user as UserInterface } from "../helpers/dbNamespace";
 import crypto from "crypto";
+import { toBoolean } from 'src/helpers/conversionHelper';
 
 
 export const updateOnlyNullFields = async (userId: number, user: UserInterface | Object) => {
@@ -175,15 +176,6 @@ function booleanToString(string?: string) {
   if (string === "0") return "0";
 
   return "1";
-}
-
-function toBoolean(string?: string) {
-  if (string === undefined) return undefined;
-
-  if (string === "false") return false;
-  if (string === "0") return false;
-
-  return true;
 }
 
 function parseResponse(data: { user: UserInterface }[]) {

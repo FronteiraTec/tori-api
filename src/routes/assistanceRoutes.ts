@@ -15,12 +15,10 @@ assistanceRouter.post("/subscribe/:assistanceId", userAuthenticated, controller.
 assistanceRouter.patch("/unsubscribe/:assistanceId", userAuthenticated, controller.unsubscribeUser);
 assistanceRouter.get("/subscribers/:assistanceId", userAuthenticated, controller.getSubscribers);
 assistanceRouter.post("/", userAuthenticated, controller.create);
-
-
-//Fix: refactor this to works like it should on documentation
 assistanceRouter.get("/", controller.getAll);
-//Fix: refactor this to works like it should on documentation
-assistanceRouter.get("/search", controller.searchQuery);
 
+
+//Fix: Protect the fields and blank or null fields
+assistanceRouter.get("/search", controller.searchQuery);
 
 export default assistanceRouter;

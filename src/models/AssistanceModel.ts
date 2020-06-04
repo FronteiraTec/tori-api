@@ -3,95 +3,75 @@ import {
   assistance as Assistance,
   assistance_tag as AssistanceTag,
   assistance_presence_list as AssistancePresenceList,
-  user as User
+  user as User,
+  address as Address,
+  tag as Tag,
+  subject as Subject,
+  course as Course
 } from "../helpers/dbNamespace";
 import { InsertResponse, DeleteResponse } from 'src/helpers/dbResponses';
+import { toBoolean } from 'src/helpers/conversionHelper';
+
+interface AssistanceSearch {
+  assistance: Assistance,
+  address: Address,
+  assistant: User,
+  assistanceCourse: Course,
+  assistantCourse: Course,
+  subject: Subject
+}
 
 interface FilterOptions {
-  filter?: string,
+  filter?: object,
   limit?: number,
   offset?: number,
-  filterData?: string,
-  orderBy?: string,
-  orderByData?: string,
-  available?: boolean
+  orderBy?: object,
+  available?: boolean | string | number
 };
 
 export const getAll = async ({ limit, offset, available, order, fields }: { fields: string[] | undefined, order: string, limit: number; offset: number; available: boolean; }) => {
-  if (fields) {
-    console.log(fields);
-    const fieldsString = fields.join(",");
-
-    db.select(fieldsString)
-    db.from("assistance")
-
-    const address = fieldsString.search("address.");
-    const assistant = fieldsString.search("assistant.");
-    const assistanceCourse = fieldsString.search("assistanceCourse.");
-    const assistantCourse = fieldsString.search("assistantCourse.");
-    const subject = fieldsString.search("subject.");
-
-    if (assistant >= 0)
-      db.join("assistance.assistance_owner_id", "user as assistant assistant.user_id");
-
-    if (assistanceCourse >= 0)
-      db.join("assistance.assistance_course_id", "course as assistanceCourse assistanceCourse.course_id");
-
-    if (assistantCourse >= 0)
-      db.join("assistant.user_course_id", "course as assistantCourse assistantCourse.course_id");
-
-
-    if (address >= 0)
-      db.leftJoin("address.address_assistance_id", "assistance.assistance_id");
-
-    if (subject >= 0)
-      db.join("subject.subject_id", "assistance.assistance_subject_id");
-
-  }
+  if (fields)
+    fieldSearch(fields, db)
   else {
-  defaultSearch(db);
+    defaultSearch(db);
+  }
+
+  if (order)
+    db.orderBy("assistance_id", order ? order : "DESC");
+
+
+  if (available !== undefined) {
+    if (Boolean(available) === true)
+      db.where("assistance_available", String(available));
+  }
+
+  if (limit !== undefined && offset !== undefined)
+    db.pagination(limit, offset);
+
+
+  try {
+    const rowsAndInfos = await db.resolve();
+    return rowsAndInfos;
+  }
+  catch (err) {
+    throw err;
+  }
 }
 
-if (order)
-  db.orderBy("assistance_id", order ? order : "DESC");
+export const searchByID = async ({ id, fields }:
+  { fields?: string[], id: number | undefined; }) => {
 
-
-if (available !== undefined) {
-  if (Boolean(available) === true)
-    db.where("assistance_available", String(available));
-}
-
-if (limit !== undefined && offset !== undefined)
-  db.pagination(limit, offset);
-
-
-try {
-  const rowsAndInfos = await db.resolve();
-  return rowsAndInfos;
-}
-catch (err) {
-  throw err;
-}
-}
-
-export const searchByID = async ({ id, select }: { id: number, select?: string }) => {
-
-  if (select !== undefined)
-    db.select(select).from("assistance");
+  if (fields)
+    fieldSearch(fields, db);
   else
     defaultSearch(db);
 
-  db.where("assistance_id", String(id));
+  db.where("assistance.assistance_id", String(id));
 
   try {
-    const assistance = await db.resolve() as { assistance: Assistance }[];
+    const assistance = await db.resolve() as AssistanceSearch[];
 
-
-    if (select !== undefined)
-      return assistance[0] !== undefined ? assistance[0].assistance : undefined;
-
-
-    return assistance.map((item: { assistance: Assistance }) => item.assistance);
+    return assistance.length > 0 ? assistance[0] : undefined;
   }
   catch (err) {
 
@@ -99,32 +79,60 @@ export const searchByID = async ({ id, select }: { id: number, select?: string }
   }
 };
 
-export const searchByName = async (name: string, args: FilterOptions) => {
-  defaultSearch(db).
-    where("assistance_title").
-    like(`%${name}%`);
+export const searchByName = async ({ name, fields, args }:
+  { fields?: string[], name: string; args?: FilterOptions; }) => {
 
-  defaultFilters(args);
+
+  if (fields)
+    fieldSearch(fields, db);
+  else
+    defaultSearch(db);
+
+  db.where("assistance_title")
+    .like(`%${name}%`);
+
+
+  if (args)
+    defaultFilters(args, db);
 
   try {
-    const assistance = await db.resolve() as { assistance: Assistance }[];
+    const assistance = await db.resolve() as AssistanceSearch[];
 
-    return assistance.map((item: { assistance: Assistance }) => item.assistance);
-
+    return assistance.length > 0 ? assistance : undefined;
   }
   catch (err) {
     throw err;
   }
 };
 
-export const searchByTag = async (name: string, args: FilterOptions) => {
-  defaultSearch(db).
-    leftJoin("assistance_tag as at at.assistance_id", "assistance.assistance_id").
-    leftJoin("tag.tag_id", "at.tag_id").
-    where("tag.tag_name").
-    like(`%${name}%`);
+export const searchByTag = async ({ tags, fields, args }:
+  { fields?: string[], tags?: string[]; args?: FilterOptions; }) => {
 
-  defaultFilters(args);
+  if (fields)
+    fieldSearch(fields, db);
+  else
+    defaultSearch(db);
+
+  db.leftJoin("assistance_tag as at at.assistance_id", "assistance.assistance_id")
+    .leftJoin("tag.tag_id", "at.tag_id")
+
+
+  if (tags)
+    tags.map((string, i) => {
+      if (i == 0)
+        db.where("(tag.tag_name")
+      else
+        db.or("(tag.tag_name")
+
+      db.like(`%${string}%`)
+        .or("assistance.assistance_title").like(`%${string}%`)
+        .or("assistance.assistance_description").like(`%${string}%`, ')');
+
+    });
+
+
+  if (args)
+    defaultFilters(args, db);
 
   try {
     const assistance = await db.resolve() as { assistance: Assistance }[];
@@ -136,23 +144,37 @@ export const searchByTag = async (name: string, args: FilterOptions) => {
   }
 };
 
-export const searchByNameTagDescription = async (name: string, args: FilterOptions) => {
-  defaultSearch(db).
-    leftJoin("assistance_tag as at at.assistance_id", "assistance.assistance_id").
-    leftJoin("tag.tag_id", "at.tag_id").
-    where("(tag.tag_name").
-    like(`%${name}%`).
-    or("assistance.assistance_title").like(`%${name}%`).
-    or("assistance.assistance_description").like(`%${name}%`, ')');
+export const searchByNameTagDescription = async ({ search, fields, args }:
+  { fields?: string[], search: string[] | undefined; args?: FilterOptions; }) => {
 
-  defaultFilters(args);
+  if (fields)
+    fieldSearch(fields, db);
+  else
+    defaultSearch(db);
+
+  db.leftJoin("assistance_tag as at at.assistance_id", "assistance.assistance_id")
+    .leftJoin("tag.tag_id", "at.tag_id")
+
+  if (search)
+    search.map((string, i) => {
+      if (i == 0)
+        db.where("(tag.tag_name")
+      else
+        db.or("(tag.tag_name")
+
+      db.like(`%${string}%`)
+        .or("assistance.assistance_title").like(`%${string}%`)
+        .or("assistance.assistance_description").like(`%${string}%`, ')');
+
+    });
+  
+  if (args)
+    defaultFilters(args, db);
 
   try {
-    const assistance = await db.resolve() as { assistance: Assistance }[];
+    const assistance = await db.resolve() as AssistanceSearch[];
 
-    return assistance.map((item: { assistance: Assistance }) => item.assistance);
-
-
+    return assistance;
   }
   catch (err) {
     throw err;
@@ -269,6 +291,28 @@ export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: n
   }
 };
 
+function fieldSearch(fields: string[], db: DbHelper) {
+  const fieldsString = fields.join(",");
+  db.select(fieldsString);
+  db.from("assistance");
+  const address = fieldsString.search("address.");
+  const assistant = fieldsString.search("assistant.");
+  const assistanceCourse = fieldsString.search("assistanceCourse.");
+  const assistantCourse = fieldsString.search("assistantCourse.");
+  const subject = fieldsString.search("subject.");
+  if (assistant >= 0)
+    db.join("assistance.assistance_owner_id", "user as assistant assistant.user_id");
+  if (assistanceCourse >= 0)
+    db.join("assistance.assistance_course_id", "course as assistanceCourse assistanceCourse.course_id");
+  if (assistantCourse >= 0)
+    db.join("assistant.user_course_id", "course as assistantCourse assistantCourse.course_id");
+  if (address >= 0)
+    db.leftJoin("address.address_assistance_id", "assistance.assistance_id");
+  if (subject >= 0)
+    db.join("subject.subject_id", "assistance.assistance_subject_id");
+  return db;
+}
+
 function defaultSearch(db: DbHelper) {
   db.
     from("assistance").
@@ -302,26 +346,34 @@ function defaultSearch(db: DbHelper) {
   return db;
 }
 
-function defaultFilters(args: FilterOptions) {
-  if (args.limit !== undefined && args.offset !== undefined)
+function defaultFilters(args: FilterOptions, db: DbHelper) {
+  if (args.limit && args.offset)
     db.pagination(args.limit, args.offset);
-  if (args.filter !== undefined) {
-    if (args.filter.search("course") >= 0) {
-      const field = args.filter.split("-")[1];
-      const query = `course.course_${field}`;
 
-      const filterData = args.filterData === undefined ? "" : args.filterData;
-      db.and(query, filterData);
+  if (args.filter) {
+    console.log(args.filter);
+    for (const key in args.filter) {
+      const value = args.filter[key as keyof typeof args.filter];
+
+      db.and(key, value);
     }
   }
 
-  if (args.available !== undefined) {
-    if (Boolean(args.available) === true)
-      db.and("assistance_available", String(1));
+  if (args.available) {
+    if (toBoolean(args.available.toString()))
+      db.and("assistance.assistance_available", "1");
+    else {
+      db.and("assistance.assistance_available", "0");
+      console.log("shj")
+    }
+
   }
 
-  if (args.orderBy !== undefined) {
-    const sortOrder = args.orderByData === undefined ? "ASC" : args.orderByData;
-    db.orderBy(`assistance.assistance_${args.orderBy}`, sortOrder);
+  if (args.orderBy) {
+    for (const key in args.orderBy) {
+      const value = args.orderBy[key as keyof typeof args.orderBy];
+      db.orderBy(key, value);
+      break;
+    }
   }
 }

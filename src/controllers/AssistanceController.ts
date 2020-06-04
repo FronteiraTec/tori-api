@@ -1,12 +1,12 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
 import * as assistanceModel from '../models/AssistanceModel';
 import * as addressModel from '../models/addressModel';
 import * as tagModel from '../models/tagModel';
-import { HTTPError as Error } from "../helpers/customError";
 import { errorResponse } from 'src/helpers/responseHelper';
 import { httpCode } from 'src/helpers/statusCode';
 import { assistance as Assistance, address as Address } from "../helpers/dbNamespace";
+import { CustomError } from 'src/helpers/customError';
 
 enum QueryOptions {
   all = "all",
@@ -22,7 +22,7 @@ export const getAll = async (req: Request, res: Response) => {
   const parsedFields = parseQueryField(fields);
   console.log(parsedFields)
   if (parsedFields !== undefined)
-  console.log(allowedFields(parsedFields));
+    console.log(allowedFields(parsedFields));
 
   if (parsedFields !== undefined)
     if (!allowedFields(parsedFields))
@@ -63,75 +63,113 @@ export const getByID = async (req: Request, res: Response) => {
   }
 };
 
-export const searchQuery = async (req: Request, res: Response) => {
-  const { q, data, filter, filterData, orderBy, orderByData, limit, offset, available } = req.query;
+export const searchQuery = async (req: Request, res: Response, next: NextFunction) => {
+  const {
+    q,
+    available,
+    limit,
+    offset,
+    orderBy,
+    search,
+    fields,
+    filter
+  } = req.query;
 
-  // q stands for query option, may be better to change its name to queryOption and data to queryData
+  const parsedFields = parseQueryField(fields);
+  const searchParsed = parseQueryField(search);
 
-  const response = (assistance: any) => {
-    res.status(200).json(assistance);
-  };
+  if(searchParsed === undefined) {
+    return errorResponse({
+      message: "Search field must be filled.",
+      code: httpCode["Bad Request"],
+      res
+    });
+  }
 
   try {
     switch (q) {
       case QueryOptions.all: {
-        const assistance = await assistanceModel.searchByNameTagDescription(data, {
-          filter,
-          filterData,
-          limit,
-          offset,
-          orderBy,
-          orderByData,
-          available
+
+        const assistance = await assistanceModel.searchByNameTagDescription({
+          search: searchParsed,
+          fields: parsedFields,
+          args: {
+            available,
+            limit,
+            offset,
+            orderBy: orderBy ? JSON.parse(orderBy) : undefined,
+            filter: filter ? JSON.parse(filter) : undefined
+          }
         });
-        response(assistance);
-        break;
+
+        return res.json(assistance);
       }
       case QueryOptions.id: {
-        const assistance = await assistanceModel.searchByID({ id: Number(data) });
-        response(assistance);
-        break;
+        const assistance = await assistanceModel.searchByID({
+          id: searchParsed ? Number(searchParsed[0]) : undefined,
+          fields: parsedFields
+        });
+
+        return res.json(assistance);
       }
 
       case QueryOptions.name: {
-        const assistance = await assistanceModel.searchByName(data, {
-          filter,
-          filterData,
-          limit,
-          offset,
-          orderBy,
-          orderByData,
-          available
-        });
-        response(assistance);
-        break;
+        if (searchParsed) {
+          const assistance = await assistanceModel.searchByName({
+            name: searchParsed[0],
+            fields: parsedFields,
+            args: {
+              available,
+              limit,
+              offset,
+              orderBy: orderBy ? JSON.parse(orderBy) : undefined,
+              filter: filter ? JSON.parse(filter) : undefined
+            }
+          });
+          return res.json(assistance);
+        }
       }
 
       case QueryOptions.tag: {
-        const assistance = await assistanceModel.searchByTag(data, {
-          filter,
-          filterData,
-          limit,
-          offset,
-          orderBy,
-          orderByData,
-          available
+        const searchParsed = parseQueryField(search);
+
+
+        const assistance = await assistanceModel.searchByTag({
+          tags: searchParsed,
+          fields: parsedFields,
+          args: {
+            available,
+            limit,
+            offset,
+            orderBy: orderBy ? JSON.parse(orderBy) : undefined,
+            filter: filter ? JSON.parse(filter) : undefined
+          }
         });
-        response(assistance);
-        break;
+        return res.json(assistance);
       }
       default: {
-        const error = new Error("Query option does not exist", 400);
-        res.json({ "error": error.message });
-        // throw error;
-        break;
+        return errorResponse({
+          message: "Query option does not exist.",
+          code: httpCode["Bad Request"],
+          res
+        });
       }
     }
   }
   catch (error) {
-    error.statusCode = 400;
-    res.json(error);
-    throw error;
+    // return next(error);
+    if(error.code === "LIMITOFFSETNUM")
+      return errorResponse({
+        message: "Limit or offset are not numbers.",
+        code: httpCode["Bad Request"],
+        res
+      });
+
+    return errorResponse({
+      message: "An internal error has occurred, please try again.",
+      code: httpCode["Internal Server Error"],
+      res
+    });
   }
 
 };
@@ -219,10 +257,14 @@ export const deleteById = async (req: Request, res: Response) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
-  const assistanceInfo = await getAssistanceOwnerId(assistanceId);
+  const assistance = (await getAssistanceOwnerId(assistanceId))?.assistance;
 
-  verifyIfUserHasPermission(userId, assistanceInfo.assistance_owner_id, res);
-  verifyIfAssistanceExists(assistanceInfo, res);
+  verifyIfUserHasPermission({
+    userId,
+    assistanceOwnerId: assistance ? assistance.assistance_owner_id : assistance,
+    res
+  });
+  verifyIfAssistanceExists(assistance ? assistance : undefined, res);
 
   try {
     const response = await assistanceModel.deleteById(Number(assistanceId));
@@ -244,10 +286,15 @@ export const disableById = async (req: Request, res: Response) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
-  const assistanceInfo = await getAssistanceOwnerId(assistanceId);
+  const assistance = (await getAssistanceOwnerId(assistanceId))?.assistance;
 
-  verifyIfUserHasPermission(userId, assistanceInfo.assistance_owner_id, res);
-  verifyIfAssistanceExists(assistanceInfo, res);
+
+  verifyIfUserHasPermission({
+    userId,
+    assistanceOwnerId: assistance ? assistance.assistance_owner_id : undefined,
+    res
+  });
+  verifyIfAssistanceExists(assistance, res);
 
   try {
     const response = await assistanceModel.update(Number(assistanceId), {
@@ -275,16 +322,22 @@ export const update = async (req: Request, res: Response) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
-  const assistance = req.body as Assistance & Address;
+  const assistanceUpdate = req.body as Assistance & Address;
 
-  const assistanceInfo = await getAssistanceOwnerId(assistanceId);
+  const assistance = (await getAssistanceOwnerId(assistanceId))?.assistance;
 
-  verifyIfUserHasPermission(userId, assistanceInfo.assistance_owner_id, res)
-  verifyIfAssistanceExists(assistanceInfo, res);
+
+
+  verifyIfUserHasPermission({
+    userId,
+    assistanceOwnerId: assistance ? assistance.assistance_owner_id : undefined,
+    res
+  })
+  verifyIfAssistanceExists(assistance, res);
 
   try {
     const response = await assistanceModel.update(Number(assistanceId), {
-      ...assistance, assistance_id: undefined
+      ...assistanceUpdate, assistance_id: undefined
     });
 
     // console.log(response);
@@ -309,25 +362,25 @@ export const subscribeUser = async (req: Request, res: Response) => {
   try {
     const assistanceInfo = await assistanceModel.searchByID({
       id: Number(assistanceId),
-      select: "assistance_owner_id,	assistance_available_vacancies, assistance_suspended, assistance_available"
+      fields: ["assistance_owner_id", "assistance_available_vacancies", "assistance_suspended", "assistance_available"]
 
-    }) as Assistance;
+    });
 
-    if (assistanceInfo === undefined || assistanceInfo.assistance_suspended === 1)
+    if (assistanceInfo === undefined || assistanceInfo.assistance.assistance_suspended === 1)
       return errorResponse({
         message: "This assistance no longer exists",
         code: httpCode["Bad Request"],
         res
       });
 
-    if (assistanceInfo.assistance_owner_id === Number(userId))
+    if (assistanceInfo.assistance.assistance_owner_id === Number(userId))
       return errorResponse({
         message: "This user can not subscribe onto his own assistance",
         code: httpCode["Bad Request"],
         res
       });
 
-    if (assistanceInfo.assistance_available_vacancies === 0)
+    if (assistanceInfo.assistance.assistance_available_vacancies === 0)
       return errorResponse({
         message: "This assistance has no empty vacancies",
         code: httpCode["Bad Request"],
@@ -529,8 +582,9 @@ function currentDate() {
 
 }
 
-function verifyIfUserHasPermission(userId: number, assistanceOwnerId: number, res: Response) {
-  if (assistanceOwnerId !== userId) {
+function verifyIfUserHasPermission({ userId, assistanceOwnerId, res }: { userId: number; assistanceOwnerId?: number; res: Response; }) {
+
+  if (assistanceOwnerId === undefined || assistanceOwnerId !== userId) {
     return errorResponse({
       message: "User has no permission to complete this operation",
       code: httpCode.Unauthorized,
@@ -542,11 +596,11 @@ function verifyIfUserHasPermission(userId: number, assistanceOwnerId: number, re
 async function getAssistanceOwnerId(assistanceId: string) {
   return await assistanceModel.searchByID({
     id: Number(assistanceId),
-    select: "assistance_owner_id"
-  }) as Assistance;
+    fields: ["assistance_owner_id"]
+  });
 }
 
-function verifyIfAssistanceExists(assistanceInfo: Object, res: Response) {
+function verifyIfAssistanceExists(assistanceInfo: Object | undefined, res: Response) {
   if (assistanceInfo === undefined) {
     return errorResponse({
       message: "Assistance does not found",
@@ -595,17 +649,15 @@ function allowedFields(fields: string[]) {
 
   for (const field of fields) {
     let verifier = false;
-   
+
     for (const allowed of availableSearchFields)
-        verifier = verifier || (allowed === field)
-    
-    if(verifier === false) return false;
+      verifier = verifier || (allowed === field)
+
+    if (verifier === false) return false;
   }
 
   return true;
 }
-
-
 
 function notAllowedFieldsSearch(fields: string[]) {
   const notAllowedFields = [
