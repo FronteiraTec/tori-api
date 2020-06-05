@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { NextFunction } from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -9,6 +9,7 @@ import './helpers/LoadEnv';
 
 
 import indexRoute from './routes/indexRoute';
+import { errorHandler } from './middleware/error';
 
 const app = express();
 
@@ -33,6 +34,8 @@ app.use(cors());
 
 // Routes
 app.use(indexRoute);
+
+app.use(errorHandler);
 
 // Server settings
 // const server = '192.168.0.106';

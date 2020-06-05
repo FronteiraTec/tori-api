@@ -16,9 +16,6 @@ assistanceRouter.patch("/unsubscribe/:assistanceId", userAuthenticated, controll
 assistanceRouter.get("/subscribers/:assistanceId", userAuthenticated, controller.getSubscribers);
 assistanceRouter.post("/", userAuthenticated, controller.create);
 assistanceRouter.get("/", controller.getAll);
-
-
-//Fix: Protect the fields and blank or null fields
 assistanceRouter.get("/search", controller.searchQuery);
 
 export default assistanceRouter;

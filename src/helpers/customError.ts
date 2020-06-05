@@ -1,17 +1,68 @@
 export class CustomError extends Error {
-  public code: string = "";
+  public code: ErrorCode;
+  public status: number;
 
-  constructor(message: string, code?: string) {
+  constructor({ message, code, status, error }: { message?: string; code?: ErrorCode; status?: number; error?: any }) {
     super(message);
 
-    if(code !== undefined)
-      this.code = code;
-    
+    this.code = ErrorCode.INTERNAL_ERROR;
+    this.status = 500;
+
+    // console.log(code);
+
+
+    if (code || status || message) {
+      if (code)
+        this.code = code;
+      if (status)
+        this.status = status;
+      if (message)
+        this.message = message;
+    }
+    if (error) {
+      if (error.code) {
+        if (error.code === "ER_BAD_FIELD_ERROR")
+          this.code = ErrorCode.ER_BAD_FIELD_ERROR
+        if (error.code === "ER_NON_UNIQ_ERROR")
+          this.code = ErrorCode.ER_NON_UNIQ_ERROR
+        if(error.code === "ER_NONUNIQ_TABLE")
+          this.code = ErrorCode.ER_NONUNIQ_TABLE
+      }
+      if (error.name === "SyntaxError")
+        this.code = ErrorCode.ER_JSON_CON
+    }
+
+    // console.log(message);
+
     this.name = this.constructor.name;
     if (typeof Error.captureStackTrace === 'function') {
       Error.captureStackTrace(this, this.constructor);
     } else {
-      this.stack = (new Error(message)).stack;
+      this.stack = (new Error(this.code.toString())).stack;
     }
   }
+}
+
+export enum ErrorCode {
+  LIM_OFF_NOT_NUM,
+  UNAUTHORIZED,
+  BAD_REQUEST,
+  INTERNAL_ERROR,
+  ER_BAD_FIELD_ERROR,
+  ER_NON_UNIQ_ERROR,
+  ER_JSON_CON,
+  BAD_Q_QUERY,
+  ER_NONUNIQ_TABLE,
+}
+
+export const DefaultErrorMessage = {
+  [ErrorCode.LIM_OFF_NOT_NUM]: "Limit or offset are not numbers.",
+  [ErrorCode.UNAUTHORIZED]: "You has no authorization to access this content",
+  [ErrorCode.BAD_REQUEST]: "One of fields are either malformed or missing.",
+  [ErrorCode.INTERNAL_ERROR]: "One of fields are either malformed or missing.",
+  [ErrorCode.ER_BAD_FIELD_ERROR]: "One of fields does not exist on database. Please consult the documentation.",
+  [ErrorCode.ER_NON_UNIQ_ERROR]: "Not unique key, please verify your fields and search for duplicates.",
+  [ErrorCode.ER_JSON_CON]: "Error while parsing json fields, please send valid encoded json.",
+  [ErrorCode.BAD_Q_QUERY]: "q param is missing. Please define a q.",
+  [ErrorCode.ER_NONUNIQ_TABLE]: "Not unique key or alias, please type tableName.tableField and not only tableField."
 }

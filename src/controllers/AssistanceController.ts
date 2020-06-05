@@ -6,7 +6,7 @@ import * as tagModel from '../models/tagModel';
 import { errorResponse } from 'src/helpers/responseHelper';
 import { httpCode } from 'src/helpers/statusCode';
 import { assistance as Assistance, address as Address } from "../helpers/dbNamespace";
-import { CustomError } from 'src/helpers/customError';
+import { CustomError, ErrorCode } from 'src/helpers/customError';
 
 enum QueryOptions {
   all = "all",
@@ -15,22 +15,17 @@ enum QueryOptions {
   tag = "tag"
 };
 
-export const getAll = async (req: Request, res: Response) => {
+export const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
   const { limit, offset, available, order, fields } = req.query;
 
   const parsedFields = parseQueryField(fields);
-  console.log(parsedFields)
-  if (parsedFields !== undefined)
-    console.log(allowedFields(parsedFields));
 
   if (parsedFields !== undefined)
     if (!allowedFields(parsedFields))
-      return errorResponse({
-        message: "You has no authorization to search on of these fields",
-        res,
-        code: httpCode.Unauthorized
-      });
+      return next(new CustomError({
+        code: ErrorCode.UNAUTHORIZED
+      }));
 
 
   try {
@@ -41,25 +36,24 @@ export const getAll = async (req: Request, res: Response) => {
       order,
       fields: parsedFields
     });
-    return res.status(200).json(allAssistance);
+
+    return res.json(allAssistance);
+
   } catch (error) {
-    error.statusCode = 400;
-    res.json(error);
-    throw error;
+    return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }))
   }
 };
 
-export const getByID = async (req: Request, res: Response) => {
+export const getByID = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
 
   try {
     const assistance = await assistanceModel.searchByID({ id: Number(id) });
 
-    res.status(200).json(assistance);
+    res.json(assistance);
+
   } catch (error) {
-    error.statusCode = 400;
-    res.json(error);
-    throw error;
+    return next(new CustomError({ error }))
   }
 };
 
@@ -78,18 +72,13 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
   const parsedFields = parseQueryField(fields);
   const searchParsed = parseQueryField(search);
 
-  if(searchParsed === undefined) {
-    return errorResponse({
-      message: "Search field must be filled.",
-      code: httpCode["Bad Request"],
-      res
-    });
-  }
+  if (searchParsed === undefined)
+    return next(new CustomError({ code: ErrorCode.BAD_Q_QUERY }));
+
 
   try {
     switch (q) {
       case QueryOptions.all: {
-
         const assistance = await assistanceModel.searchByNameTagDescription({
           search: searchParsed,
           fields: parsedFields,
@@ -112,7 +101,6 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
 
         return res.json(assistance);
       }
-
       case QueryOptions.name: {
         if (searchParsed) {
           const assistance = await assistanceModel.searchByName({
@@ -126,10 +114,10 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
               filter: filter ? JSON.parse(filter) : undefined
             }
           });
+
           return res.json(assistance);
         }
       }
-
       case QueryOptions.tag: {
         const searchParsed = parseQueryField(search);
 
@@ -148,33 +136,20 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
         return res.json(assistance);
       }
       default: {
-        return errorResponse({
+        return next(new CustomError({
           message: "Query option does not exist.",
-          code: httpCode["Bad Request"],
-          res
-        });
+          code: ErrorCode.BAD_REQUEST
+        }));
       }
     }
   }
   catch (error) {
-    // return next(error);
-    if(error.code === "LIMITOFFSETNUM")
-      return errorResponse({
-        message: "Limit or offset are not numbers.",
-        code: httpCode["Bad Request"],
-        res
-      });
-
-    return errorResponse({
-      message: "An internal error has occurred, please try again.",
-      code: httpCode["Internal Server Error"],
-      res
-    });
+    return next(new CustomError({ error }));
   }
 
 };
 
-export const create = async (req: Request, res: Response) => {
+export const create = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user;
 
   const {
@@ -195,10 +170,6 @@ export const create = async (req: Request, res: Response) => {
     address_street,
     address_nickname,
   } = req.body;
-
-
-
-  //Try to create the monitoring  
 
   try {
     const newAssistance = await assistanceModel.create({
@@ -226,16 +197,15 @@ export const create = async (req: Request, res: Response) => {
           address_assistance_id: newAssistance.insertId
         });
       } catch (error) {
-        return new Error(error);
+        return next(new CustomError({ error }));
       }
     })();
 
     if (newAddress instanceof Error || newAddress === undefined || newAddress.affectedRows === undefined) {
-      return errorResponse({
+      return next(new CustomError({
+        code: ErrorCode.INTERNAL_ERROR,
         message: "An error occurred while creating the address",
-        code: httpCode["Internal Server Error"],
-        res
-      });
+      }));
     }
 
     if (tags.length > 0)
@@ -243,17 +213,12 @@ export const create = async (req: Request, res: Response) => {
 
     res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
   }
-  catch (err) {
-    return errorResponse({
-      message: "An error occurred while creating the the assistance",
-      code: httpCode["Internal Server Error"],
-      res,
-      error: err
-    });
+  catch (error) {
+    return next(new CustomError({ error }));;
   }
 }
 
-export const deleteById = async (req: Request, res: Response) => {
+export const deleteById = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
@@ -264,25 +229,21 @@ export const deleteById = async (req: Request, res: Response) => {
     assistanceOwnerId: assistance ? assistance.assistance_owner_id : assistance,
     res
   });
+
   verifyIfAssistanceExists(assistance ? assistance : undefined, res);
 
   try {
     const response = await assistanceModel.deleteById(Number(assistanceId));
     res.json("Success");
   }
-  catch (err) {
-    return errorResponse({
-      message: "An unknown error ocurred, try again",
-      code: httpCode["Internal Server Error"],
-      error: err,
-      res
-    });
+  catch (error) {
+    return next(new CustomError({ error }));
   }
 
 
 }
 
-export const disableById = async (req: Request, res: Response) => {
+export const disableById = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
@@ -294,6 +255,7 @@ export const disableById = async (req: Request, res: Response) => {
     assistanceOwnerId: assistance ? assistance.assistance_owner_id : undefined,
     res
   });
+
   verifyIfAssistanceExists(assistance, res);
 
   try {
@@ -302,23 +264,16 @@ export const disableById = async (req: Request, res: Response) => {
       assistance_suspended_date: currentDate()
     });
 
-    // console.log(response);
     res.json("Success");
   }
-  catch (err) {
-    console.log(err);
-    return errorResponse({
-      message: "An unknown error ocurred, try again",
-      code: httpCode["Internal Server Error"],
-      error: err,
-      res
-    });
+  catch (error) {
+    return next(new CustomError({ error }));;
   }
 
 
 }
 
-export const update = async (req: Request, res: Response) => {
+export const update = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
@@ -333,6 +288,7 @@ export const update = async (req: Request, res: Response) => {
     assistanceOwnerId: assistance ? assistance.assistance_owner_id : undefined,
     res
   })
+
   verifyIfAssistanceExists(assistance, res);
 
   try {
@@ -340,22 +296,16 @@ export const update = async (req: Request, res: Response) => {
       ...assistanceUpdate, assistance_id: undefined
     });
 
-    // console.log(response);
     res.json("Success");
   }
-  catch (err) {
-    return errorResponse({
-      message: "An unknown error ocurred, try again",
-      code: httpCode["Internal Server Error"],
-      error: err,
-      res
-    });
+  catch (error) {
+    return next(new CustomError({ error }));;
   }
 
 
 }
 
-export const subscribeUser = async (req: Request, res: Response) => {
+export const subscribeUser = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
@@ -367,26 +317,22 @@ export const subscribeUser = async (req: Request, res: Response) => {
     });
 
     if (assistanceInfo === undefined || assistanceInfo.assistance.assistance_suspended === 1)
-      return errorResponse({
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
         message: "This assistance no longer exists",
-        code: httpCode["Bad Request"],
-        res
-      });
+      }));;
 
     if (assistanceInfo.assistance.assistance_owner_id === Number(userId))
-      return errorResponse({
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
         message: "This user can not subscribe onto his own assistance",
-        code: httpCode["Bad Request"],
-        res
-      });
+      }));
 
     if (assistanceInfo.assistance.assistance_available_vacancies === 0)
-      return errorResponse({
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
         message: "This assistance has no empty vacancies",
-        code: httpCode["Bad Request"],
-        res
-      });
-
+      }));
 
     const isSubscribed = await assistanceModel.findSubscribedUsersByID({
       userId: userId,
@@ -394,11 +340,10 @@ export const subscribeUser = async (req: Request, res: Response) => {
     });
 
     if (isSubscribed !== undefined)
-      return errorResponse({
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
         message: "This user already is subscribed in this assistance",
-        code: httpCode["Not Acceptable"],
-        res
-      });
+      }));
 
     const subscribe = await assistanceModel.subscribeUser({
       assistance_id: assistanceId,
@@ -408,20 +353,14 @@ export const subscribeUser = async (req: Request, res: Response) => {
     res.json("User subscribed successfully");
 
   } catch (error) {
-    return errorResponse({
-      message: "An error occurred while creating the the assistance",
-      code: httpCode["Internal Server Error"],
-      res,
-      error
-    });
+    return next(new CustomError({ error }));;
   }
 
 }
 
-export const unsubscribeUser = async (req: Request, res: Response) => {
+export const unsubscribeUser = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
-
 
   try {
     const result = await assistanceModel.unsubscribeUsersByID({
@@ -429,36 +368,30 @@ export const unsubscribeUser = async (req: Request, res: Response) => {
       assistanceId: Number(assistanceId)
     });
 
-
     if (result === undefined)
-      return errorResponse({
+      return next(new CustomError({
+        code: ErrorCode.INTERNAL_ERROR,
         message: "An error occurred while creating the the assistance",
-        code: httpCode["Internal Server Error"],
-        res,
-      });
-
+      }));
 
     if (result.affectedRows === 0)
-      return errorResponse({
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
         message: "User was not subscribed in this assistance",
-        code: httpCode["I\"m a teapot"],
-        res,
-      });
+      }));
 
     return res.json("User unsubscribed successfully");
 
   }
-  catch (err) {
-    return errorResponse({
+  catch (error) {
+    return next(new CustomError({
+      error,
       message: "An error occurred while creating the the assistance",
-      code: httpCode["Internal Server Error"],
-      res,
-      error: err
-    });
+    }));
   }
 }
 
-export const getSubscribers = async (req: Request, res: Response) => {
+export const getSubscribers = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
   const { fields } = req.query;
@@ -466,18 +399,16 @@ export const getSubscribers = async (req: Request, res: Response) => {
   const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId: Number(assistanceId) });
 
   if (user === undefined)
-    return errorResponse({
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST,
       message: "User was not subscribed in this assistance",
-      code: httpCode["I\"m a teapot"],
-      res,
-    });
+    }));
 
   if (fields === undefined) {
-    return errorResponse({
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST,
       message: "Fields must be filled",
-      res,
-      code: httpCode["Bad Request"]
-    });
+    }));
   }
 
   const parsedFields = fields.replace(/[\[\]]/g, "")
@@ -486,29 +417,16 @@ export const getSubscribers = async (req: Request, res: Response) => {
     .map((field: string) => `${field.trim()}`);
 
   if (notAllowedFieldsSearch(parsedFields))
-    return errorResponse({
-      message: "You has no authorization to search on of these fields",
-      res,
-      code: httpCode.Unauthorized
-    });
+    return next(new CustomError({
+      code: ErrorCode.UNAUTHORIZED
+    }));
 
   try {
     const users = await assistanceModel.findAllSubscribedUsers(Number(assistanceId), parsedFields.join(","));
     res.json(users);
 
   } catch (error) {
-    if (error.code === "ER_BAD_FIELD_ERROR")
-      return errorResponse({
-        message: "One field does not exist",
-        res,
-        code: httpCode["Bad Request"],
-      });
-
-    return errorResponse({
-      message: "An internal error has ocurred",
-      res,
-      code: httpCode["Internal Server Error"],
-    });
+    return next(new CustomError({error}));
   }
 }
 

@@ -1,4 +1,4 @@
-import DbHelper, { db } from "../helpers/dbHelper";
+import DbHelper from "../helpers/dbHelper";
 import {
   assistance as Assistance,
   assistance_tag as AssistanceTag,
@@ -30,6 +30,8 @@ interface FilterOptions {
 };
 
 export const getAll = async ({ limit, offset, available, order, fields }: { fields: string[] | undefined, order: string, limit: number; offset: number; available: boolean; }) => {
+  const db = new DbHelper();
+
   if (fields)
     fieldSearch(fields, db)
   else {
@@ -60,7 +62,9 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
 
 export const searchByID = async ({ id, fields }:
   { fields?: string[], id: number | undefined; }) => {
-
+  
+  const db = new DbHelper();
+  
   if (fields)
     fieldSearch(fields, db);
   else
@@ -81,6 +85,8 @@ export const searchByID = async ({ id, fields }:
 
 export const searchByName = async ({ name, fields, args }:
   { fields?: string[], name: string; args?: FilterOptions; }) => {
+  
+  const db = new DbHelper();
 
 
   if (fields)
@@ -108,6 +114,8 @@ export const searchByName = async ({ name, fields, args }:
 export const searchByTag = async ({ tags, fields, args }:
   { fields?: string[], tags?: string[]; args?: FilterOptions; }) => {
 
+    const db = new DbHelper();
+  
   if (fields)
     fieldSearch(fields, db);
   else
@@ -147,6 +155,8 @@ export const searchByTag = async ({ tags, fields, args }:
 export const searchByNameTagDescription = async ({ search, fields, args }:
   { fields?: string[], search: string[] | undefined; args?: FilterOptions; }) => {
 
+  const db = new DbHelper();
+
   if (fields)
     fieldSearch(fields, db);
   else
@@ -157,6 +167,7 @@ export const searchByNameTagDescription = async ({ search, fields, args }:
 
   if (search)
     search.map((string, i) => {
+      console.log("i = ", i)
       if (i == 0)
         db.where("(tag.tag_name")
       else
@@ -182,6 +193,8 @@ export const searchByNameTagDescription = async ({ search, fields, args }:
 };
 
 export const deleteById = async (id: number) => {
+  const db = new DbHelper();
+
   db.delete("assistance")
     .where("assistance_id", id.toString());
 
@@ -194,6 +207,8 @@ export const deleteById = async (id: number) => {
 };
 
 export const create = async (assistanceData: Assistance | Object): Promise<InsertResponse> => {
+  const db = new DbHelper();
+
   try {
     const newAssistance = await db.insert("assistance", assistanceData).resolve() as InsertResponse[];
     return newAssistance[0];
@@ -204,6 +219,7 @@ export const create = async (assistanceData: Assistance | Object): Promise<Inser
 };
 
 export const update = async (assistanceId: number, assistanceFields: Assistance | Object) => {
+  const db = new DbHelper();
 
   try {
     const result = await
@@ -221,6 +237,8 @@ export const update = async (assistanceId: number, assistanceFields: Assistance 
 
 
 export const createTag = async (assistanceTag: AssistanceTag | Object): Promise<InsertResponse> => {
+  const db = new DbHelper();
+
   try {
     const newTag = await db.insert("assistance_tag", assistanceTag).resolve() as InsertResponse;
     return newTag;
@@ -232,6 +250,8 @@ export const createTag = async (assistanceTag: AssistanceTag | Object): Promise<
 
 
 export const subscribeUser = async (presenceList: AssistancePresenceList | Object): Promise<InsertResponse> => {
+  const db = new DbHelper();
+
   try {
     const newPresenceList = await db
       .insert("assistance_presence_list", presenceList)
@@ -244,6 +264,8 @@ export const subscribeUser = async (presenceList: AssistancePresenceList | Objec
 };
 
 export const findAllSubscribedUsers = async (assistanceId: number, select: string) => {
+  const db = new DbHelper();
+
   try {
     const res = await db
       .select(select)
@@ -261,6 +283,8 @@ export const findAllSubscribedUsers = async (assistanceId: number, select: strin
 
 
 export const findSubscribedUsersByID = async ({ userId, assistanceId }: { userId: number; assistanceId: number; }) => {
+  const db = new DbHelper();
+
   try {
     const user = await db
       .select()
@@ -277,6 +301,8 @@ export const findSubscribedUsersByID = async ({ userId, assistanceId }: { userId
 };
 
 export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: number; assistanceId: number; }) => {
+  const db = new DbHelper();
+
   try {
     const user = await db
       .delete("assistance_presence_list")
@@ -351,7 +377,6 @@ function defaultFilters(args: FilterOptions, db: DbHelper) {
     db.pagination(args.limit, args.offset);
 
   if (args.filter) {
-    console.log(args.filter);
     for (const key in args.filter) {
       const value = args.filter[key as keyof typeof args.filter];
 
@@ -364,7 +389,6 @@ function defaultFilters(args: FilterOptions, db: DbHelper) {
       db.and("assistance.assistance_available", "1");
     else {
       db.and("assistance.assistance_available", "0");
-      console.log("shj")
     }
 
   }
