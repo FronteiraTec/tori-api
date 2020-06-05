@@ -39,8 +39,10 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
   }
 
   if (order)
-    db.orderBy("assistance_id", order ? order : "DESC");
-
+    db.orderBy("assistance_id", order);
+  else 
+    db.orderBy("assistance_id", "DESC");
+  
 
   if (available !== undefined) {
     if (Boolean(available) === true)
@@ -49,7 +51,6 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
 
   if (limit !== undefined && offset !== undefined)
     db.pagination(limit, offset);
-
 
   try {
     const rowsAndInfos = await db.resolve();
@@ -62,7 +63,7 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
 
 export const searchByID = async ({ id, fields }:
   { fields?: string[], id: number | undefined; }) => {
-  
+    
   const db = new DbHelper();
   
   if (fields)
@@ -74,6 +75,7 @@ export const searchByID = async ({ id, fields }:
 
   try {
     const assistance = await db.resolve() as AssistanceSearch[];
+
 
     return assistance.length > 0 ? assistance[0] : undefined;
   }
@@ -218,7 +220,7 @@ export const create = async (assistanceData: Assistance | Object): Promise<Inser
   }
 };
 
-export const update = async (assistanceId: number, assistanceFields: Assistance | Object) => {
+export const update = async (assistanceId: number | string, assistanceFields: Assistance | Object) => {
   const db = new DbHelper();
 
   try {
@@ -233,9 +235,6 @@ export const update = async (assistanceId: number, assistanceFields: Assistance 
   }
 };
 
-
-
-
 export const createTag = async (assistanceTag: AssistanceTag | Object): Promise<InsertResponse> => {
   const db = new DbHelper();
 
@@ -247,7 +246,6 @@ export const createTag = async (assistanceTag: AssistanceTag | Object): Promise<
     throw err;
   }
 };
-
 
 export const subscribeUser = async (presenceList: AssistancePresenceList | Object): Promise<InsertResponse> => {
   const db = new DbHelper();
@@ -280,7 +278,6 @@ export const findAllSubscribedUsers = async (assistanceId: number, select: strin
     throw err;
   }
 };
-
 
 export const findSubscribedUsersByID = async ({ userId, assistanceId }: { userId: number; assistanceId: number; }) => {
   const db = new DbHelper();
@@ -317,7 +314,7 @@ export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: n
   }
 };
 
-function fieldSearch(fields: string[], db: DbHelper) {
+const fieldSearch = (fields: string[], db: DbHelper) => {
   const fieldsString = fields.join(",");
   db.select(fieldsString);
   db.from("assistance");
@@ -331,15 +328,15 @@ function fieldSearch(fields: string[], db: DbHelper) {
   if (assistanceCourse >= 0)
     db.join("assistance.assistance_course_id", "course as assistanceCourse assistanceCourse.course_id");
   if (assistantCourse >= 0)
-    db.join("assistant.user_course_id", "course as assistantCourse assistantCourse.course_id");
+    db.leftJoin("assistant.user_course_id", "course as assistantCourse assistantCourse.course_id");
   if (address >= 0)
     db.leftJoin("address.address_assistance_id", "assistance.assistance_id");
   if (subject >= 0)
     db.join("subject.subject_id", "assistance.assistance_subject_id");
   return db;
-}
+};
 
-function defaultSearch(db: DbHelper) {
+const defaultSearch = (db: DbHelper) => {
   db.
     from("assistance").
     select(`
@@ -365,14 +362,14 @@ function defaultSearch(db: DbHelper) {
 
     .join("assistance.assistance_owner_id", "user as assistant assistant.user_id")
     .join("assistance.assistance_course_id", "course as assistanceCourse assistanceCourse.course_id")
-    .join("assistant.user_course_id", "course as assistantCourse assistantCourse.course_id")
+    .leftJoin("assistant.user_course_id", "course as assistantCourse assistantCourse.course_id")
     .join("subject.subject_id", "assistance.assistance_subject_id")
     .leftJoin("address.address_assistance_id", "assistance.assistance_id");
 
   return db;
-}
+};
 
-function defaultFilters(args: FilterOptions, db: DbHelper) {
+const defaultFilters = (args: FilterOptions, db: DbHelper) => {
   if (args.limit && args.offset)
     db.pagination(args.limit, args.offset);
 
@@ -385,10 +382,13 @@ function defaultFilters(args: FilterOptions, db: DbHelper) {
   }
 
   if (args.available) {
-    if (toBoolean(args.available.toString()))
+    if (toBoolean(args.available.toString())){
       db.and("assistance.assistance_available", "1");
+      db.and("assistance.assistance_suspended", "0");
+    }
     else {
       db.and("assistance.assistance_available", "0");
+      db.or("assistance.assistance_suspended", "1");
     }
 
   }
@@ -400,4 +400,4 @@ function defaultFilters(args: FilterOptions, db: DbHelper) {
       break;
     }
   }
-}
+};

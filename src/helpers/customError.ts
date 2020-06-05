@@ -27,12 +27,12 @@ export class CustomError extends Error {
           this.code = ErrorCode.ER_NON_UNIQ_ERROR
         if(error.code === "ER_NONUNIQ_TABLE")
           this.code = ErrorCode.ER_NONUNIQ_TABLE
+        if(error.code === "ER_DUP_ENTRY")
+          this.code = ErrorCode.ER_DUP_ENTRY
       }
       if (error.name === "SyntaxError")
         this.code = ErrorCode.ER_JSON_CON
     }
-
-    // console.log(message);
 
     this.name = this.constructor.name;
     if (typeof Error.captureStackTrace === 'function') {
@@ -53,6 +53,7 @@ export enum ErrorCode {
   ER_JSON_CON,
   BAD_Q_QUERY,
   ER_NONUNIQ_TABLE,
+  ER_DUP_ENTRY,
 }
 
 export const DefaultErrorMessage = {
@@ -64,5 +65,6 @@ export const DefaultErrorMessage = {
   [ErrorCode.ER_NON_UNIQ_ERROR]: "Not unique key, please verify your fields and search for duplicates.",
   [ErrorCode.ER_JSON_CON]: "Error while parsing json fields, please send valid encoded json.",
   [ErrorCode.BAD_Q_QUERY]: "q param is missing. Please define a q.",
-  [ErrorCode.ER_NONUNIQ_TABLE]: "Not unique key or alias, please type tableName.tableField and not only tableField."
+  [ErrorCode.ER_NONUNIQ_TABLE]: "Not unique key or alias, please type tableName.tableField and not only tableField.",
+  [ErrorCode.ER_DUP_ENTRY]: "Duple entry in one of fields."
 }

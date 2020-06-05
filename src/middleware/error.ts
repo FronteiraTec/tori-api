@@ -22,8 +22,5 @@ export const errorHandler = (error: CustomError, req: Request, res: Response, ne
     .json({
       message: error.message ? error.message : DefaultErrorMessage[error.code],
       code: error.code
-    })
-
-
-
+    });
 }
