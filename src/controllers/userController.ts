@@ -1,26 +1,18 @@
-import { Request, Response } from 'express';
-import crypto from "crypto";
-import { writeFileSync, fstat } from 'fs';
-import path from 'path';
+import { Request, Response, NextFunction } from 'express';
 
 import * as userModel from '../models/userModel';
 import * as addressModel from '../models/addressModel';
 
 import { httpCode } from '../helpers/statusCode';
 import { errorResponse } from '../helpers/responseHelper';
+import { parseQueryField } from 'src/helpers/utilHelper';
+import { CustomError, ErrorCode } from 'src/helpers/customError';
+import { createImageName, saveImageFromBase64 } from 'src/helpers/outputHelper';
 
-
-export const getUser = async (req: Request, res: Response) => {
+export const getUser = async (req: Request, res: Response, next: NextFunction) => {
   const { limit, offset, assistant, fields } = req.query;
 
-  let parsedFields = undefined;
-
-  if (fields !== undefined) {
-    parsedFields = fields.replace(/[\[\]]/g, "")
-      .trim()
-      .split(",")
-      .map((field: string) => `\`${field.trim()}\``)
-  }
+  const parsedFields = parseQueryField(fields);
 
   if (!verifyUserPermission(parsedFields)) {
     return errorResponse({
@@ -39,104 +31,77 @@ export const getUser = async (req: Request, res: Response) => {
     })
 
     res.json(result);
-  } catch (err) {
-    console.log(err)
-    res.status(httpCode["Internal Server Error"])
-      .json(err);
+  } catch (error) {
+
+    return next(new CustomError({ error }));
   }
 
 };
 
-export const searchUser = async (req: Request, res: Response) => {
-  const { q, email, id, name, assistant, fields } = req.query;
+export const searchUser = async (req: Request, res: Response, next: NextFunction) => {
+  const { q, email, id, name, fields } = req.query;
 
   const userId = (req as any).user;
 
-  let parsedFields = undefined;
+  const parsedFields = parseQueryField(fields);
 
-  if (fields !== undefined) {
-    parsedFields = fields.replace(/[\[\]]/g, "")
-      .trim()
-      .split(",")
-      .map((field: string) => `\`${field.trim()}\``)
+  if (userId !== id) {
+    if (!verifyUserPermission(parsedFields)) {
+      return errorResponse({
+        message: "Not allowed",
+        res,
+        code: httpCode.Unauthorized
+      });
+    }
   }
 
   try {
-    let result = undefined;
-
     if (q === "own") {
-      result = await userModel.getById({ userId, fields: parsedFields.join(",") });
+      const result = await userModel.getById({
+        userId,
+        fields: parsedFields ? parsedFields.join(",") : undefined
+      });
       return res.json(result);
     }
 
-    if (userId !== id) {
-      if (!verifyUserPermission(parsedFields)) {
-        return errorResponse({
-          message: "Not allowed",
-          res,
-          code: httpCode.Unauthorized
-        });
-      }
-    }
-
-    if (q === "email" && email)
-      result = await userModel.getByEmail({
+    if (q === "email" && email) {
+      const result = await userModel.getByEmail({
         email: email,
         fields: parsedFields ? parsedFields.join(",") : undefined
       });
+      return res.json(result);
+    }
 
-    else if (q === "id" && id)
-      result = await userModel.getById({
+    else if (q === "id" && id) {
+      const result = await userModel.getById({
         userId: id,
         fields: parsedFields ? parsedFields.join(",") : undefined
       });
+      return res.json(result);
+    }
 
-    else if (q === "name")
-      result = await userModel.getByName({
+    else if (q === "name") {
+      const result = await userModel.getByName({
         name,
         fields: parsedFields ? parsedFields.join(",") : undefined
       });
+
+      return res.json(result);
+    }
     else {
-      return res
-        .status(httpCode["Internal Server Error"])
-        .json({
-          error: {
-            message: "No option selected. Please inform a q param and try again"
-          }
-        });
+      return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
     }
 
-    res.json(result);
-
-  } catch (err) {
-    res.status(httpCode["Internal Server Error"])
-      .json(err);
+  }
+  catch (error) {
+    return next(new CustomError({ error }));
   }
 };
 
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   const { userFields, addressId, addressFields } = req.body;
 
   const userId = (req as any).user;
-
-
-  function verifyContentISCorrect(content: any) {
-    if (content === undefined || content === "" || !(content instanceof Object) || Object.keys(content).length === 0) {
-      return errorResponse({ res, message: "field \"userFields\" is malformed" });
-    }
-  }
-
-  function verifyObjectHasEmptyValues(object: object) {
-    for (let i in userFields) {
-      const field = userFields[i];
-
-      if (field === "")
-        return errorResponse({ res, message: "One field is blank" });
-    };
-
-  }
-
-  if (!userId) return errorResponse({ res, message: "UserId is missing" });
 
   verifyContentISCorrect(userFields);
   verifyObjectHasEmptyValues(userFields);
@@ -153,51 +118,52 @@ export const updateUser = async (req: Request, res: Response) => {
       await addressModel.update(addressId, addressFields);
 
     res.json("Fields updated successfully");
-  } catch (err) {
-    console.log(err);
-    return errorResponse({
-      res,
-      code: httpCode["Internal Server Error"],
-      message: "Internal error"
-    });
+  } 
+  catch (error) {
+    return next(new CustomError({error}));
   }
 
+  function verifyContentISCorrect(content: any) {
+    if (content === undefined || content === "" || !(content instanceof Object) || content.length === 0) {
+        return next(new CustomError({ 
+          code: ErrorCode.BAD_REQUEST,
+          message: "field \"userFields\" is malformed" 
+         }));
+    }
+  }
+
+  function verifyObjectHasEmptyValues(object: object) {
+    for (let i in userFields) {
+      const field = userFields[i];
+
+      if (field === "")
+        return next(new CustomError({code:ErrorCode.BAD_REQUEST, message: "One field is empty"}));
+    };
+
+  }
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user;
 
   try {
     const result = await userModel.deleteById(userId);
-    console.log(result);
 
     return res.json({ message: "User deleted successfully" });
-  } catch (err) {
-    if (err.code === "ER_ROW_IS_REFERENCED_2") {
-      return errorResponse({
-        message: "User has an assistance. Delete the assistance before deleting the account",
-        code: httpCode["Not Acceptable"],
-        // error: err,
-        res
-      });
-    }
-
-    return errorResponse({
-      message: "An error ocurred while deleting this user",
-      code: httpCode["Internal Server Error"],
-      error: err,
-      res
-    })
+  } 
+  catch (error) {
+    return next(new CustomError({error}));
   }
 };
 
 
-export const uploadImage = async (req: Request, res: Response) => {
+export const uploadImage = async (req: Request, res: Response, next: NextFunction) => {
   const { extension, image: base64Image } = req.body;
 
   const userId = (req as any).user;
 
   try {
+    //TODO: Move this to .env 
     const imagePath = "src/public/images/profile-picture/";
     const imageName = createImageName({ userId, extension, imagePath });
 
@@ -207,45 +173,16 @@ export const uploadImage = async (req: Request, res: Response) => {
     });
 
     const result = await userModel.updateProfilePicture({
-      userId, 
+      userId,
       imagePath: imageName.split("src/")[1]
     });
 
     return res.json({ message: "Image uploaded successfully" });
-  } catch (err) {
-    return errorResponse({
-      message: "An error ocurred while updating the image",
-      code: httpCode["Internal Server Error"],
-      error: err,
-      res
-    })
+  } 
+  catch (error) {
+    return next(new CustomError({error}));
   }
 };
-
-function createImageName({ userId, extension, imagePath }: { userId: number; extension: any; imagePath: string; }) {
-  const imageName = crypto.createHash('md5')
-    .update(userId.toString()).
-    digest("hex") + `.${extension}`;
-
-  return path.join(imagePath, imageName);
-}
-
-function saveImageFromBase64({ path, base64String }: { path: string; base64String: string; }) {
-  try {
-    writeFileSync(path, decodeBase64Image(base64String), { encoding: 'base64' });
-  } catch (err) {
-    throw err;
-  }
-}
-
-function decodeBase64Image(base64String: string) {
-  if (base64String.startsWith("data:image")) {
-    return base64String.split(';base64,').pop();
-  }
-  else {
-    return base64String
-  }
-}
 
 function verifyUserPermission(parsedFields: any) {
   const notAllowedSearchFields = [

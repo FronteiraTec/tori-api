@@ -9,7 +9,7 @@ export class CustomError extends Error {
     this.status = 500;
 
     // console.log(code);
-
+    //TODO: refactor this file
 
     if (code || status || message) {
       if (code)
@@ -29,9 +29,12 @@ export class CustomError extends Error {
           this.code = ErrorCode.ER_NONUNIQ_TABLE
         if(error.code === "ER_DUP_ENTRY")
           this.code = ErrorCode.ER_DUP_ENTRY
+        if(error.code = "ER_ROW_IS_REFERENCED_2"){
+          this.code = ErrorCode.ER_ROW_IS_REFERENCED_2;
+        }
       }
       if (error.name === "SyntaxError")
-        this.code = ErrorCode.ER_JSON_CON
+        this.code = ErrorCode.ER_JSON_CON;
     }
 
     this.name = this.constructor.name;
@@ -54,6 +57,7 @@ export enum ErrorCode {
   BAD_Q_QUERY,
   ER_NONUNIQ_TABLE,
   ER_DUP_ENTRY,
+  ER_ROW_IS_REFERENCED_2
 }
 
 export const DefaultErrorMessage = {
@@ -66,5 +70,6 @@ export const DefaultErrorMessage = {
   [ErrorCode.ER_JSON_CON]: "Error while parsing json fields, please send valid encoded json.",
   [ErrorCode.BAD_Q_QUERY]: "q param is missing. Please define a q.",
   [ErrorCode.ER_NONUNIQ_TABLE]: "Not unique key or alias, please type tableName.tableField and not only tableField.",
-  [ErrorCode.ER_DUP_ENTRY]: "Duple entry in one of fields."
+  [ErrorCode.ER_DUP_ENTRY]: "Duple entry in one of fields.",
+  [ErrorCode.ER_ROW_IS_REFERENCED_2]: "Can not delete it. You should delete its references before"
 }

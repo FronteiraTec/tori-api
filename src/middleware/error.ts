@@ -16,7 +16,7 @@ export const errorHandler = (error: CustomError, req: Request, res: Response, ne
     status = httpCode["Internal Server Error"];
   if (error.code === ErrorCode.ER_BAD_FIELD_ERROR)
     status = httpCode["Bad Request"];
-
+  
   return res
     .status(status)
     .json({
