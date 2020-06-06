@@ -10,15 +10,9 @@ import { toBoolean } from 'src/helpers/conversionHelper';
 
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
-  const { limit, offset, available, order, fields } = req.query;
+  const { limit, offset, available, order } = req.query;
 
-  const parsedFields = parseQueryField(fields);
-
-  if (parsedFields !== undefined)
-    if (!allowedFields(parsedFields))
-      return next(new CustomError({
-        code: ErrorCode.UNAUTHORIZED
-      }));
+  const fields = (req as any).fields;
 
   try {
     const allAssistance = await assistanceModel.getAll({
@@ -26,7 +20,7 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
       offset,
       available,
       order,
-      fields: parsedFields
+      fields
     });
 
     return res.json(allAssistance);
@@ -57,11 +51,11 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
     offset,
     orderBy,
     search,
-    fields,
     filter
   } = req.query;
 
-  const parsedFields = parseQueryField(fields);
+  const fields = (req as any).fields;
+
   const searchParsed = parseQueryField(search);
 
   if (searchParsed === undefined && q !== QueryOptions.id)
@@ -72,7 +66,7 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
       case QueryOptions.all: {
         const assistance = await assistanceModel.searchByNameTagDescription({
           search: searchParsed,
-          fields: parsedFields,
+          fields,
           args: {
             available,
             limit,
@@ -88,7 +82,7 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
 
         const assistance = await assistanceModel.searchByID({
           id: searchParsed ? Number(searchParsed[0]) : undefined,
-          fields: parsedFields
+          fields
         });
 
         return res.json(assistance);
@@ -97,7 +91,7 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
         if (searchParsed) {
           const assistance = await assistanceModel.searchByName({
             name: searchParsed[0],
-            fields: parsedFields,
+            fields,
             args: {
               available,
               limit,
@@ -113,10 +107,9 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
       case QueryOptions.tag: {
         const searchParsed = parseQueryField(search);
 
-
         const assistance = await assistanceModel.searchByTag({
           tags: searchParsed,
-          fields: parsedFields,
+          fields,
           args: {
             available,
             limit,
@@ -145,48 +138,48 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
   const userId = (req as any).user;
 
   const {
-    assistance_available_vacancies,
-    assistance_course_id,
-    assistance_date,
-    assistance_description,
-    assistance_subject_id,
-    assistance_title,
-    assistance_total_vacancies,
+    available_vacancies,
+    course_id,
+    date,
+    description,
+    subject_id,
+    title,
+    total_vacancies,
     tags,
-    address_cep,
-    address_complement,
-    address_latitude,
-    address_longitude,
-    address_number,
-    address_reference,
-    address_street,
-    address_nickname,
+    cep,
+    complement,
+    latitude,
+    longitude,
+    number,
+    reference,
+    street,
+    nickname,
   } = req.body;
 
   try {
     const newAssistance = await assistanceModel.create({
-      assistance_available_vacancies,
-      assistance_course_id,
-      assistance_date,
-      assistance_description,
-      assistance_subject_id,
-      assistance_title,
-      assistance_total_vacancies,
-      assistance_owner_id: userId,
+      available_vacancies,
+      course_id,
+      date,
+      description,
+      subject_id,
+      title,
+      total_vacancies,
+      owner_id: userId,
     });
 
     const newAddress = await (async () => {
       try {
         return await addressModel.create({
-          address_cep,
-          address_complement,
-          address_latitude,
-          address_longitude,
-          address_number,
-          address_reference,
-          address_street,
-          address_nickname,
-          address_assistance_id: newAssistance.insertId
+          cep,
+          complement,
+          latitude,
+          longitude,
+          number,
+          reference,
+          street,
+          nickname,
+          id: newAssistance.insertId
         });
       } catch (error) {
         return next(new CustomError({ error }));
@@ -228,8 +221,8 @@ export const disableById = async (req: Request, res: Response, next: NextFunctio
 
   try {
     const response = await assistanceModel.update(Number(assistanceId), {
-      assistance_suspended: 1,
-      assistance_suspended_date: currentDate()
+      suspended: 1,
+      suspended_date: currentDate()
     });
 
     res.json("Success");
@@ -246,7 +239,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
 
   try {
     const response = await assistanceModel.update(Number(assistanceId), {
-      ...assistanceUpdate, assistance_id: undefined
+      ...assistanceUpdate, id: undefined
     });
 
     res.json("Success");
@@ -263,22 +256,22 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
   try {
     const assistanceInfo = await assistanceModel.searchByID({
       id: Number(assistanceId),
-      fields: ["assistance_owner_id", "assistance_available_vacancies", "assistance_suspended", "assistance_available"]
+      fields: ["owner_id", "available_vacancies", "suspended", "available"]
     });
 
-    if (assistanceInfo === undefined || assistanceInfo.assistance.assistance_suspended == 1 || toBoolean(assistanceInfo.assistance.assistance_available) == false)
+    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.suspended) == true || toBoolean(assistanceInfo.assistance.available) == false)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This assistance no longer exists",
       }));;
 
-    if (assistanceInfo.assistance.assistance_owner_id === Number(userId))
+    if (assistanceInfo.assistance.owner_id === Number(userId))
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This user can not subscribe onto his own assistance",
       }));
 
-    if (assistanceInfo.assistance.assistance_available_vacancies === 0)
+    if (assistanceInfo.assistance.available_vacancies === 0)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This assistance has no empty vacancies",
@@ -296,12 +289,12 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
       }));
 
     const subscribe = await assistanceModel.subscribeUser({
-      assistance_id: assistanceId,
+      id: assistanceId,
       student_id: userId,
     });
 
     const updateAssistance = assistanceModel.update(assistanceId, {
-      assistance_available_vacancies: assistanceInfo.assistance.assistance_available_vacancies -1
+      available_vacancies: assistanceInfo.assistance.available_vacancies - 1
     });
 
     res.json("User subscribed successfully");
@@ -321,16 +314,16 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
 
     const assistanceInfo = await assistanceModel.searchByID({
       id: Number(assistanceId),
-      fields: ["assistance_owner_id", "assistance_available_vacancies", "assistance_suspended", "assistance_available"]
+      fields: ["owner_id", "available_vacancies", "suspended", "available"]
     });
 
-    if (assistanceInfo === undefined || assistanceInfo.assistance.assistance_suspended == 1 || toBoolean(assistanceInfo.assistance.assistance_available) == false)
+    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.suspended) == true || toBoolean(assistanceInfo.assistance.available) == false)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This assistance no longer exists",
       }));;
 
-    if (assistanceInfo.assistance.assistance_owner_id === Number(userId))
+    if (assistanceInfo.assistance.owner_id === Number(userId))
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This user can not unsubscribe in his own assistance",
@@ -355,7 +348,7 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
       }));
 
     const updateAssistance = assistanceModel.update(assistanceId, {
-      assistance_available_vacancies: assistanceInfo.assistance.assistance_available_vacancies + 1
+      available_vacancies: assistanceInfo.assistance.available_vacancies + 1
     });
 
     return res.json("User unsubscribed successfully");
@@ -372,36 +365,37 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
 export const getSubscribers = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user as number;
   const { assistanceId } = req.params;
-  const { fields } = req.query;
 
-  const assistance = (await assistanceModel.searchByID({
-    id: Number(assistanceId),
-    fields: ["assistance_owner_id"]
-  }))?.assistance;
-
-  const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId: Number(assistanceId) });
-
-  if (user === undefined && userId != assistance?.assistance_owner_id)
-    return next(new CustomError({
-      code: ErrorCode.BAD_REQUEST,
-      message: "User was not subscribed in this assistance",
-    }));
-
-  if (fields === undefined) {
-    return next(new CustomError({
-      code: ErrorCode.BAD_REQUEST,
-      message: "Fields must be filled",
-    }));
-  }
-
-  const parsedFields = parseQueryField(fields);
-
-  if (notAllowedFieldsSearch(parsedFields))
-    return next(new CustomError({
-      code: ErrorCode.UNAUTHORIZED
-    }));
+  const fields = (req as any).fields;
 
   try {
+    const assistance = (await assistanceModel.searchByID({
+      id: Number(assistanceId),
+      fields: ["owner_id"]
+    }))?.assistance;
+
+    const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId: Number(assistanceId) });
+
+    if (user === undefined && userId != assistance?.owner_id)
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
+        message: "User was not subscribed in this assistance",
+      }));
+
+    if (fields === undefined) {
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
+        message: "Fields must be filled",
+      }));
+    }
+
+    const parsedFields = parseQueryField(fields);
+
+    if (notAllowedFieldsSearch(parsedFields))
+      return next(new CustomError({
+        code: ErrorCode.UNAUTHORIZED
+      }));
+
     if (parsedFields === undefined)
       throw new CustomError({ code: ErrorCode.BAD_REQUEST });
 

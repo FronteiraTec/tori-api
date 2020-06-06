@@ -7,7 +7,7 @@ export const update = async (addressId: number, address: AddressInterface | Obje
   try {
     const result = await
       db.update("address", address)
-        .where("address_id", String(addressId))
+        .where("id", String(addressId))
         .resolve();
 
     return result;
@@ -31,7 +31,7 @@ export const deleteById = async (addressId: number) => {
   try {
       const res = await db.from("address")
       .delete()
-      .where("address_id", addressId.toString())
+      .where("id", addressId.toString())
       .resolve();
     return res;
   } catch (err) {

@@ -115,7 +115,7 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
   }
 
   try {
-    userProfilePhoto = await model.getProfilePhotoFromMoodle(authenticator, password);
+    userProfilePhoto = await model.getProfilePictureFromMoodle(authenticator, password);
   }
   catch (error) {
     return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
@@ -164,12 +164,12 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
     try {
       // atualizar os dados do usuário no banco!;
       updateOnlyNullFields(user.id, {
-        user_cpf: userData.cpf,
-        user_full_name: userData.name,
-        user_email: userData.email,
-        user_password: password,
-        user_idUFFS: userData.idUffs,
-        user_profile_photo: userProfilePhoto
+        cpf: userData.cpf,
+        full_name: userData.name,
+        email: userData.email,
+        password: password,
+        idUFFS: userData.idUffs,
+        profile_photo: userProfilePhoto
       });
     } catch (error) {
       return next(new CustomError({

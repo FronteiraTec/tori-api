@@ -199,14 +199,14 @@ export const uploadImage = async (req: Request, res: Response, next: NextFunctio
 
 function verifyUserPermission(parsedFields: any) {
   const notAllowedSearchFields = [
-    "user_id",
-    "user_created_at",
-    "user_matricula",
-    "user_idUFFS",
-    "user_email",
-    "user_phone_number",
-    "user_password",
-    "user_cpf",
+    "user.id",
+    "user.created_at",
+    "user.matricula",
+    "user.idUFFS",
+    "user.email",
+    "user.phone_number",
+    "user.password",
+    "user.cpf",
   ];
 
   let has = false;

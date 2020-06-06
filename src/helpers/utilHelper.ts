@@ -15,39 +15,45 @@ export const currentDate = () => {
   return `${time[0]}-${date[0]}-${date[1]} ${time[1]}`;
 }
 
-export const allowedFields = (fields: string[]) => {
+export /**
+ *
+ *
+ * @param {string[]} fields
+ * @returns True if all fields are allowed and false if not
+ */
+const allowedFields = (fields: string[]) => {
   const availableSearchFields = [
-    "assistance.assistance_id",
-    "assistance.assistance_title",
-    "assistance.assistance_description",
-    "assistance.assistance_available",
-    "assistance.assistance_total_vacancies",
-    "assistance.assistance_available_vacancies",
-    "assistance.assistance_date",
-    "assistanceCourse.course_name",
-    "assistanceCourse.course_description",
-    "assistanceCourse.course_id",
-    "subject.subject_id",
-    "subject.subject_name",
-    "subject.subject_description",
-    "assistant.user_id",
-    "assistant.user_full_name",
-    "assistant.user_created_at",
-    "assistant.user_assistant_stars",
-    "assistant.user_email",
-    "assistant.user_course_id",
-    "assistantCourse.course_id",
-    "assistantCourse.course_name",
-    "assistantCourse.course_description",
-    "address.address_cep",
-    "address.address_street",
-    "address.address_number",
-    "address.address_complement",
-    "address.address_reference",
-    "address.address_nickname",
-    "address.address_latitude",
-    "address.address_longitude",
-    "address.address_assistance_id",
+    "assistance.id",
+    "assistance.title",
+    "assistance.description",
+    "assistance.available",
+    "assistance.total_vacancies",
+    "assistance.available_vacancies",
+    "assistance.date",
+    "assistanceCourse.name",
+    "assistanceCourse.description",
+    "assistanceCourse.id",
+    "subject.id",
+    "subject.name",
+    "subject.description",
+    "assistant.id",
+    "assistant.full_name",
+    "assistant.created_at",
+    "assistant.assistant_stars",
+    "assistant.email",
+    "assistant.course_id",
+    "assistantCourse.id",
+    "assistantCourse.name",
+    "assistantCourse.description",
+    "address.cep",
+    "address.street",
+    "address.number",
+    "address.complement",
+    "address.reference",
+    "address.nickname",
+    "address.latitude",
+    "address.longitude",
+    "address.assistance_id",
   ];
 
   for (const field of fields) {

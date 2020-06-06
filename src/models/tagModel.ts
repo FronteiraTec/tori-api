@@ -18,9 +18,9 @@ export const findByName = async (tagName: string) => {
 
   try {
     const result = await
-      db.select("tag_id")
+      db.select("id")
         .from("tag")
-        .where("tag_name", lowerName)
+        .where("name", lowerName)
         .resolve() as { tag: Tag }[];
 
     return result.length > 0 ? result[0].tag : undefined;
@@ -33,7 +33,7 @@ export const deleteById = async (tagId: number) => {
   try {
     const res = await db.from("tag")
       .delete()
-      .where("tag_id", tagId.toString())
+      .where("id", tagId.toString())
       .resolve();
     return res;
   } catch (err) {

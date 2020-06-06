@@ -24,7 +24,7 @@ export const addTags = async (tags: string[]) => {
                 // Search ids in database.
                 const tagIdObject = await tagModel.findByName(tags[i].toLowerCase());
                 if (tagIdObject !== undefined)
-                    tagsId.push(tagIdObject.tag_id);
+                    tagsId.push(tagIdObject.id);
             }
             else {
                 throw new CustomError({
