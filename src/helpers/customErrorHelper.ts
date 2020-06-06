@@ -1,9 +1,14 @@
+import { json } from 'body-parser';
+
 export class CustomError extends Error {
   public code: ErrorCode;
   public status: number;
 
-  constructor({ message, code, status, error }: { message?: string; code?: ErrorCode; status?: number; error?: any }) {
-    super(message);
+  constructor({ message, code, status, error }: { message?: string | Object[] | Object; code?: ErrorCode; status?: number; error?: any }) {
+    if (typeof message === 'string')
+      super(message);
+    else
+      super(JSON.stringify(message))
 
     this.code = ErrorCode.INTERNAL_ERROR;
     this.status = 500;
@@ -16,8 +21,10 @@ export class CustomError extends Error {
         this.code = code;
       if (status)
         this.status = status;
-      if (message)
+      if (typeof message === 'string')
         this.message = message;
+      else
+        this.message = JSON.stringify(message);
     }
     if (error) {
       if (error.code) {
@@ -25,11 +32,11 @@ export class CustomError extends Error {
           this.code = ErrorCode.ER_BAD_FIELD_ERROR
         if (error.code === "ER_NON_UNIQ_ERROR")
           this.code = ErrorCode.ER_NON_UNIQ_ERROR
-        if(error.code === "ER_NONUNIQ_TABLE")
+        if (error.code === "ER_NONUNIQ_TABLE")
           this.code = ErrorCode.ER_NONUNIQ_TABLE
-        if(error.code === "ER_DUP_ENTRY")
+        if (error.code === "ER_DUP_ENTRY")
           this.code = ErrorCode.ER_DUP_ENTRY
-        if(error.code = "ER_ROW_IS_REFERENCED_2"){
+        if (error.code = "ER_ROW_IS_REFERENCED_2") {
           this.code = ErrorCode.ER_ROW_IS_REFERENCED_2;
         }
       }

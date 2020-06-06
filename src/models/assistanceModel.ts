@@ -8,8 +8,8 @@ import {
   tag as Tag,
   subject as Subject,
   course as Course
-} from "../helpers/dbNamespace";
-import { InsertResponse, DeleteResponse } from 'src/helpers/dbResponses';
+} from "../helpers/dbNamespaceHelper";
+import { InsertResponse, DeleteResponse } from 'src/helpers/dbResponsesHelper';
 import { toBoolean } from 'src/helpers/conversionHelper';
 
 interface AssistanceSearch {

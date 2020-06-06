@@ -1,14 +1,13 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
-import * as model from '../models/authModel';
-import { httpCode } from '../helpers/statusCode';
-import { multiValidate, validate } from '../helpers/validation';
-import { generateJWT } from '../helpers/jwtHelper';
+import * as model from 'src/models/authModel';
+import { multiValidate } from 'src/helpers/validationHelper';
+import { generateJWT } from 'src/helpers/jwtHelper';
 import { updateOnlyNullFields } from 'src/models/userModel';
+import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 
 
-
-export const signIn = async (req: Request, res: Response) => {
+export const signIn = async (req: Request, res: Response, next: NextFunction) => {
   const { authenticator, password } = req.body;
 
   const validateResult = multiValidate([
@@ -17,11 +16,10 @@ export const signIn = async (req: Request, res: Response) => {
   ]);
 
   if (validateResult.length > 0) {
-    return res.status(httpCode["Not Acceptable"]).json({
-      error: {
-        reason: validateResult
-      }
-    });
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST,
+      message: validateResult
+    }));
   }
 
   try {
@@ -31,19 +29,20 @@ export const signIn = async (req: Request, res: Response) => {
     });
 
 
-    if (possibleUser === null) {
-      res.status(httpCode.Unauthorized).json("authenticator or password invalid");
-      return;
+    if (possibleUser === undefined) {
+      return next(new CustomError({
+        code: ErrorCode.UNAUTHORIZED, message: "User or password incorrect"
+      }));
     }
 
-    return defaultLoginResponse(possibleUser as { name: string, id: number }, res);
-
-  } catch (err) {
-    res.status(httpCode["Internal Server Error"]).json(err);
+    const responseData = await defaultLoginResponse(possibleUser as { name: string, id: number });
+    res.json(responseData);
+  } catch (error) {
+    return next(new CustomError({ error }))
   }
 };
 
-export const signUp = async (req: Request, res: Response) => {
+export const signUp = async (req: Request, res: Response, next: NextFunction) => {
   const { name, cpf, email: authenticator, password }:
     { name: string, cpf: string, email: string, password: string } = req.body;
 
@@ -54,36 +53,37 @@ export const signUp = async (req: Request, res: Response) => {
     { data: authenticator, type: "email", message: "authenticator invalid" }
   ];
 
-  const validationResult = multiValidate(allValidations);
+  const validateResult = multiValidate(allValidations);
 
-
-  if (validationResult.length !== 0) {
-    res.status(httpCode["Not Acceptable"]).json(validationResult);
-    return;
+  if (validateResult.length > 0) {
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST,
+      message: validateResult
+    }));
   }
 
   try {
     const newUser = await model.signUp({ cpf, authenticator, name, password });
-
-
-    return defaultLoginResponse(newUser, res);
-  } catch (err) {
-    console.log(err);
-    res.status(httpCode.Conflict).json(err);
+    const responseData = await defaultLoginResponse(newUser);
+    return res.json(responseData);
+  } catch (error) {
+    return next(new CustomError({ error }));
   }
 };
 
-export const signInUFFS = async (req: Request, res: Response) => {
+export const signInUFFS = async (req: Request, res: Response, next: NextFunction) => {
   const { authenticator, password } = req.body;
 
-  // vValida os inputs
-  if (authenticator.length < 5 || password.empty) {
-    return res.status(httpCode["Not Acceptable"])
-      .json({
-        error: {
-          message: "Password or authenticator not acceptable, less than 5 letters was found"
-        }
-      });
+  const validateResult = multiValidate([
+    { data: password, type: "password", message: "Password invalid" },
+    { data: authenticator, type: "email", message: "authenticator invalid" }
+  ]);
+
+  if (validateResult.length > 0) {
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST,
+      message: validateResult
+    }));
   }
 
   // Verificar se o usuário ja esta cadastrado no sistema, se sim realizar o login
@@ -91,19 +91,15 @@ export const signInUFFS = async (req: Request, res: Response) => {
 
   if (userAlreadySigned !== null) {
     // Cadastrado, proceder o login
-    defaultLoginResponse(userAlreadySigned, res);
-    return;
+    const responseData = await defaultLoginResponse(userAlreadySigned);
+    return res.json(responseData);
   }
 
   // Se não, tentar realizar o login com as credenciais uffs
   const tokenAPiUffs = await model.tryUffsLogin({ authenticator, password })
 
   if (tokenAPiUffs === null) {
-    return res.status(httpCode.Unauthorized).json({
-      "error": {
-        message: "Usuário ou senha incorretos"
-      }
-    });
+    return next(new CustomError({ code: ErrorCode.UNAUTHORIZED }));
   }
 
   // Usuário autenticado pela uffs, tentar conseguir dados
@@ -115,19 +111,14 @@ export const signInUFFS = async (req: Request, res: Response) => {
     userData = await model.getDataFromStudentPortal({ authenticator, token: tokenAPiUffs });
   }
   catch (err) {
-    return res.status(httpCode["Internal Server Error"]).json({
-      error: {
-        message: "Error while getting information on student portal",
-        error: err
-      }
-    });
+    return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
   }
 
   try {
     userProfilePhoto = await model.getProfilePhotoFromMoodle(authenticator, password);
   }
-  catch (err) {
-    throw new Error("Error while getting information on student profile photo on moodle");
+  catch (error) {
+    return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
   }
 
   // Salvar o usuário no banco de dados local
@@ -146,18 +137,18 @@ export const signInUFFS = async (req: Request, res: Response) => {
 
     const createdUser = await model.signUp(user);
 
-    return defaultLoginResponse({
+    const responseData = await ({
       id: createdUser.id,
       name: user.name,
       profilePhoto: userProfilePhoto,
       idUffs: user.idUffs,
-    }, res);
+    });
+
+    return res.json(responseData);
   }
-  catch (err) {
-    if (err.code !== "ER_DUP_ENTRY") {
-      // Erro ao criar usuário
-      return res.status(httpCode["Internal Server Error"])
-        .json(err);
+  catch (error) {
+    if (error.code !== "ER_DUP_ENTRY") {
+      return next(new CustomError({ error }));
     }
 
     // Usuário ja possui uma conta cadastrado, "sincronizar com a conta da uffs"
@@ -165,15 +156,13 @@ export const signInUFFS = async (req: Request, res: Response) => {
     const user = await model.signIn({ authenticator: userData.cpf });
 
     if (user === null) {
-      return res.status(httpCode["Internal Server Error"])
-        .json(err);
+      return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
     }
 
     user.idUFFS = userData.idUffs;
 
     try {
       // atualizar os dados do usuário no banco!;
-
       updateOnlyNullFields(user.id, {
         user_cpf: userData.cpf,
         user_full_name: userData.name,
@@ -182,28 +171,27 @@ export const signInUFFS = async (req: Request, res: Response) => {
         user_idUFFS: userData.idUffs,
         user_profile_photo: userProfilePhoto
       });
-    } catch (err) {
-      console.log({
-        error: {
-          message: "Erro ao atualizar os dados do usuário no banco de dados"
-        }
-      });
-      throw err;
+    } catch (error) {
+      return next(new CustomError({
+        message: "Error updating database.",
+        error
+      }));
     }
 
-    return defaultLoginResponse(user, res);
+    const responseData = await defaultLoginResponse(user);
+    res.json(responseData);
   }
 };
 
 
-async function defaultLoginResponse(user: { id: number; name: string; profilePhoto?: string; idUffs?: string }, res: Response<any>) {
+async function defaultLoginResponse(user: { id: number; name: string; profilePhoto?: string; idUffs?: string }) {
   const { token, expiresIn } = await generateJWT({
     id: String(user.id),
-    // expireTime: "1d"
   });
-  res.json({
+
+  return {
     ...user,
     token,
     expiresIn
-  });
+  };
 }

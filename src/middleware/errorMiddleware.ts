@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
-import { CustomError, ErrorCode, DefaultErrorMessage } from 'src/helpers/customError';
-import { httpCode } from 'src/helpers/statusCode';
+import { CustomError, ErrorCode, DefaultErrorMessage } from 'src/helpers/customErrorHelper';
+import { httpCode } from 'src/helpers/statusCodeHelper';
 
 export const errorHandler = (error: CustomError, req: Request, res: Response, next: NextFunction) => {
   let status = 500;

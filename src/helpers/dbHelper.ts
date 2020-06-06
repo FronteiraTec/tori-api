@@ -1,7 +1,7 @@
 /* spell-checker: disable */
 
-import pool from "./dbConnect";
-import { CustomError, ErrorCode } from './customError';
+import pool from "./dbConnectHelper";
+import { CustomError, ErrorCode } from './customErrorHelper';
 
 
 interface Data {

@@ -1,6 +1,6 @@
 import { Response, Request, NextFunction } from "express";
 import { errorResponse } from '../helpers/responseHelper';
-import { httpCode } from '../helpers/statusCode';
+import { httpCode } from '../helpers/statusCodeHelper';
 import { validateJWT } from '../helpers/jwtHelper';
 
 

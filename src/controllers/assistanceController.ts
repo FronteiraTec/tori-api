@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 
-import * as assistanceModel from 'src/models/AssistanceModel';
+import * as assistanceModel from 'src/models/assistanceModel';
 import * as addressModel from 'src/models/addressModel';
-import { assistance as Assistance, address as Address } from 'src/helpers/dbNamespace';
-import { CustomError, ErrorCode } from 'src/helpers/customError';
+import { assistance as Assistance, address as Address } from 'src/helpers/dbNamespaceHelper';
+import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { QueryOptions, addTags } from 'src/helpers/assistanceHelper';
 import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch } from 'src/helpers/utilHelper';
 import { toBoolean } from 'src/helpers/conversionHelper';

@@ -1,6 +1,6 @@
 import { db } from "../helpers/dbHelper";
-import { address as AddressInterface } from "../helpers/dbNamespace";
-import { InsertResponse } from 'src/helpers/dbResponses';
+import { address as AddressInterface } from "../helpers/dbNamespaceHelper";
+import { InsertResponse } from 'src/helpers/dbResponsesHelper';
 
 
 export const update = async (addressId: number, address: AddressInterface | Object) => {

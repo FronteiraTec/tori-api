@@ -1,6 +1,6 @@
 import { db } from "../helpers/dbHelper";
-import { tag as Tag } from "../helpers/dbNamespace";
-import { InsertResponse } from 'src/helpers/dbResponses';
+import { tag as Tag } from "../helpers/dbNamespaceHelper";
+import { InsertResponse } from 'src/helpers/dbResponsesHelper';
 
 export const create = async (tag: Tag | Object) => {
   try {

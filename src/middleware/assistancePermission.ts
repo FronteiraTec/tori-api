@@ -1,6 +1,6 @@
 import { Response, Request, NextFunction } from "express";
-import { CustomError, ErrorCode } from 'src/helpers/customError';
-import { searchByID } from "src/models/AssistanceModel";
+import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
+import { searchByID } from "src/models/assistanceModel";
 
 export const verifyIfUserHasPermission = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user as number;

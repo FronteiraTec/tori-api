@@ -5,11 +5,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import './helpers/LoadEnv';
+import './helpers/loadEnvHelper';
 
 
 import indexRoute from './routes/indexRoute';
-import { errorHandler } from './middleware/error';
+import { errorHandler } from './middleware/errorMiddleware';
 
 const app = express();
 

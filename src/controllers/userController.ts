@@ -3,11 +3,19 @@ import { Request, Response, NextFunction } from 'express';
 import * as userModel from '../models/userModel';
 import * as addressModel from '../models/addressModel';
 
-import { httpCode } from '../helpers/statusCode';
+import { httpCode } from '../helpers/statusCodeHelper';
 import { errorResponse } from '../helpers/responseHelper';
 import { parseQueryField } from 'src/helpers/utilHelper';
-import { CustomError, ErrorCode } from 'src/helpers/customError';
+import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { createImageName, saveImageFromBase64 } from 'src/helpers/outputHelper';
+
+
+enum UserQueryOption {
+  own = "own",
+  email = "email",
+  id = "id",
+  name = "name"
+}
 
 export const getUser = async (req: Request, res: Response, next: NextFunction) => {
   const { limit, offset, assistant, fields } = req.query;
@@ -56,42 +64,48 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
   }
 
   try {
-    if (q === "own") {
-      const result = await userModel.getById({
-        userId,
-        fields: parsedFields ? parsedFields.join(",") : undefined
-      });
-      return res.json(result);
-    }
+    switch (q) {
+      case UserQueryOption.own: {
+        const result = await userModel.getById({
+          userId,
+          fields: parsedFields ? parsedFields.join(",") : undefined
+        });
+        return res.json(result);
+      }
 
-    if (q === "email" && email) {
-      const result = await userModel.getByEmail({
-        email: email,
-        fields: parsedFields ? parsedFields.join(",") : undefined
-      });
-      return res.json(result);
-    }
+      case UserQueryOption.email: {
+        const result = await userModel.getByEmail({
+          email: email,
+          fields: parsedFields ? parsedFields.join(",") : undefined
+        });
+        return res.json(result);
+      }
 
-    else if (q === "id" && id) {
-      const result = await userModel.getById({
-        userId: id,
-        fields: parsedFields ? parsedFields.join(",") : undefined
-      });
-      return res.json(result);
-    }
+      case UserQueryOption.id: {
+        const result = await userModel.getById({
+          userId: id,
+          fields: parsedFields ? parsedFields.join(",") : undefined
+        });
+        return res.json(result);
+      }
 
-    else if (q === "name") {
-      const result = await userModel.getByName({
-        name,
-        fields: parsedFields ? parsedFields.join(",") : undefined
-      });
+      case UserQueryOption.name: {
+        const result = await userModel.getByName({
+          name,
+          fields: parsedFields ? parsedFields.join(",") : undefined
+        });
 
-      return res.json(result);
-    }
-    else {
-      return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
-    }
+        return res.json(result);
+      }
 
+      default: {
+        const result = await userModel.getById({
+          userId,
+          fields: parsedFields ? parsedFields.join(",") : undefined
+        });
+        return res.json(result);
+      }
+    }
   }
   catch (error) {
     return next(new CustomError({ error }));
@@ -118,17 +132,17 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
       await addressModel.update(addressId, addressFields);
 
     res.json("Fields updated successfully");
-  } 
+  }
   catch (error) {
-    return next(new CustomError({error}));
+    return next(new CustomError({ error }));
   }
 
   function verifyContentISCorrect(content: any) {
     if (content === undefined || content === "" || !(content instanceof Object) || content.length === 0) {
-        return next(new CustomError({ 
-          code: ErrorCode.BAD_REQUEST,
-          message: "field \"userFields\" is malformed" 
-         }));
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
+        message: "field \"userFields\" is malformed"
+      }));
     }
   }
 
@@ -137,7 +151,7 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
       const field = userFields[i];
 
       if (field === "")
-        return next(new CustomError({code:ErrorCode.BAD_REQUEST, message: "One field is empty"}));
+        return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "One field is empty" }));
     };
 
   }
@@ -150,12 +164,11 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
     const result = await userModel.deleteById(userId);
 
     return res.json({ message: "User deleted successfully" });
-  } 
+  }
   catch (error) {
-    return next(new CustomError({error}));
+    return next(new CustomError({ error }));
   }
 };
-
 
 export const uploadImage = async (req: Request, res: Response, next: NextFunction) => {
   const { extension, image: base64Image } = req.body;
@@ -178,9 +191,9 @@ export const uploadImage = async (req: Request, res: Response, next: NextFunctio
     });
 
     return res.json({ message: "Image uploaded successfully" });
-  } 
+  }
   catch (error) {
-    return next(new CustomError({error}));
+    return next(new CustomError({ error }));
   }
 };
 

@@ -1,5 +1,5 @@
 import { db } from "../helpers/dbHelper";
-import { user as UserInterface } from "../helpers/dbNamespace";
+import { user as UserInterface } from "../helpers/dbNamespaceHelper";
 import crypto from "crypto";
 import { toBoolean } from 'src/helpers/conversionHelper';
 

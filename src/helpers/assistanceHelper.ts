@@ -1,6 +1,6 @@
-import { CustomError } from 'src/helpers/customError';
+import { CustomError } from 'src/helpers/customErrorHelper';
 import * as tagModel from 'src/models/tagModel';
-import { createTag as assistanceModelCreateTag } from 'src/models/AssistanceModel';
+import { createTag as assistanceModelCreateTag } from 'src/models/assistanceModel';
 
 export enum QueryOptions {
     all = "all",

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import * as controller from "../controllers/AssistanceController";
-import { userAuthenticated } from "src/middleware/auth";
+import * as controller from "src/controllers/assistanceController";
+import { userAuthenticated } from "src/middleware/authMiddleware";
 import { verifyIfUserHasPermission } from 'src/middleware/assistancePermission';
 
 const assistanceRouter: Router = Router();
