@@ -1,6 +1,7 @@
 import { db } from "../helpers/dbHelper";
 import { user as UserInterface } from "../helpers/dbNamespace";
 import crypto from "crypto";
+import { toBoolean } from 'src/helpers/conversionHelper';
 
 
 export const updateOnlyNullFields = async (userId: number, user: UserInterface | Object) => {
@@ -34,7 +35,7 @@ export const getById = async ({ userId, fields }: { userId: number, fields?: str
 
     const parsedResult = parseResponse(result);
 
-    return parseResponse.length == 1 ? parsedResult[0] : parsedResult;
+    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
   } catch (err) {
     throw err;
   }
@@ -57,7 +58,8 @@ export const getByEmail = async ({ email, fields }: { email: string, fields?: st
 
     const parsedResult = parseResponse(result);
 
-    return parseResponse.length == 1 ? parsedResult[0] : parsedResult;
+    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+
   } catch (err) {
     throw err;
   }
@@ -79,7 +81,7 @@ export const getByName = async ({ name, fields }: { name: string, fields?: strin
 
     const parsedResult = parseResponse(result);
 
-    return parsedResult;
+    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
 
   } catch (err) {
     throw err;
@@ -106,7 +108,9 @@ export const getAll = async ({ assistant, limit, offset, fields }:
 
     const result = await db.resolve() as { user: UserInterface }[];
 
-    return parseResponse(result);
+    const parsedResult = parseResponse(result);
+    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+
   } catch (err) {
     throw err;
   }
@@ -172,15 +176,6 @@ function booleanToString(string?: string) {
   if (string === "0") return "0";
 
   return "1";
-}
-
-function toBoolean(string?: string) {
-  if (string === undefined) return undefined;
-
-  if (string === "false") return false;
-  if (string === "0") return false;
-
-  return true;
 }
 
 function parseResponse(data: { user: UserInterface }[]) {

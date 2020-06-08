@@ -1,6 +1,7 @@
 /* spell-checker: disable */
 
 import pool from "./dbConnect";
+import { CustomError } from './customError';
 
 
 interface Data {
@@ -165,7 +166,7 @@ export default class DbHelper {
 
   pagination(limit: number, offset: number): this {
     if (isNaN(limit) || isNaN(offset)) {
-      const error = new Error("Limit or offset are not numbers!");
+      const error = new CustomError("Limit and offset are not numbers.", "LIMITOFFSETNUM");
       throw error;
     }
 

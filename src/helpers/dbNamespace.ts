@@ -104,24 +104,22 @@ export interface course {
 }
 
 export namespace presence_listFields {
-    export type presence_list_id = number;
-    export type aided_student_id = number;
-    export type presence_list_owner_id = number;
+    export type id = number;
+    export type student_id = number;
     export type assistance_id = number;
-    export type presence_list_assistant_rating = number;
-    export type presence_list_aided_student_rating = number;
-    export type presence_list_aided_student_presence = boolean;
+    export type assistant_rating = number;
+    export type student_rating = number;
+    export type student_presence = boolean;
 
 }
 
-export interface presence_list {
-    presence_list_id: presence_listFields.presence_list_id;
-    aided_student_id: presence_listFields.aided_student_id;
-    presence_list_owner_id: presence_listFields.presence_list_owner_id;
+export interface assistance_presence_list {
+    presence_list_id: presence_listFields.id;
+    aided_student_id: presence_listFields.student_id;
     assistance_id: presence_listFields.assistance_id;
-    presence_list_assistant_rating: presence_listFields.presence_list_assistant_rating;
-    presence_list_aided_student_rating: presence_listFields.presence_list_aided_student_rating;
-    presence_list_aided_student_presence: presence_listFields.presence_list_aided_student_presence;
+    presence_list_assistant_rating: presence_listFields.assistant_rating;
+    presence_list_aided_student_rating: presence_listFields.student_rating;
+    presence_list_aided_student_presence: presence_listFields.student_presence;
 
 }
 

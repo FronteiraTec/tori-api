@@ -7,7 +7,7 @@ export const create = async (tag: Tag | Object) => {
     const result = await
       db.insert("tag", tag).resolve();
 
-    return result[0] as InsertResponse;
+    return result.length > 0 ? result[0] as InsertResponse : undefined;
   } catch (err) {
     throw err;
   }
@@ -23,7 +23,7 @@ export const findByName = async (tagName: string) => {
         .where("tag_name", lowerName)
         .resolve() as { tag: Tag }[];
 
-    return result[0].tag;
+    return result.length > 0 ? result[0].tag : undefined;
   } catch (err) {
     throw err;
   }

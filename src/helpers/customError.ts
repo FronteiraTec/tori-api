@@ -1,11 +1,11 @@
-export class HTTPError extends Error {
-  public statusCode: number = -1;
+export class CustomError extends Error {
+  public code: string = "";
 
-  constructor(message: string, statusCode?: number) {
+  constructor(message: string, code?: string) {
     super(message);
 
-    if(statusCode !== undefined)
-      this.statusCode = statusCode;
+    if(code !== undefined)
+      this.code = code;
     
     this.name = this.constructor.name;
     if (typeof Error.captureStackTrace === 'function') {
