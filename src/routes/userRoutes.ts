@@ -1,25 +1,19 @@
 import { Router } from 'express';
 import * as controller from '../controllers/userController';
-import { userAuthenticated } from "../middleware/authenticationmiddleware";
+import { userAuthenticated } from "../middleware/authMiddleware";
+import { allowedSearchField } from 'src/middleware/permissionMiddleware';
 
 
 const router = Router();
 // const routerBase = Router();
 
+router.get('/', userAuthenticated, allowedSearchField ,controller.getAll);
+router.patch('/', userAuthenticated, controller.updateUser);
 
-router.get('/user/search', userAuthenticated, controller.searchUser);
-router.get('/user', userAuthenticated, controller.getUser);
+router.get('/search', userAuthenticated, controller.searchUser);
+router.put('/profile-picture', userAuthenticated, controller.uploadImage);
 
-
-router.patch('/user', userAuthenticated, controller.updateUser);
-
-router.put('/user/image', userAuthenticated, controller.uploadImage);
-
-
-// TODO: Logar com cpf e nome de usuário também
-// TODO Endpoint para verificar cpfs cadastrados
-// TODO Endpoint para verificar email cadastrados
-// TODO Endpoint para verificar username cadastrados
-// TODO padronizar respostas
+//TODO: search user assistance - created by or subscribed 
+router.get('/assistance', userAuthenticated, () => {});
 
 export default router;
