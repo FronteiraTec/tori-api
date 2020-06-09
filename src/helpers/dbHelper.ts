@@ -1,7 +1,7 @@
 /* spell-checker: disable */
 
-import pool from "./dbConnect";
-import { CustomError } from './customError';
+import pool from "./dbConnectHelper";
+import { CustomError, ErrorCode } from './customErrorHelper';
 
 
 interface Data {
@@ -65,7 +65,7 @@ export default class DbHelper {
    * @example where("nome_campo = valor_a_ser_encontrado")
    * @returns
    */
-  where(...args: string[]): this {
+  where(...args: any[]): this {
     let where: string;
     let key: string = args[0];
     let val: string = args[1];
@@ -166,7 +166,7 @@ export default class DbHelper {
 
   pagination(limit: number, offset: number): this {
     if (isNaN(limit) || isNaN(offset)) {
-      const error = new CustomError("Limit and offset are not numbers.", "LIMITOFFSETNUM");
+      const error = new CustomError({ message: "Limit and offset are not numbers.", code: ErrorCode.LIM_OFF_NOT_NUM });
       throw error;
     }
 

@@ -1,51 +1,52 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
-import * as model from '../models/authModel';
-import { httpCode } from '../helpers/statusCode';
-import { multiValidate, validate } from '../helpers/validation';
-import { generateJWT } from '../helpers/jwtHelper';
+import * as authModel from 'src/models/authModel';
+import * as userModel from 'src/models/userModel';
+import { user as User } from 'src/helpers/dbNamespaceHelper';
+import { multiValidate, validate } from 'src/helpers/validationHelper';
+import { generateJWT } from 'src/helpers/jwtHelper';
 import { updateOnlyNullFields } from 'src/models/userModel';
+import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 
 
-
-export const signIn = async (req: Request, res: Response) => {
+export const signIn = async (req: Request, res: Response, next: NextFunction) => {
   const { authenticator, password } = req.body;
 
   const validateResult = multiValidate([
-    { data: authenticator, type: "email", message: "authenticator not valid" },
-    { data: password, type: "not-empty", message: "password not valid" },
+    { data: authenticator, type: "len=3", message: "authenticator not valid" },
+    { data: password, type: "len=3", message: "password not valid" },
   ]);
 
   if (validateResult.length > 0) {
-    return res.status(httpCode["Not Acceptable"]).json({
-      error: {
-        reason: validateResult
-      }
-    });
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST,
+      message: validateResult
+    }));
   }
 
   try {
-    const possibleUser = await model.signIn({
+    const possibleUser = await authModel.signIn({
       authenticator,
       password: password.toString()
     });
 
-
-    if (possibleUser === null) {
-      res.status(httpCode.Unauthorized).json("authenticator or password invalid");
-      return;
+    if (possibleUser === undefined || possibleUser === null) {
+      return next(new CustomError({
+        code: ErrorCode.UNAUTHORIZED, message: "User or password incorrect"
+      }));
     }
 
-    return defaultLoginResponse(possibleUser as { name: string, id: number }, res);
 
-  } catch (err) {
-    res.status(httpCode["Internal Server Error"]).json(err);
+    const responseData = await defaultLoginResponse(possibleUser);
+    res.json(responseData);
+  } catch (error) {
+    return next(new CustomError({ error }))
   }
 };
 
-export const signUp = async (req: Request, res: Response) => {
-  const { name, cpf, email: authenticator, password }:
-    { name: string, cpf: string, email: string, password: string } = req.body;
+export const signUp = async (req: Request, res: Response, next: NextFunction) => {
+  const { full_name: name, cpf, email: authenticator, password }:
+    { full_name: string, cpf: string, email: string, password: string } = req.body;
 
   const allValidations = [
     { data: cpf, type: "cpf", message: "CPF invalid" },
@@ -54,56 +55,53 @@ export const signUp = async (req: Request, res: Response) => {
     { data: authenticator, type: "email", message: "authenticator invalid" }
   ];
 
-  const validationResult = multiValidate(allValidations);
+  const validateResult = multiValidate(allValidations);
 
-
-  if (validationResult.length !== 0) {
-    res.status(httpCode["Not Acceptable"]).json(validationResult);
-    return;
+  if (validateResult.length > 0) {
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST,
+      message: validateResult
+    }));
   }
 
   try {
-    const newUser = await model.signUp({ cpf, authenticator, name, password });
-
-
-    return defaultLoginResponse(newUser, res);
-  } catch (err) {
-    console.log(err);
-    res.status(httpCode.Conflict).json(err);
+    const newUser = await authModel.signUp({ cpf, authenticator, name, password });
+    const responseData = await defaultLoginResponse(newUser);
+    return res.json(responseData);
+  } catch (error) {
+    return next(new CustomError({ error }));
   }
 };
 
-export const signInUFFS = async (req: Request, res: Response) => {
+export const signInUFFS = async (req: Request, res: Response, next: NextFunction) => {
   const { authenticator, password } = req.body;
 
-  // vValida os inputs
-  if (authenticator.length < 5 || password.empty) {
-    return res.status(httpCode["Not Acceptable"])
-      .json({
-        error: {
-          message: "Password or authenticator not acceptable, less than 5 letters was found"
-        }
-      });
+  const validateResult = multiValidate([
+    { data: password, type: "len=3", message: "Password invalid" },
+    { data: authenticator, type: "len=4", message: "authenticator invalid" }
+  ]);
+
+  if (validateResult.length > 0) {
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST,
+      message: validateResult
+    }));
   }
 
   // Verificar se o usuário ja esta cadastrado no sistema, se sim realizar o login
-  const userAlreadySigned = await model.signIn({ authenticator, password });
+  const userAlreadySigned = await authModel.signIn({ authenticator, password });
 
   if (userAlreadySigned !== null) {
     // Cadastrado, proceder o login
-    defaultLoginResponse(userAlreadySigned, res);
-    return;
+    const responseData = await defaultLoginResponse(userAlreadySigned);
+    return res.json(responseData);
   }
 
   // Se não, tentar realizar o login com as credenciais uffs
-  const tokenAPiUffs = await model.tryUffsLogin({ authenticator, password })
+  const tokenAPiUffs = await authModel.tryUffsLogin({ authenticator, password })
 
   if (tokenAPiUffs === null) {
-    return res.status(httpCode.Unauthorized).json({
-      "error": {
-        message: "Usuário ou senha incorretos"
-      }
-    });
+    return next(new CustomError({ code: ErrorCode.UNAUTHORIZED }));
   }
 
   // Usuário autenticado pela uffs, tentar conseguir dados
@@ -112,22 +110,17 @@ export const signInUFFS = async (req: Request, res: Response) => {
   let userProfilePhoto = null;
 
   try {
-    userData = await model.getDataFromStudentPortal({ authenticator, token: tokenAPiUffs });
+    userData = await authModel.getDataFromStudentPortal({ authenticator, token: tokenAPiUffs });
   }
   catch (err) {
-    return res.status(httpCode["Internal Server Error"]).json({
-      error: {
-        message: "Error while getting information on student portal",
-        error: err
-      }
-    });
+    return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
   }
 
   try {
-    userProfilePhoto = await model.getProfilePhotoFromMoodle(authenticator, password);
+    userProfilePhoto = await authModel.getProfilePictureFromMoodle(authenticator, password);
   }
-  catch (err) {
-    throw new Error("Error while getting information on student profile photo on moodle");
+  catch (error) {
+    return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
   }
 
   // Salvar o usuário no banco de dados local
@@ -144,66 +137,119 @@ export const signInUFFS = async (req: Request, res: Response) => {
       profilePhoto: userProfilePhoto
     };
 
-    const createdUser = await model.signUp(user);
+    const createdUser = await authModel.signUp(user);
 
-    return defaultLoginResponse({
+    const responseData = ({
       id: createdUser.id,
       name: user.name,
       profilePhoto: userProfilePhoto,
       idUffs: user.idUffs,
-    }, res);
+    });
+
+    return res.json(responseData);
   }
-  catch (err) {
-    if (err.code !== "ER_DUP_ENTRY") {
-      // Erro ao criar usuário
-      return res.status(httpCode["Internal Server Error"])
-        .json(err);
+  catch (error) {
+    if (error.code !== "ER_DUP_ENTRY") {
+      return next(new CustomError({ error }));
     }
 
     // Usuário ja possui uma conta cadastrado, "sincronizar com a conta da uffs"
 
-    const user = await model.signIn({ authenticator: userData.cpf });
+    const user = await authModel.signIn({ authenticator: userData.cpf });
 
     if (user === null) {
-      return res.status(httpCode["Internal Server Error"])
-        .json(err);
+      return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
     }
 
     user.idUFFS = userData.idUffs;
 
     try {
       // atualizar os dados do usuário no banco!;
-
       updateOnlyNullFields(user.id, {
-        user_cpf: userData.cpf,
-        user_full_name: userData.name,
-        user_email: userData.email,
-        user_password: password,
-        user_idUFFS: userData.idUffs,
-        user_profile_photo: userProfilePhoto
+        cpf: userData.cpf,
+        full_name: userData.name,
+        email: userData.email,
+        password: password,
+        idUFFS: userData.idUffs,
+        profile_picture: userProfilePhoto
       });
-    } catch (err) {
-      console.log({
-        error: {
-          message: "Erro ao atualizar os dados do usuário no banco de dados"
-        }
-      });
-      throw err;
+    } catch (error) {
+      return next(new CustomError({
+        message: "Error updating database.",
+        error
+      }));
     }
 
-    return defaultLoginResponse(user, res);
+    const responseData = await defaultLoginResponse(user);
+    res.json(responseData);
   }
 };
 
+export const verifyAvailability = async (req: Request, res: Response, next: NextFunction) => {
+  const { q, search } = req.query;
 
-async function defaultLoginResponse(user: { id: number; name: string; profilePhoto?: string; idUffs?: string }, res: Response<any>) {
+  enum QueryOptions {
+    cpf = "cpf",
+    email = "email",
+    username = "username"
+  }
+
+  if (!search) {
+    return next(new CustomError({ code: ErrorCode.BAD_REQUEST }));
+  }
+
+  try {
+    switch (q) {
+      case QueryOptions.cpf: {
+        if (validate({ data: search, type: "cpf" }) !== true) 
+          return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "CPF invalid"}));
+  
+        const user = await userModel.getWhere({ key: "cpf", value: search, fields: "id" });
+  
+        if (user.length === 0)
+          return res.json({ available: true });
+  
+        return res.json({ available: false });
+      }
+      case QueryOptions.email: {
+        if (validate({ data: search, type: "email" }) !== true)
+          return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "Email invalid"}));
+  
+        const user = await userModel.getByEmail({ email: search, fields: "id" });
+  
+        if (user.length === 0)
+          return res.json({ available: true });
+          
+        return res.json({ available: false });
+      }
+      case QueryOptions.username: {
+        if (validate({ data: search, type: "len=3" }) !== true) 
+          return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "Username invalid"}));
+        
+        const user = await userModel.getWhere({ key: "idUFFS", value: search, fields: "id" });
+  
+        if (user.length === 0)
+          return res.json({ available: true });
+  
+        return res.json({ available: false });
+      }
+  
+      default:
+        return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "q option missing."}));
+    }
+  } catch (error) {
+    return next(new CustomError({error}));
+  }
+}
+
+async function defaultLoginResponse(user: User) {
   const { token, expiresIn } = await generateJWT({
     id: String(user.id),
-    // expireTime: "1d"
   });
-  res.json({
-    ...user,
+
+  return {
+    full_name: user.full_name,
     token,
     expiresIn
-  });
+  };
 }

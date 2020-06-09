@@ -1,5 +1,5 @@
 import { db } from "../helpers/dbHelper";
-import { user as UserInterface } from "../helpers/dbNamespace";
+import { user as User } from "../helpers/dbNamespaceHelper";
 import crypto from "crypto";
 
 import {
@@ -16,24 +16,24 @@ enum AuthenticatorType {
   cpf
 }
 
-export const signUp = async ({ name, cpf, authenticator, password, idUffs, profilePhoto }:
-  { name: string; cpf: string; authenticator: string; password: string; profilePhoto?: string; idUffs?: string }) => {
+export const signUp = async ({ name, cpf, authenticator, password, idUffs, profilePicture }:
+  { name: string; cpf: string; authenticator: string; password: string; profilePicture?: string; idUffs?: string }) => {
 
   const hashedPassword = hashPassword(password);
 
   console.log(idUffs);
 
   const newUserData = {
-    user_cpf: cpf,
-    user_email: authenticator,
-    user_password: hashedPassword,
-    user_full_name: name,
-  } as UserInterface
+    cpf: cpf,
+    email: authenticator,
+    password: hashedPassword,
+    full_name: name,
+  } as User
 
   if (idUffs)
-    newUserData.user_idUFFS = idUffs;
-  if (profilePhoto)
-    newUserData.user_profile_photo = profilePhoto;
+    newUserData.idUFFS = idUffs;
+  if (profilePicture)
+    newUserData.profile_picture = profilePicture;
 
   try {
     const newUser = await db.insert("user", newUserData)
@@ -41,8 +41,8 @@ export const signUp = async ({ name, cpf, authenticator, password, idUffs, profi
 
     return {
       id: Number(newUser[0].insertId),
-      name
-    } as { id: number, name: string }
+      full_name: name
+    } as User;
   } catch (err) {
     throw err;
   }
@@ -68,31 +68,27 @@ export const signIn = async ({ authenticator, password }:
   const authType = getAuthenticatorType(authenticator);
 
   try {
-    db.select("user_full_name, user_id")
+    db.select("full_name, id")
       .from("user");
 
     if (authType === AuthenticatorType.email)
-      db.where("user_email", authenticator);
+      db.where("email", authenticator);
 
     else if (authType === AuthenticatorType.cpf)
-      db.where("user_cpf", authenticator);
+      db.where("cpf", authenticator);
 
     else if (authType === AuthenticatorType.idUFFS)
-      db.where("user_idUFFS", authenticator);
+      db.where("idUFFS", authenticator);
 
     if (password !== undefined) {
       const hashedPassword = hashPassword(password);
-      db.and("user_password", hashedPassword);
+      db.and("password", hashedPassword);
     }
 
-    const user = await db.resolve() as { user: UserInterface }[];
+    const user = await db.resolve() as { user: User }[];
 
     if (user[0] !== undefined)
-      return {
-        name: user[0].user.user_full_name,
-        id: user[0].user.user_id,
-        idUFFS: user[0].user.user_idUFFS
-      };
+      return user[0].user;
 
     return null;
 
@@ -143,7 +139,7 @@ export const getDataFromStudentPortal = async ({ authenticator, token }:
   }
 }
 
-export const getProfilePhotoFromMoodle = async (authenticator: string, password: string) => {
+export const getProfilePictureFromMoodle = async (authenticator: string, password: string) => {
   try {
 
     const userPicture = await getUserPictureFromMoodle({ authenticator, password });
