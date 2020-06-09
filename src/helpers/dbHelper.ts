@@ -65,7 +65,7 @@ export default class DbHelper {
    * @example where("nome_campo = valor_a_ser_encontrado")
    * @returns
    */
-  where(...args: string[]): this {
+  where(...args: any[]): this {
     let where: string;
     let key: string = args[0];
     let val: string = args[1];

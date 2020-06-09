@@ -10,9 +10,12 @@ import './helpers/loadEnvHelper';
 
 import indexRoute from './routes/indexRoute';
 import { errorHandler } from './middleware/errorMiddleware';
+import { createFolders } from './helpers/startConfigurationsHelper';
+
+// Create folders
+createFolders();
 
 const app = express();
-
 
 // Show routes called in console during development
 if (process.env.NODE_ENV === 'development') {
@@ -23,7 +26,6 @@ if (process.env.NODE_ENV === 'development') {
 if (process.env.NODE_ENV === 'production') {
   app.use(helmet());
 }
-
 
 // Static files
 app.use("/public", express.static('src/public'));
@@ -38,10 +40,8 @@ app.use(indexRoute);
 app.use(errorHandler);
 
 // Server settings
-// const server = '192.168.0.106';
 const port = process.env.PORT;
 
 app.listen(port, () => {
-  // tslint:disable-next-line:no-console
   console.log(`Server is listening on http://localhost:${port}`);
 });

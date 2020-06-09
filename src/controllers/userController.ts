@@ -17,25 +17,17 @@ enum UserQueryOption {
   name = "name"
 }
 
-export const getUser = async (req: Request, res: Response, next: NextFunction) => {
-  const { limit, offset, assistant, fields } = req.query;
+export const getAll = async (req: Request, res: Response, next: NextFunction) => {
+  const { limit, offset, assistant } = req.query;
 
-  const parsedFields = parseQueryField(fields);
-
-  if (!verifyUserPermission(parsedFields)) {
-    return errorResponse({
-      message: "Not allowed",
-      res,
-      code: httpCode.Unauthorized
-    });
-  }
+  const fields = (req as any).fields;
 
   try {
     const result = await userModel.getAll({
       offset,
       limit,
       assistant,
-      fields: parsedFields ? parsedFields.join(",") : undefined
+      fields
     })
 
     res.json(result);
@@ -176,8 +168,10 @@ export const uploadImage = async (req: Request, res: Response, next: NextFunctio
   const userId = (req as any).user;
 
   try {
-    //TODO: Move this to .env 
-    const imagePath = "src/public/images/profile-picture/";
+    const imagePath = process.env.PROFILE_PIC_PATH;
+
+    if (imagePath === undefined) throw new CustomError({ message: "Image path not found in env file" });
+
     const imageName = createImageName({ userId, extension, imagePath });
 
     saveImageFromBase64({

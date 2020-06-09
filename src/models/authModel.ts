@@ -1,5 +1,5 @@
 import { db } from "../helpers/dbHelper";
-import { user as UserInterface } from "../helpers/dbNamespaceHelper";
+import { user as User } from "../helpers/dbNamespaceHelper";
 import crypto from "crypto";
 
 import {
@@ -28,7 +28,7 @@ export const signUp = async ({ name, cpf, authenticator, password, idUffs, profi
     email: authenticator,
     password: hashedPassword,
     full_name: name,
-  } as UserInterface
+  } as User
 
   if (idUffs)
     newUserData.idUFFS = idUffs;
@@ -41,8 +41,8 @@ export const signUp = async ({ name, cpf, authenticator, password, idUffs, profi
 
     return {
       id: Number(newUser[0].insertId),
-      name
-    } as { id: number, name: string }
+      full_name: name
+    } as User;
   } catch (err) {
     throw err;
   }
@@ -85,14 +85,10 @@ export const signIn = async ({ authenticator, password }:
       db.and("password", hashedPassword);
     }
 
-    const user = await db.resolve() as { user: UserInterface }[];
+    const user = await db.resolve() as { user: User }[];
 
     if (user[0] !== undefined)
-      return {
-        name: user[0].user.full_name,
-        id: user[0].user.id,
-        idUFFS: user[0].user.idUFFS
-      };
+      return user[0].user;
 
     return null;
 

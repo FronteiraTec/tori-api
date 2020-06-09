@@ -33,9 +33,9 @@ export const getById = async ({ userId, fields }: { userId: number, fields?: str
 
     const result = await db.resolve() as { user: UserInterface }[];
 
-    const parsedResult = parseResponse(result);
+    // const parsedResult = parseResponse(result);
 
-    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+    return [...result];
   } catch (err) {
     throw err;
   }
@@ -58,7 +58,37 @@ export const getByEmail = async ({ email, fields }: { email: string, fields?: st
 
     const parsedResult = parseResponse(result);
 
-    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+    // return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+    // const result = await db.resolve() as { user: UserInterface }[];
+    return [...result];
+
+
+
+  } catch (err) {
+    throw err;
+  }
+}
+
+export const getWhere = async ({ key, value, fields }: { key: string, value: string | number, fields?: string }) => {
+
+  try {
+
+    if (fields !== undefined)
+      db.select(fields);
+    else
+      db.select(defaultReturn());
+
+    db.from("user");
+
+    db.where(key, value);
+
+    const result = await db.resolve() as { user: UserInterface }[];
+
+    // return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+    // const result = await db.resolve() as { user: UserInterface }[];
+    return [...result];
+
+
 
   } catch (err) {
     throw err;
@@ -79,9 +109,11 @@ export const getByName = async ({ name, fields }: { name: string, fields?: strin
 
     const result = await db.resolve() as { user: UserInterface }[];
 
-    const parsedResult = parseResponse(result);
+    // const parsedResult = parseResponse(result);
 
-    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+    // return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+
+    return [...result];
 
   } catch (err) {
     throw err;
@@ -108,8 +140,10 @@ export const getAll = async ({ assistant, limit, offset, fields }:
 
     const result = await db.resolve() as { user: UserInterface }[];
 
-    const parsedResult = parseResponse(result);
-    return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+    // const parsedResult = parseResponse(result);
+    
+    // return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
+    return [...result];
 
   } catch (err) {
     throw err;

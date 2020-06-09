@@ -7,9 +7,9 @@ interface ValidationFields {
 }
 
 
-function multiValidate(objs: ValidationFields[]) {
+function multiValidate(obj: ValidationFields[]) {
   const response = [] as { message: string }[];
-  objs.forEach(validation => {
+  obj.forEach(validation => {
     const res = validate(validation);
 
     if (res !== true)
@@ -20,10 +20,10 @@ function multiValidate(objs: ValidationFields[]) {
 }
 
 function validate({ data, type, len, mustHas, message }: ValidationFields) {
-  // const defaultMessage = "Unknow field incomplete";
+  // const defaultMessage = "Unknown field incomplete";
   if (data === undefined)
     return {
-      message: message ? message : "Unknow field incomplete"
+      message: message ? message : "Unknown field incomplete"
     };
 
   if (type === "cpf") {
@@ -47,13 +47,21 @@ function validate({ data, type, len, mustHas, message }: ValidationFields) {
   }
 
   if (type === "not-empty") {
-
     if (!(data === undefined || data === null || data === ""))
       return true;
   }
 
+  if(type) {
+    if(type.search("len=") >= 0) {
+      const len = parseInt(type.split("=")[1]);
+
+      if(data.toString().length >= len)
+        return true;
+    }
+  }
+
   return {
-    message: message ? message : "Unknow field incomplete"
+    message: message ? message : "Unknown field incomplete"
   }
 
 }
@@ -66,13 +74,10 @@ function emailValidator(email: string) {
 }
 
 function passwordValidator(password: string) {
-  // need to have numbers and numbers and at least one special character
-  // if (password.search(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/) === -1)
-  //TODO fix password regex
-  // "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-
-  // if (password.search(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/) === -1)
-  //   return false;
+  const strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{6,})");
+  
+  if (password.search(strongRegex) === -1)
+    return false;
 
   return true
 }

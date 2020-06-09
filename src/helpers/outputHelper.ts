@@ -1,4 +1,4 @@
-import { writeFileSync } from 'fs';
+import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
@@ -9,7 +9,11 @@ export const createImageName = ({ userId, extension, imagePath }: { userId: numb
     digest("hex") + `.${extension}`;
 
   return path.join(imagePath, imageName);
-}
+};
+
+export const createFolder = ( path: string ) => {
+  mkdirSync(path, { recursive: true });
+};
 
 export const saveImageFromBase64 = ({ path, base64String }: { path: string; base64String: string; }) => {
   try {

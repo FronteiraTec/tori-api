@@ -5,9 +5,7 @@ import { verifyIfUserHasPermission, allowedSearchField } from 'src/middleware/pe
 
 const assistanceRouter: Router = Router();
 
-//TODO: document disable route
 //TODO: get latitude and longitude from cep
-//TODO: defined allowed search fields
 assistanceRouter.delete("/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.deleteById);
 assistanceRouter.patch("/disable/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.disableById);
 assistanceRouter.patch("/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.update);

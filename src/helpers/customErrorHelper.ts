@@ -13,9 +13,6 @@ export class CustomError extends Error {
     this.code = ErrorCode.INTERNAL_ERROR;
     this.status = 500;
 
-    // console.log(code);
-    //TODO: refactor this file
-
     if (code || status || message) {
       if (code)
         this.code = code;
