@@ -13,7 +13,8 @@ router.patch('/', userAuthenticated, controller.updateUser);
 router.get('/search', userAuthenticated, controller.searchUser);
 router.put('/profile-picture', userAuthenticated, controller.uploadImage);
 
-//TODO: search user assistance - created by or subscribed 
-router.get('/assistance', userAuthenticated, () => {});
+//TODO: document this routes
+router.get('/assistance/created', userAuthenticated, controller.assistanceCreated);
+router.get('/assistance/subscribed', userAuthenticated, allowedSearchField, controller.assistanceSubscribed);
 
 export default router;
