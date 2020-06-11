@@ -149,8 +149,12 @@ export const getProfilePictureFromMoodle = async (authenticator: string, passwor
   }
 }
 
-function hashPassword(password: string) {
-  return crypto.createHash("sha256").update(password).digest("hex");
+function hashPassword(password: string | number) {
+  if(typeof password === "string")
+    return crypto.createHash("sha256").update(password).digest("hex");
+  else
+    return crypto.createHash("sha256").update(password.toString()).digest("hex");
+
 }
 
 const capitalizeFirstLetter = (text: string) => {

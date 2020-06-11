@@ -173,7 +173,7 @@ export interface tag {
 }
 
 export namespace userFields {
-    export type id = number;
+    export type id = number | string;
     export type full_name = string;
     export type created_at = Date;
     export type is_assistant = boolean;

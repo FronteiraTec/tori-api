@@ -4,12 +4,12 @@ import crypto from "crypto";
 import { toBoolean } from 'src/helpers/conversionHelper';
 
 
-export const updateOnlyNullFields = async (userId: number, user: UserInterface | Object) => {
+export const updateOnlyNullFields = async (userId: number | string, user: UserInterface | Object) => {
 
   try {
     const result = await
       db.updateOnlyNullFields("user", user)
-        .where("id", String(userId))
+        .where("id", userId)
         .resolve();
 
     return result;

@@ -7,6 +7,7 @@ import { multiValidate, validate } from 'src/helpers/validationHelper';
 import { generateJWT } from 'src/helpers/jwtHelper';
 import { updateOnlyNullFields } from 'src/models/userModel';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
+import { saveUserUniqueQrCodeFromRawId, encryptText } from 'src/helpers/outputHelper';
 
 
 export const signIn = async (req: Request, res: Response, next: NextFunction) => {
@@ -57,6 +58,8 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
 
   const validateResult = multiValidate(allValidations);
 
+  
+
   if (validateResult.length > 0) {
     return next(new CustomError({
       code: ErrorCode.BAD_REQUEST,
@@ -67,8 +70,12 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const newUser = await authModel.signUp({ cpf, authenticator, name, password });
     const responseData = await defaultLoginResponse(newUser);
+
+    await saveUserUniqueQrCodeFromRawId(newUser.id);
+
     return res.json(responseData);
   } catch (error) {
+    // TODO: SPECIFY ERROR  
     return next(new CustomError({ error }));
   }
 };
@@ -94,6 +101,7 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
   if (userAlreadySigned !== null) {
     // Cadastrado, proceder o login
     const responseData = await defaultLoginResponse(userAlreadySigned);
+    
     return res.json(responseData);
   }
 
@@ -141,10 +149,13 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
 
     const responseData = ({
       id: createdUser.id,
-      name: user.name,
-      profilePhoto: userProfilePhoto,
+      full_name: user.name,
+      profile_photo: userProfilePhoto,
       idUffs: user.idUffs,
     });
+
+    //criar um qrcode para o usuário;
+    await saveUserUniqueQrCodeFromRawId(createdUser.id);
 
     return res.json(responseData);
   }
