@@ -5,7 +5,6 @@ import { allowedSearchField } from 'src/middleware/permissionMiddleware';
 
 
 const router = Router();
-// const routerBase = Router();
 
 router.get('/', userAuthenticated, allowedSearchField ,controller.getAll);
 router.patch('/', userAuthenticated, controller.updateUser);
@@ -16,5 +15,9 @@ router.put('/profile-picture', userAuthenticated, controller.uploadImage);
 //TODO: document this routes
 router.get('/assistance/created', userAuthenticated, controller.assistanceCreated);
 router.get('/assistance/subscribed', userAuthenticated, allowedSearchField, controller.assistanceSubscribed);
+
+router.get('/assistance/subscribed', userAuthenticated, allowedSearchField, controller.assistanceSubscribed);
+
+router.post("/generate-qr-code", userAuthenticated, controller.generateQrCode);
 
 export default router;

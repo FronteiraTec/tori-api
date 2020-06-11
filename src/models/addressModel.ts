@@ -1,13 +1,14 @@
 import { db } from "../helpers/dbHelper";
 import { address as AddressInterface } from "../helpers/dbNamespaceHelper";
 import { InsertResponse } from 'src/helpers/dbResponsesHelper';
+import { decryptHexId } from 'src/helpers/utilHelper';
 
 
 export const update = async (addressId: number, address: AddressInterface | Object) => {
   try {
     const result = await
       db.update("address", address)
-        .where("id", String(addressId))
+        .where("id", decryptHexId(addressId))
         .resolve();
 
     return result;
@@ -31,7 +32,7 @@ export const deleteById = async (addressId: number) => {
   try {
       const res = await db.from("address")
       .delete()
-      .where("id", addressId.toString())
+      .where("id", decryptHexId(addressId))
       .resolve();
     return res;
   } catch (err) {

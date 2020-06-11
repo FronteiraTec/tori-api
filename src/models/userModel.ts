@@ -1,15 +1,20 @@
 import { db } from "../helpers/dbHelper";
-import { user as UserInterface } from "../helpers/dbNamespaceHelper";
+import { user as User } from "../helpers/dbNamespaceHelper";
 import crypto from "crypto";
 import { toBoolean } from 'src/helpers/conversionHelper';
+import { encryptTextHex, booleanToString, decryptHexId } from 'src/helpers/utilHelper';
+
+interface UserSearch {
+  user: User
+}
 
 
-export const updateOnlyNullFields = async (userId: number, user: UserInterface | Object) => {
+export const updateOnlyNullFields = async (userId: number | string, user: User | Object) => {
 
   try {
     const result = await
       db.updateOnlyNullFields("user", user)
-        .where("id", String(userId))
+        .where("id", decryptHexId(userId))
         .resolve();
 
     return result;
@@ -29,13 +34,13 @@ export const getById = async ({ userId, fields }: { userId: number, fields?: str
 
     db.from("user");
 
-    db.where("id", String(userId));
+    db.where("id", decryptHexId(userId));
 
-    const result = await db.resolve() as { user: UserInterface }[];
+    const result = await db.resolve() as UserSearch[];
 
     // const parsedResult = parseResponse(result);
 
-    return [...result];
+    return encryptId(result);
   } catch (err) {
     throw err;
   }
@@ -54,16 +59,9 @@ export const getByEmail = async ({ email, fields }: { email: string, fields?: st
 
     db.where("email", email);
 
-    const result = await db.resolve() as { user: UserInterface }[];
+    const result = await db.resolve() as UserSearch[];
 
-    const parsedResult = parseResponse(result);
-
-    // return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
-    // const result = await db.resolve() as { user: UserInterface }[];
-    return [...result];
-
-
-
+    return encryptId(result);
   } catch (err) {
     throw err;
   }
@@ -82,14 +80,9 @@ export const getWhere = async ({ key, value, fields }: { key: string, value: str
 
     db.where(key, value);
 
-    const result = await db.resolve() as { user: UserInterface }[];
+    const result = await db.resolve() as UserSearch[];
 
-    // return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
-    // const result = await db.resolve() as { user: UserInterface }[];
-    return [...result];
-
-
-
+    return encryptId(result);
   } catch (err) {
     throw err;
   }
@@ -107,14 +100,9 @@ export const getByName = async ({ name, fields }: { name: string, fields?: strin
 
     db.where("full_name").like(`%${name}%`);
 
-    const result = await db.resolve() as { user: UserInterface }[];
+    const result = await db.resolve() as UserSearch[];
 
-    // const parsedResult = parseResponse(result);
-
-    // return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
-
-    return [...result];
-
+    return encryptId(result);
   } catch (err) {
     throw err;
   }
@@ -138,19 +126,15 @@ export const getAll = async ({ assistant, limit, offset, fields }:
     if (assistant !== undefined)
       db.where("is_assistant", toBoolean(assistant) ? "1" : "0");
 
-    const result = await db.resolve() as { user: UserInterface }[];
+    const result = await db.resolve() as UserSearch[];
 
-    // const parsedResult = parseResponse(result);
-    
-    // return parsedResult.length > 0 ? parsedResult[0] : parsedResult;
-    return [...result];
-
+    return encryptId(result);
   } catch (err) {
     throw err;
   }
 }
 
-export const update = async (userId: number, user: UserInterface | any) => {
+export const update = async (userId: number, user: User | any) => {
 
   if (user.is_assistant)
     user.is_assistant = booleanToString(user.is_assistant);
@@ -160,7 +144,7 @@ export const update = async (userId: number, user: UserInterface | any) => {
   try {
     const result = await
       db.update("user", user)
-        .where("id", String(userId))
+        .where("id", decryptHexId(userId))
         .resolve();
 
     return result;
@@ -174,7 +158,7 @@ export const deleteById = async (userId: number) => {
     const result = await
       db.delete()
         .from("user")
-        .where("id", String(userId))
+        .where("id", decryptHexId(userId))
         .resolve();
 
     return result;
@@ -188,50 +172,13 @@ export const updateProfilePicture = async ({ userId, imagePath }: { userId: numb
   try {
     const result = await
       db.update("user", { profile_picture: imagePath })
-        .where("id", String(userId))
+        .where("id", decryptHexId(userId))
         .resolve();
 
     return result;
   } catch (err) {
     throw err;
   }
-}
-
-
-function hashPassword(password: string) {
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
-
-
-function booleanToString(string?: string) {
-  if (string === undefined) return undefined;
-
-  if (string === "false") return "0";
-  if (string === "0") return "0";
-
-  return "1";
-}
-
-function parseResponse(data: { user: UserInterface }[]) {
-  return data.map(data => {
-    return {
-      id: data.user.id,
-      name: data.user.full_name,
-      createdAt: data.user.created_at,
-      isAssistant: data.user.is_assistant,
-      courseId: data.user.course_id,
-      cpf: data.user.cpf,
-      matricula: data.user.matricula,
-      idUffs: data.user.idUFFS,
-      assistantStars: data.user.assistant_stars,
-      studentStars: data.user.student_stars,
-      email: data.user.email,
-      phone: data.user.phone_number,
-      // password: data.user.password,
-      verifiedAssistant: data.user.verified_assistant,
-      profilePhoto: data.user.profile_picture,
-    }
-  });
 }
 
 function defaultReturn() {
@@ -241,4 +188,23 @@ function defaultReturn() {
     created_at,
     email
   `;
+}
+
+const encryptId = (list: UserSearch[]) => {
+  return list.map(item => {
+    const newItem = { ...item };
+
+    
+    if (item.user?.id){
+      const userId = encryptTextHex(item.user.id);
+      newItem.user.id = userId;
+    }
+
+    if (item.user?.course_id) {
+      const courseId = encryptTextHex(item.user.course_id);
+      newItem.user.course_id = courseId;
+    }
+
+    return newItem;
+  });
 }

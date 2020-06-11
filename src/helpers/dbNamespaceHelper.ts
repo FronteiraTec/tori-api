@@ -11,7 +11,7 @@
 
 
 export namespace addressFields {
-    export type id = number;
+    export type id = number | string;
     export type cep = string;
     export type street = string;
     export type number_ = number;
@@ -20,7 +20,7 @@ export namespace addressFields {
     export type nickname = string | null;
     export type latitude = number | null;
     export type longitude = number | null;
-    export type assistance_id = number | null;
+    export type assistance_id = number | string;
 
 }
 
@@ -39,8 +39,8 @@ export interface address {
 }
 
 export namespace assistanceFields {
-    export type id = number;
-    export type owner_id = number;
+    export type id = number | string;
+    export type owner_id = number | string;
     export type title = string;
     export type total_vacancies = number;
     export type available = boolean;
@@ -48,11 +48,10 @@ export namespace assistanceFields {
     export type description = string;
     export type date = Date;
     export type created_at = Date;
-    export type course_id = number | null;
-    export type subject_id = number | null;
+    export type course_id = number | string | null;
+    export type subject_id = number | string| null;
     export type suspended = boolean;
     export type suspended_date = Date | null;
-
 }
 
 export interface assistance {
@@ -73,9 +72,9 @@ export interface assistance {
 }
 
 export namespace assistance_presence_listFields {
-    export type id = number;
-    export type student_id = number;
-    export type assistance_id = number;
+    export type id = number | string;
+    export type student_id = number | string;
+    export type assistance_id = number | string;
     export type assistant_rating = number | null;
     export type student_rating = number | null;
     export type student_presence = boolean;
@@ -93,9 +92,9 @@ export interface assistance_presence_list {
 }
 
 export namespace assistance_tagFields {
-    export type id = number;
-    export type assistance_id = number;
-    export type tag_id = number;
+    export type id = number | string;
+    export type assistance_id = number | string;
+    export type tag_id = number | string;
     export type created_at = Date;
 
 }
@@ -109,7 +108,7 @@ export interface assistance_tag {
 }
 
 export namespace courseFields {
-    export type id = number;
+    export type id = number | string;
     export type name = string;
     export type number_semesters = number | null;
     export type description = string | null;
@@ -125,7 +124,7 @@ export interface course {
 }
 
 export namespace subjectFields {
-    export type id = number;
+    export type id = number | string;
     export type name = string;
     export type description = string | null;
     export type code = string | null;
@@ -141,9 +140,9 @@ export interface subject {
 }
 
 export namespace subject_courseFields {
-    export type id = number;
-    export type course_id = number;
-    export type subject_id = number;
+    export type id = number | string;
+    export type course_id = number | string;
+    export type subject_id = number | string;
     export type semester = number | null;
 
 }
@@ -157,7 +156,7 @@ export interface subject_course {
 }
 
 export namespace tagFields {
-    export type id = number;
+    export type id = number | string;
     export type name = string;
     export type description = string | null;
     export type created_at = Date;
@@ -173,11 +172,11 @@ export interface tag {
 }
 
 export namespace userFields {
-    export type id = number;
+    export type id = number | string;
     export type full_name = string;
     export type created_at = Date;
     export type is_assistant = boolean;
-    export type course_id = number | null;
+    export type course_id = number | string | null;
     export type cpf = string | null;
     export type matricula = string | null;
     export type idUFFS = string | null;
