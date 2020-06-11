@@ -1,6 +1,7 @@
 import { db } from "../helpers/dbHelper";
 import { tag as Tag } from "../helpers/dbNamespaceHelper";
 import { InsertResponse } from 'src/helpers/dbResponsesHelper';
+import { encryptTextHex } from 'src/helpers/utilHelper';
 
 export const create = async (tag: Tag | Object) => {
   try {
@@ -29,11 +30,11 @@ export const findByName = async (tagName: string) => {
   }
 }
 
-export const deleteById = async (tagId: number) => {
+export const deleteById = async (tagId: number | string) => {
   try {
     const res = await db.from("tag")
       .delete()
-      .where("id", tagId.toString())
+      .where("id", encryptTextHex(tagId))
       .resolve();
     return res;
   } catch (err) {

@@ -8,6 +8,7 @@ import {
   getUserInfo,
   getUserPictureFromMoodle
 } from 'src/helpers/loginUffsHelper';
+import { encryptTextHex, decryptHexId } from 'src/helpers/utilHelper';
 
 
 enum AuthenticatorType {
@@ -40,7 +41,7 @@ export const signUp = async ({ name, cpf, authenticator, password, idUffs, profi
       .resolve() as { insertId: string }[];
 
     return {
-      id: Number(newUser[0].insertId),
+      id: encryptTextHex(newUser[0].insertId),
       full_name: name
     } as User;
   } catch (err) {
@@ -87,8 +88,15 @@ export const signIn = async ({ authenticator, password }:
 
     const user = await db.resolve() as { user: User }[];
 
-    if (user[0] !== undefined)
+    if (user[0] !== undefined){
+      const userId = user[0].user.id;
+      const encryptedUserId = encryptTextHex(userId);
+
+      if(encryptedUserId)
+        user[0].user.id = encryptedUserId;
+        
       return user[0].user;
+    }
 
     return null;
 
@@ -154,7 +162,6 @@ function hashPassword(password: string | number) {
     return crypto.createHash("sha256").update(password).digest("hex");
   else
     return crypto.createHash("sha256").update(password.toString()).digest("hex");
-
 }
 
 const capitalizeFirstLetter = (text: string) => {

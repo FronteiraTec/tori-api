@@ -1,6 +1,10 @@
+import { CustomError, ErrorCode } from './customErrorHelper';
+import crypto from 'crypto';
+
 export const parseQueryField = (fields?: string) =>{
   if (fields === undefined || fields === "")
-    return undefined;
+    return [];
+
   return fields.replace(/[\[\]]/g, "")
     .trim()
     .split(",")
@@ -15,13 +19,7 @@ export const currentDate = () => {
   return `${time[0]}-${date[0]}-${date[1]} ${time[1]}`;
 }
 
-export /**
- *
- *
- * @param {string[]} fields
- * @returns True if all fields are allowed and false if not
- */
-const allowedFields = (fields: string[]) => {
+export const allowedFields = (fields: string[]) => {
   const availableSearchFields = [
     "assistance.id",
     "assistance.title",
@@ -105,3 +103,82 @@ export const notAllowedFieldsSearch = (fields?: string[]) => {
   }
   return false;
 }
+
+
+export const encryptText = (text: number | string, base?: BaseEnumEncryptOptions) => {
+
+  const config = getCryptConfigAES();
+  const cipher = crypto.createCipheriv('aes-256-cbc', config.cryptKey, config.iv)
+  const textBuffer = Buffer.from(String(text));
+
+  try {
+    return Buffer.concat([
+      cipher.update(textBuffer),
+      cipher.final()
+    ]).toString(base ? base : 'base64');
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const decryptText = (encryptedText: string | number | undefined, base?: BaseEnumEncryptOptions) => {
+  if (encryptedText === null || encryptedText === undefined || encryptedText === '') {
+    return encryptedText;
+  }
+  
+  const config = getCryptConfigAES();
+
+  const decipher = crypto.createDecipheriv('aes-256-cbc', config.cryptKey, config.iv)
+
+  try {
+    return Buffer.concat([
+      decipher.update(encryptedText.toString(), base ? base : 'base64'), // Expect `text` to be a base64 string
+      decipher.final()
+    ]).toString();
+  } catch (error) {
+    return undefined;
+  }
+};
+
+export const encryptTextHex = (text: number | string) => {
+  return encryptText(text, BaseEnumEncryptOptions.hex);
+};
+
+export const decryptTextHex = (encryptedText: string | number | undefined) => {
+  
+    return decryptText(encryptedText, BaseEnumEncryptOptions.hex);
+
+};
+
+const getCryptConfigAES = () => {
+  const password = process.env.CRYPT_AES_PASSWORD;
+
+  if (password === undefined) {
+    throw new Error("CRYPT_AES_PASSWORD is not configured on .env file");
+  }
+
+  return {
+    cryptKey: crypto.createHash('sha256').update(password).digest(),
+    iv: 'a2xhCgAAAAAAAAAA'
+  };
+};
+
+
+export enum BaseEnumEncryptOptions {
+  base64 = "base64",
+  hex = "hex"
+}
+
+
+export const decryptHexId = (id: string | number) => {
+  return Number(decryptTextHex(id));
+};
+
+export const booleanToString = (string?: string) => {
+  if (string === undefined) return undefined;
+
+  if (string === "false") return "0";
+  if (string === "0") return "0";
+
+  return "1";
+};

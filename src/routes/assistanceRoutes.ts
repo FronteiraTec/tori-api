@@ -4,7 +4,6 @@ import { userAuthenticated } from "src/middleware/authMiddleware";
 import { verifyIfUserHasPermission, allowedSearchField } from 'src/middleware/permissionMiddleware';
 
 const router = Router();
-
 router.delete("/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.deleteById);
 router.patch("/disable/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.disableById);
 router.patch("/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.update);

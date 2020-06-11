@@ -9,10 +9,10 @@ import { updateOnlyNullFields } from 'src/models/userModel';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { 
   saveUserUniqueQrCodeFromRawId, 
-  encryptText, 
-  BaseEnumEncryptOptions, 
-  getQrCodePath } from 'src/helpers/outputHelper';
+  getQrCodePath 
+} from 'src/helpers/outputHelper';
 import { join } from 'path';
+import { encryptText, BaseEnumEncryptOptions } from 'src/helpers/utilHelper';
 
 
 export const signIn = async (req: Request, res: Response, next: NextFunction) => {

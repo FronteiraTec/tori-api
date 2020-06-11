@@ -2,6 +2,7 @@ import { Response, Request, NextFunction } from "express";
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { searchByID } from "src/models/assistanceModel";
 import { allowedFields, parseQueryField } from 'src/helpers/utilHelper';
+import { decryptText, BaseEnumEncryptOptions } from 'src/helpers/utilHelper';
 
 export const verifyIfUserHasPermission = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user as number;
@@ -47,10 +48,49 @@ export const allowedSearchField = (req: Request, res: Response, next: NextFuncti
         code: ErrorCode.UNAUTHORIZED
       }));
 
-  
+
   (req as any).fields = parsedFields;
-  
+
 
 
   next();
+};
+
+export const decriptAssistanceId = (req: Request, res: Response, next: NextFunction) => {
+  const { assistanceId } = req.params;
+  const assistanceIdQuery = req.query.assistanceId;
+  const { id, q, search } = req.query;
+
+  try {
+    if(assistanceId ){
+      const decryptedId = decryptText(assistanceId, BaseEnumEncryptOptions.hex);
+  
+      req.params.assistanceId = decryptedId ? decryptedId : req.params.assistanceId;
+    }
+  
+    if(assistanceIdQuery ){
+      const decryptedId = decryptText(assistanceIdQuery, BaseEnumEncryptOptions.hex);
+  
+      req.query.assistanceId = decryptedId ? decryptedId : req.query.assistanceId;
+    }
+  
+    if(q === "id") {
+      if(id){
+        const decryptedId = decryptText(id, BaseEnumEncryptOptions.hex);
+        req.query.id = decryptedId ? decryptedId : req.query.id;
+      }
+  
+      if(search){
+        const decryptedId = decryptText(search, BaseEnumEncryptOptions.hex);
+        req.query.search = decryptedId ? decryptedId : req.query.search;
+      }
+    }
+    next();
+  } catch (error) {
+    return next(new CustomError({ 
+      code: ErrorCode.BAD_REQUEST,
+      message: "Assistance id invalid"
+     }));
+    
+  }
 };

@@ -2,6 +2,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import path, { join } from 'path';
 import crypto from 'crypto';
 import qrCode from "qrcode";
+import { encryptText, BaseEnumEncryptOptions } from './utilHelper';
 
 
 export const createImageName = ({ userId, extension, imagePath }: { userId: number; extension: any; imagePath: string; }) => {
@@ -69,7 +70,8 @@ export const saveUserUniqueQrCodeFromRawId = async (userId: string | number, sav
   const fileName = encryptId + ".png";
 
   try {
-    await qrCodeToFile(join(savePath, fileName), toSave);
+    if(toSave)
+      await qrCodeToFile(join(savePath, fileName), toSave);
     return encryptId;
   }
   catch (err) {
@@ -77,59 +79,8 @@ export const saveUserUniqueQrCodeFromRawId = async (userId: string | number, sav
   }
 };
 
-export const encryptText = (text: number | string, base?: BaseEnumEncryptOptions) => {
-  const config = getCryptConfigAES();
-  const cipher = crypto.createCipheriv('aes-256-cbc', config.cryptKey, config.iv)
-  const textBuffer = Buffer.from(String(text));
-
-  try {
-    return Buffer.concat([
-      cipher.update(textBuffer),
-      cipher.final()
-    ]).toString(base ? base : 'base64');
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const decryptText = (encryptedText: string, base?: BaseEnumEncryptOptions) => {
-  if (encryptedText === null || encryptedText === undefined || encryptedText === '') {
-    return encryptedText;
-  }
-  
-  const config = getCryptConfigAES();
-
-  const decipher = crypto.createDecipheriv('aes-256-cbc', config.cryptKey, config.iv)
-
-  try {
-    return Buffer.concat([
-      decipher.update(encryptedText, base ? base : 'base64'), // Expect `text` to be a base64 string
-      decipher.final()
-    ]).toString();
-  } catch (error) {
-    return undefined;
-  }
-};
 
 export const getQrCodePath = () => {
   return process.env.USER_UNIQUE_QR_CODE_PATH?.split("src/")[1];
 }
 
-const getCryptConfigAES = () => {
-  const password = process.env.CRYPT_AES_PASSWORD;
-
-  if (password === undefined) {
-    throw new Error("CRYPT_AES_PASSWORD is not configured on .env file");
-  }
-
-  return {
-    cryptKey: crypto.createHash('sha256').update(password).digest(),
-    iv: 'a2xhCgAAAAAAAAAA'
-  };
-};
-
-
-export enum BaseEnumEncryptOptions {
-  base64 = "base64",
-  hex = "hex"
-}

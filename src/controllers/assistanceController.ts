@@ -7,7 +7,7 @@ import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { QueryOptions, addTags } from 'src/helpers/assistanceHelper';
 import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch } from 'src/helpers/utilHelper';
 import { toBoolean } from 'src/helpers/conversionHelper';
-import { decryptText } from 'src/helpers/outputHelper';
+import { decryptText } from 'src/helpers/utilHelper';
 
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -59,7 +59,7 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
 
   const searchParsed = parseQueryField(search);
 
-  if (searchParsed === undefined && q !== QueryOptions.id)
+  if ( q !== QueryOptions.id)
     return next(new CustomError({ code: ErrorCode.BAD_Q_QUERY }));
 
   try {
@@ -80,9 +80,8 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
         return res.json(assistance);
       }
       case QueryOptions.id: {
-
         const assistance = await assistanceModel.searchByID({
-          id: searchParsed ? Number(searchParsed[0]) : undefined,
+          id: searchParsed[0],
           fields
         });
 
@@ -208,7 +207,7 @@ export const deleteById = async (req: Request, res: Response, next: NextFunction
   const { assistanceId } = req.params;
 
   try {
-    const response = await assistanceModel.deleteById(Number(assistanceId));
+    const response = await assistanceModel.deleteById(assistanceId);
     res.json("Success");
   }
   catch (error) {
@@ -221,7 +220,7 @@ export const disableById = async (req: Request, res: Response, next: NextFunctio
   const { assistanceId } = req.params;
 
   try {
-    const response = await assistanceModel.update(Number(assistanceId), {
+    const response = await assistanceModel.update(assistanceId, {
       suspended: 1,
       suspended_date: currentDate()
     });
@@ -239,7 +238,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
   const assistanceUpdate = req.body as Assistance & Address;
 
   try {
-    const response = await assistanceModel.update(Number(assistanceId), {
+    const response = await assistanceModel.update(assistanceId, {
       ...assistanceUpdate, id: undefined
     });
 
@@ -256,7 +255,7 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
 
   try {
     const assistanceInfo = await assistanceModel.searchByID({
-      id: Number(assistanceId),
+      id: assistanceId,
       fields: ["owner_id", "available_vacancies", "suspended", "available"]
     });
 
@@ -266,7 +265,7 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
         message: "This assistance no longer exists",
       }));;
 
-    if (assistanceInfo.assistance.owner_id === Number(userId))
+    if (assistanceInfo.assistance.owner_id === userId)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This user can not subscribe onto his own assistance",
@@ -280,7 +279,7 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
 
     const isSubscribed = await assistanceModel.findSubscribedUsersByID({
       userId: userId,
-      assistanceId: Number(assistanceId),
+      assistanceId: assistanceId,
       select: ["assistance_presence_list.id"]
     });
 
@@ -325,7 +324,7 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
         message: "This assistance no longer exists",
       }));;
 
-    if (assistanceInfo.assistance.owner_id === Number(userId))
+    if (assistanceInfo.assistance.owner_id === userId)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This user can not unsubscribe in his own assistance",
@@ -372,12 +371,12 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
 
   try {
     const assistance = (await assistanceModel.searchByID({
-      id: Number(assistanceId),
+      id: assistanceId,
       fields: ["owner_id"]
     }))?.assistance;
 
-    const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId: Number(assistanceId), select: ["assistance_presence_list.id"] });
-
+    const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId: assistanceId, select: ["assistance_presence_list.id"] });
+    
     if (user === undefined && userId != assistance?.owner_id)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
@@ -404,6 +403,7 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
     res.json(users);
 
   } catch (error) {
+    console.log(error);
     return next(new CustomError({ error }));
   }
 };
