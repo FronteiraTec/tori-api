@@ -114,7 +114,7 @@ export default class DbHelper {
     return this;
   }
 
-  and(...args: string[]): this {
+  and(...args: any[]): this {
     let and;
 
     if (args.length === 2) {

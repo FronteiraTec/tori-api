@@ -279,7 +279,8 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
 
     const isSubscribed = await assistanceModel.findSubscribedUsersByID({
       userId: userId,
-      assistanceId: Number(assistanceId)
+      assistanceId: Number(assistanceId),
+      select: ["assistance_presence_list.id"]
     });
 
     if (isSubscribed !== undefined)
@@ -289,7 +290,7 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
       }));
 
     const subscribe = await assistanceModel.subscribeUser({
-      id: assistanceId,
+      assistance_id: assistanceId,
       student_id: userId,
     });
 
@@ -313,7 +314,7 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
   try {
 
     const assistanceInfo = await assistanceModel.searchByID({
-      id: Number(assistanceId),
+      id: assistanceId,
       fields: ["owner_id", "available_vacancies", "suspended", "available"]
     });
 
@@ -328,11 +329,11 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
         code: ErrorCode.BAD_REQUEST,
         message: "This user can not unsubscribe in his own assistance",
       }));
-
+    
 
     const result = await assistanceModel.unsubscribeUsersByID({
       userId,
-      assistanceId: Number(assistanceId)
+      assistanceId
     });
 
     if (result === undefined)
@@ -374,7 +375,7 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
       fields: ["owner_id"]
     }))?.assistance;
 
-    const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId: Number(assistanceId) });
+    const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId: Number(assistanceId), select: ["assistance_presence_list.id"] });
 
     if (user === undefined && userId != assistance?.owner_id)
       return next(new CustomError({

@@ -33,9 +33,9 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
   const db = new DbHelper();
 
   if (fields)
-    fieldSearch(fields, db)
+    fieldSearch({ fields, db })
   else {
-    defaultSearch(db);
+    defaultSearch({ db });
   }
 
   if (order)
@@ -63,14 +63,14 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
 }
 
 export const searchByID = async ({ id, fields }:
-  { fields?: string[], id: number | undefined; }) => {
+  { fields?: string[], id: number | string | undefined; }) => {
 
   const db = new DbHelper();
 
   if (fields)
-    fieldSearch(fields, db);
+    fieldSearch({ fields, db });
   else
-    defaultSearch(db);
+    defaultSearch({ db });
 
   db.where("assistance.id", String(id));
 
@@ -90,9 +90,9 @@ export const searchByName = async ({ name, fields, args }:
   const db = new DbHelper();
 
   if (fields)
-    fieldSearch(fields, db);
+    fieldSearch({ fields, db });
   else
-    defaultSearch(db);
+    defaultSearch({ db });
 
   db.where("assistance.title")
     .like(`%${name}%`);
@@ -117,9 +117,9 @@ export const searchByTag = async ({ tags, fields, args }:
   const db = new DbHelper();
 
   if (fields)
-    fieldSearch(fields, db);
+    fieldSearch({ fields, db });
   else
-    defaultSearch(db);
+    defaultSearch({ db });
 
   db.leftJoin("assistance_tag as at at.assistance_id", "assistance.id")
     .leftJoin("tag.id", "at.id")
@@ -156,16 +156,15 @@ export const searchByNameTagDescription = async ({ search, fields, args }:
   const db = new DbHelper();
 
   if (fields)
-    fieldSearch(fields, db);
+    fieldSearch({ fields, db });
   else
-    defaultSearch(db);
+    defaultSearch({ db });
 
   db.leftJoin("assistance_tag as at at.assistance_id", "assistance.id")
     .leftJoin("tag.id", "at.id")
 
   if (search)
     search.map((string, i) => {
-      console.log("i = ", i)
       if (i == 0)
         db.where("(tag.name")
       else
@@ -275,32 +274,39 @@ export const findAllSubscribedUsers = async (assistanceId: number, select: strin
   }
 };
 
-export const findSubscribedUsersByID = async ({ userId, assistanceId }: { userId: number; assistanceId: number; }) => {
+export const findSubscribedUsersByID = async ({ userId, assistanceId, select }: { select?: string[], userId: number; assistanceId: number; }) => {
   const db = new DbHelper();
+
+  db.join("assistance.id", "assistance_presence_list.assistance_id")
+
+  if (select)
+    fieldSearch({ fields: select, db, from: "assistance_presence_list" });
+  else
+    defaultSearch({ db, from: "assistance_presence_list" });
+
+  console.log(assistanceId, userId)
 
   try {
     const user = await db
-      .select()
-      .from("assistance_presence_list")
-      .where("student_id", userId.toString())
-      .and("assistance_id", assistanceId.toString())
+      .where("assistance_presence_list.student_id", userId)
+      .and("assistance_presence_list.assistance_id", assistanceId)
       .resolve() as { assistance_presence_list: AssistancePresenceList }[];
 
-    return user.length > 0 ? user[0].assistance_presence_list : undefined;
+    return user.length > 0 ? user[0] : undefined;
   }
   catch (err) {
     throw err;
   }
 };
 
-export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: number; assistanceId: number; }) => {
+export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: number | string; assistanceId: number | string; }) => {
   const db = new DbHelper();
 
   try {
     const user = await db
       .delete("assistance_presence_list")
-      .where("student_id", userId.toString())
-      .and("assistance_id", assistanceId.toString())
+      .where("student_id", userId)
+      .and("assistance_id", assistanceId)
       .resolve() as DeleteResponse[];
 
     return user.length > 0 ? user[0] : undefined;
@@ -310,10 +316,58 @@ export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: n
   }
 };
 
-const fieldSearch = (fields: string[], db: DbHelper) => {
+export const findAllSubscribedAssistanceByUser = async ({ userId, select }: { userId: number; select?: string[]; }) => {
+  const db = new DbHelper();
+
+  db.join("assistance.id", "assistance_presence_list.assistance_id")
+
+  if (select)
+    fieldSearch({ fields: select, db, from: "assistance_presence_list" });
+  else
+    defaultSearch({ db, from: "assistance_presence_list" });
+
+  try {
+    const res = await db
+      .where("assistance_presence_list.student_id", userId)
+      .resolve() as { user: User, assistance_presence_list: AssistancePresenceList }[];
+
+
+    return [...res];
+  }
+  catch (err) {
+    throw err;
+  }
+};
+
+export const findAllCreatedAssistanceByUser = async ({ userId, select }: { userId: number; select?: string[]; }) => {
+  const db = new DbHelper();
+
+  if (select)
+    fieldSearch({ fields: select, db });
+  else
+    defaultSearch({ db });
+
+  try {
+    const res = await db
+      .where("assistance.owner_id", userId)
+      .resolve() as { user: User, assistance_presence_list: AssistancePresenceList }[];
+
+    return [...res];
+  }
+  catch (err) {
+    throw err;
+  }
+};
+
+const fieldSearch = ({ fields, db, from }: { from?: string, fields: string[]; db: DbHelper; }) => {
   const fieldsString = fields.join(",");
   db.select(fieldsString);
-  db.from("assistance");
+
+  if (from)
+    db.from(from);
+  else
+    db.from("assistance");
+
 
   const address = fieldsString.search("address.");
   const assistant = fieldsString.search("assistant.");
@@ -335,9 +389,13 @@ const fieldSearch = (fields: string[], db: DbHelper) => {
   return db;
 };
 
-const defaultSearch = (db: DbHelper) => {
+const defaultSearch = ({ db, from }: { db: DbHelper; from?: string; }) => {
+  if (from)
+    db.from(from);
+  else
+    db.from("assistance");
+
   db.
-    from("assistance").
     select(`
         assistance.*,
         assistant.id,

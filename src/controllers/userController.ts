@@ -8,6 +8,7 @@ import { errorResponse } from '../helpers/responseHelper';
 import { parseQueryField } from 'src/helpers/utilHelper';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { createImageName, saveImageFromBase64 } from 'src/helpers/outputHelper';
+import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedUsersByID } from 'src/models/assistanceModel';
 
 
 enum UserQueryOption {
@@ -190,6 +191,82 @@ export const uploadImage = async (req: Request, res: Response, next: NextFunctio
     return next(new CustomError({ error }));
   }
 };
+
+export const assistanceCreated = async (req: Request, res: Response, next: NextFunction) => {
+  const userId = (req as any).user;
+
+  const { fields: rawFields, q, search } = req.query;
+
+  const fields = parseQueryField(rawFields);
+
+  const ownerIdIndex = fields?.findIndex(element => element === "assistance.owner_id");
+
+  if (ownerIdIndex === -1)
+    fields?.push("assistance.owner_id");
+
+  try {
+    switch (q) {
+      case "id": {
+
+        const userAssistance = await searchByID({
+          id: search,
+          fields
+        });
+
+        if (userAssistance?.assistance.owner_id != userId)
+          return next(new CustomError({ code: ErrorCode.UNAUTHORIZED }));
+        if(ownerIdIndex === -1)
+          delete userAssistance?.assistance.owner_id;
+
+        return res.json(userAssistance);
+      }
+
+      default: {
+        const userAssistanceList = await findAllCreatedAssistanceByUser({
+          userId,
+          select: fields
+        });
+
+        return res.json(userAssistanceList);
+      }
+    }
+
+  } catch (error) {
+    return next(new CustomError({ error }));
+  }
+
+};
+
+export const assistanceSubscribed = async (req: Request, res: Response, next: NextFunction) => {
+  const fields = (req as any).fields;
+  const userId = (req as any).user;
+
+  const {q, search} = req.query;
+
+  try {
+    if(q === "id") {
+      const userAssistance = await findSubscribedUsersByID({
+        userId,
+        assistanceId: search,
+        select: fields
+      });
+
+      return res.json(userAssistance);
+    }
+
+    const userAssistanceList = await findAllSubscribedAssistanceByUser({
+      userId,
+      select: fields
+    });
+
+    return res.json(userAssistanceList)
+  } catch (error) {
+    return next(new CustomError({ error }));
+  }
+};
+
+
+
 
 function verifyUserPermission(parsedFields: any) {
   const notAllowedSearchFields = [
