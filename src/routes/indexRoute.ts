@@ -12,8 +12,7 @@ router.use("/assistance", assistanceRouter);
 router.use("/auth", authRouter);
 router.use("/user", userRouter);
 
-//TODO: route to get userImage
+
 //TODO: encript assistance id and decript it 
-//TODO: route to confirm user presence on assistance
 
 export default router;

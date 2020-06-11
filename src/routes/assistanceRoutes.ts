@@ -3,17 +3,19 @@ import * as controller from "src/controllers/assistanceController";
 import { userAuthenticated } from "src/middleware/authMiddleware";
 import { verifyIfUserHasPermission, allowedSearchField } from 'src/middleware/permissionMiddleware';
 
-const assistanceRouter: Router = Router();
+const router = Router();
 
-//TODO: get latitude and longitude from cep
-assistanceRouter.delete("/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.deleteById);
-assistanceRouter.patch("/disable/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.disableById);
-assistanceRouter.patch("/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.update);
-assistanceRouter.post("/subscribe/:assistanceId", userAuthenticated, controller.subscribeUser);
-assistanceRouter.get("/subscribers/:assistanceId", userAuthenticated, allowedSearchField, controller.getSubscribers);
-assistanceRouter.patch("/unsubscribe/:assistanceId", userAuthenticated, controller.unsubscribeUser);
-assistanceRouter.post("/", userAuthenticated, controller.create);
-assistanceRouter.get("/", allowedSearchField, controller.getAll);
-assistanceRouter.get("/search", allowedSearchField, controller.searchQuery);
+router.delete("/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.deleteById);
+router.patch("/disable/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.disableById);
+router.patch("/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.update);
+router.post("/subscribe/:assistanceId", userAuthenticated, controller.subscribeUser);
+router.get("/subscribers/:assistanceId", userAuthenticated, allowedSearchField, controller.getSubscribers);
+router.patch("/unsubscribe/:assistanceId", userAuthenticated, controller.unsubscribeUser);
+router.get("/search", allowedSearchField, controller.searchQuery);
+//TODO: Document thus route
+router.patch("/confirm-presence/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.assistanceGivePresence);
 
-export default assistanceRouter;
+router.post("/", userAuthenticated, controller.create);
+router.get("/", allowedSearchField, controller.getAll);
+
+export default router;

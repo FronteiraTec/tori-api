@@ -65,11 +65,12 @@ export const saveUserUniqueQrCodeFromRawId = async (userId: string | number, sav
   }
 
   const toSave = encryptText(userId);
-  const fileName = encryptText(userId, BaseEnumEncryptOptions.hex) + ".png";
+  const encryptId = encryptText(userId, BaseEnumEncryptOptions.hex);
+  const fileName = encryptId + ".png";
 
   try {
     await qrCodeToFile(join(savePath, fileName), toSave);
-    return true;
+    return encryptId;
   }
   catch (err) {
     throw err;
@@ -95,7 +96,7 @@ export const decryptText = (encryptedText: string, base?: BaseEnumEncryptOptions
   if (encryptedText === null || encryptedText === undefined || encryptedText === '') {
     return encryptedText;
   }
-
+  
   const config = getCryptConfigAES();
 
   const decipher = crypto.createDecipheriv('aes-256-cbc', config.cryptKey, config.iv)
@@ -110,6 +111,10 @@ export const decryptText = (encryptedText: string, base?: BaseEnumEncryptOptions
   }
 };
 
+export const getQrCodePath = () => {
+  return process.env.USER_UNIQUE_QR_CODE_PATH?.split("src/")[1];
+}
+
 const getCryptConfigAES = () => {
   const password = process.env.CRYPT_AES_PASSWORD;
 
@@ -122,6 +127,7 @@ const getCryptConfigAES = () => {
     iv: 'a2xhCgAAAAAAAAAA'
   };
 };
+
 
 export enum BaseEnumEncryptOptions {
   base64 = "base64",

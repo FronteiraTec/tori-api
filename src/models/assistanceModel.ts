@@ -256,7 +256,7 @@ export const subscribeUser = async (presenceList: AssistancePresenceList | Objec
   }
 };
 
-export const findAllSubscribedUsers = async (assistanceId: number, select: string) => {
+export const findAllSubscribedUsers = async (assistanceId: number | string, select: string) => {
   const db = new DbHelper();
 
   try {
@@ -313,6 +313,37 @@ export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: n
   }
   catch (err) {
     throw err;
+  }
+};
+
+export const editSubscribedUsersByID = async ({ userId, assistanceId, fields }: { fields: AssistancePresenceList | object, userId: number | string; assistanceId: number | string; }) => {
+  const db = new DbHelper();
+
+  try {
+    const result = await db.update("assistance_presence_list", fields)
+      .where("assistance_presence_list.student_id", userId)
+      .and("assistance_presence_list.assistance_id", assistanceId)
+      .resolve();
+
+    return result;
+  }
+  catch (err) {
+    throw err;
+  }
+};
+
+export const givePresenceToUser = async (assistanceId: string | number, userId: string | number) => {
+
+  try {
+    return (await editSubscribedUsersByID({
+      assistanceId,
+      userId,
+      fields: {
+        student_presence: true
+      }
+    }))[0] as InsertResponse;
+  } catch (error) {
+    throw error;
   }
 };
 

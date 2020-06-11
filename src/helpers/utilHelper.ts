@@ -54,6 +54,22 @@ const allowedFields = (fields: string[]) => {
     "address.latitude",
     "address.longitude",
     "address.assistance_id",
+    "user.full_name",
+    "user.created_at",
+    "user.student_stars",
+    "user.email",
+    "user.course_id",
+    "userCourse.id",
+    "userCourse.name",
+    "userCourse.description",
+    "student.full_name",
+    "student.created_at",
+    "student.student_stars",
+    "student.email",
+    "student.course_id",
+    "studentCourse.id",
+    "studentCourse.name",
+    "studentCourse.description"
   ];
 
   for (const field of fields) {

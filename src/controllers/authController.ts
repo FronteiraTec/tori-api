@@ -7,7 +7,12 @@ import { multiValidate, validate } from 'src/helpers/validationHelper';
 import { generateJWT } from 'src/helpers/jwtHelper';
 import { updateOnlyNullFields } from 'src/models/userModel';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
-import { saveUserUniqueQrCodeFromRawId, encryptText } from 'src/helpers/outputHelper';
+import { 
+  saveUserUniqueQrCodeFromRawId, 
+  encryptText, 
+  BaseEnumEncryptOptions, 
+  getQrCodePath } from 'src/helpers/outputHelper';
+import { join } from 'path';
 
 
 export const signIn = async (req: Request, res: Response, next: NextFunction) => {
@@ -258,9 +263,16 @@ async function defaultLoginResponse(user: User) {
     id: String(user.id),
   });
 
+  const qrCode = encryptText(user.id, BaseEnumEncryptOptions.hex);
+  const qrCodePath = getQrCodePath();
+
+  if(qrCodePath === undefined)
+    throw new Error("No qrCode path found");
+
   return {
     full_name: user.full_name,
     token,
-    expiresIn
+    expiresIn,
+    qrCode: join(qrCodePath, qrCode + ".png")
   };
 }

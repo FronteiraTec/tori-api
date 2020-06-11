@@ -7,6 +7,7 @@ import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { QueryOptions, addTags } from 'src/helpers/assistanceHelper';
 import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch } from 'src/helpers/utilHelper';
 import { toBoolean } from 'src/helpers/conversionHelper';
+import { decryptText } from 'src/helpers/outputHelper';
 
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -329,7 +330,7 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
         code: ErrorCode.BAD_REQUEST,
         message: "This user can not unsubscribe in his own assistance",
       }));
-    
+
 
     const result = await assistanceModel.unsubscribeUsersByID({
       userId,
@@ -390,24 +391,40 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
       }));
     }
 
-    const parsedFields = parseQueryField(fields);
-
-    if (notAllowedFieldsSearch(parsedFields))
+    if (notAllowedFieldsSearch(fields))
       return next(new CustomError({
         code: ErrorCode.UNAUTHORIZED
       }));
 
-    if (parsedFields === undefined)
-      throw new CustomError({ code: ErrorCode.BAD_REQUEST });
-
     const users = await assistanceModel
       .findAllSubscribedUsers(
-        Number(assistanceId),
-        parsedFields.join(",")
+        assistanceId,
+        fields.join(",")
       );
     res.json(users);
 
   } catch (error) {
     return next(new CustomError({ error }));
+  }
+};
+
+export const assistanceGivePresence = async (req: Request, res: Response, next: NextFunction) => {
+  const { userCode } = req.body;
+  const { assistanceId } = req.params;
+
+  const userId = decryptText(userCode);
+
+  if (userId === undefined)
+    return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "User code invalid sent. Send a valid user code." }));
+
+  try {
+    const response = await assistanceModel.givePresenceToUser(assistanceId, userId);
+  
+    if(response.affectedRows === 0)
+      return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "User not subscribed on this assistance."}));
+  
+    res.json(true);
+  } catch (error) {
+    return next(new CustomError({code: ErrorCode.INTERNAL_ERROR, message: "User not subscribed on this assistance."}));
   }
 };

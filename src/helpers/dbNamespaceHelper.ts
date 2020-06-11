@@ -39,7 +39,7 @@ export interface address {
 }
 
 export namespace assistanceFields {
-    export type id = number;
+    export type id = number | string;
     export type owner_id = number;
     export type title = string;
     export type total_vacancies = number;

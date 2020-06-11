@@ -7,7 +7,7 @@ import { httpCode } from '../helpers/statusCodeHelper';
 import { errorResponse } from '../helpers/responseHelper';
 import { parseQueryField } from 'src/helpers/utilHelper';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
-import { createImageName, saveImageFromBase64 } from 'src/helpers/outputHelper';
+import { createImageName, saveImageFromBase64, saveUserUniqueQrCodeFromRawId } from 'src/helpers/outputHelper';
 import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedUsersByID } from 'src/models/assistanceModel';
 
 
@@ -215,7 +215,7 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
 
         if (userAssistance?.assistance.owner_id != userId)
           return next(new CustomError({ code: ErrorCode.UNAUTHORIZED }));
-        if(ownerIdIndex === -1)
+        if (ownerIdIndex === -1)
           delete userAssistance?.assistance.owner_id;
 
         return res.json(userAssistance);
@@ -241,10 +241,10 @@ export const assistanceSubscribed = async (req: Request, res: Response, next: Ne
   const fields = (req as any).fields;
   const userId = (req as any).user;
 
-  const {q, search} = req.query;
+  const { q, search } = req.query;
 
   try {
-    if(q === "id") {
+    if (q === "id") {
       const userAssistance = await findSubscribedUsersByID({
         userId,
         assistanceId: search,
@@ -265,6 +265,18 @@ export const assistanceSubscribed = async (req: Request, res: Response, next: Ne
   }
 };
 
+export const generateQrCode = async (req: Request, res: Response, next: NextFunction) => {
+  const userId = (req as any).user;
+
+  try {
+    const imageName = await saveUserUniqueQrCodeFromRawId(userId);
+
+    res.json(imageName);
+  } catch (error) {
+    next(new CustomError({ error }));
+  }
+
+}
 
 
 

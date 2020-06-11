@@ -13,6 +13,7 @@ export const verifyIfUserHasPermission = async (req: Request, res: Response, nex
       fields: ["owner_id"]
     }))?.assistance;
 
+
     if (assistance?.owner_id === undefined || assistance.owner_id != userId) {
       return next(new CustomError({
         message: "User has no permission to complete this operation",
@@ -40,15 +41,16 @@ export const allowedSearchField = (req: Request, res: Response, next: NextFuncti
   const { fields } = req.query;
   const parsedFields = parseQueryField(fields);
 
-  console.log(parsedFields);
-
   if (parsedFields !== undefined)
     if (!allowedFields(parsedFields))
       return next(new CustomError({
         code: ErrorCode.UNAUTHORIZED
       }));
+
   
   (req as any).fields = parsedFields;
+  
+
 
   next();
 };
