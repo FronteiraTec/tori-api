@@ -211,7 +211,10 @@ export const deleteById = async (req: Request, res: Response, next: NextFunction
     res.json("Success");
   }
   catch (error) {
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error, 
+      message: "An error ocurried while deleting this assistance."  
+    }));
   }
 };
 
@@ -228,7 +231,10 @@ export const disableById = async (req: Request, res: Response, next: NextFunctio
     res.json("Success");
   }
   catch (error) {
-    return next(new CustomError({ error }));;
+    return next(new CustomError({ 
+      error,
+      message: "An error ocurried while disabling this assistance."  
+     }));;
   }
 };
 
@@ -245,7 +251,10 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     res.json("Success");
   }
   catch (error) {
-    return next(new CustomError({ error }));;
+    return next(new CustomError({ 
+      error,
+      message: "An error occuried while updating this assistance."
+     }));;
   }
 };
 
@@ -301,7 +310,10 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
     res.json("User subscribed successfully");
 
   } catch (error) {
-    return next(new CustomError({ error }));;
+    return next(new CustomError({ 
+      error,
+      message: "An error occuried while subscribing this user."
+     }));;
   }
 
 };
@@ -403,8 +415,10 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
     res.json(users);
 
   } catch (error) {
-    console.log(error);
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error,
+      message: "An error occuried while getting user in this assistance."
+     }));
   }
 };
 
@@ -415,16 +429,25 @@ export const assistanceGivePresence = async (req: Request, res: Response, next: 
   const userId = decryptText(userCode);
 
   if (userId === undefined)
-    return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "User code invalid sent. Send a valid user code." }));
+    return next(new CustomError({ 
+      code: ErrorCode.BAD_REQUEST, 
+      message: "User code invalid sent. Send a valid user code."
+    }));
 
   try {
     const response = await assistanceModel.givePresenceToUser(assistanceId, userId);
   
     if(response.affectedRows === 0)
-      return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "User not subscribed on this assistance."}));
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST, 
+        message: "User not subscribed on this assistance."
+      }));
   
     res.json(true);
   } catch (error) {
-    return next(new CustomError({code: ErrorCode.INTERNAL_ERROR, message: "User not subscribed on this assistance."}));
+    return next(new CustomError({
+      code: ErrorCode.INTERNAL_ERROR, 
+      message: "User not subscribed on this assistance."
+    }));
   }
 };

@@ -68,7 +68,7 @@ export const DefaultErrorMessage = {
   [ErrorCode.LIM_OFF_NOT_NUM]: "Limit or offset are not numbers.",
   [ErrorCode.UNAUTHORIZED]: "You has no authorization to access this content",
   [ErrorCode.BAD_REQUEST]: "One of fields are either malformed or missing.",
-  [ErrorCode.INTERNAL_ERROR]: "One of fields are either malformed or missing.",
+  [ErrorCode.INTERNAL_ERROR]: "An unknown erros has occuried.",
   [ErrorCode.ER_BAD_FIELD_ERROR]: "One of fields does not exist on database. Please consult the documentation.",
   [ErrorCode.ER_NON_UNIQ_ERROR]: "Not unique key, please verify your fields and search for duplicates.",
   [ErrorCode.ER_JSON_CON]: "Error while parsing json fields, please send valid encoded json.",
