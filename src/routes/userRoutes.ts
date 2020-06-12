@@ -8,7 +8,7 @@ const router = Router();
 
 router.get('/', userAuthenticated, allowedSearchField ,controller.getAll);
 router.patch('/', userAuthenticated, controller.updateUser);
-
+router.delete("/", userAuthenticated, controller.deleteUser);
 router.get('/search', userAuthenticated, controller.searchUser);
 router.put('/profile-picture', userAuthenticated, controller.uploadImage);
 router.get('/assistance/created', userAuthenticated, controller.assistanceCreated);

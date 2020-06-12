@@ -3,7 +3,6 @@ import { errorResponse } from '../helpers/responseHelper';
 import { httpCode } from '../helpers/statusCodeHelper';
 import { validateJWT } from '../helpers/jwtHelper';
 
-
 export const userAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   function getToken(req: Request) {
     const authHeader = req.headers.authorization;
@@ -20,11 +19,10 @@ export const userAuthenticated = async (req: Request, res: Response, next: NextF
   if (token === false)
     return errorResponse({ message: "Unauthorized", code: httpCode.Unauthorized, res });
 
-
-
   try {
     const tokenDecoded = await validateJWT({ token });
     const userId = Object(tokenDecoded).data.id;
+
     (req as any).user = userId;
     
     next();
