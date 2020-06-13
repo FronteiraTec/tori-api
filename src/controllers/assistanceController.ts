@@ -27,6 +27,8 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
     return res.json(allAssistance);
 
   } catch (error) {
+    console.log(error);
+
     return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }))
   }
 };

@@ -33,7 +33,7 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
 
     res.json(result);
   } catch (error) {
-
+    console.log(error)
     return next(new CustomError({
       error,
       message: "An error has occuried while retriving assistance list."
@@ -104,6 +104,7 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
     }
   }
   catch (error) {
+    console.log(error);
     return next(new CustomError({
       error,
       message: "An error has occuried while searching user"

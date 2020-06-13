@@ -33,7 +33,7 @@ interface FilterOptions {
 export const getAll = async ({ limit, offset, available, order, fields }: { fields: string[] | undefined, order: string, limit: number; offset: number; available: boolean; }) => {
   const db = new DbHelper();
 
-  if (fields)
+  if (fields?.length)
     fieldSearch({ fields, db })
   else {
     defaultSearch({ db });
@@ -93,7 +93,7 @@ export const searchByName = async ({ name, fields, args }:
 
   const db = new DbHelper();
 
-  if (fields)
+  if (fields?.length)
     fieldSearch({ fields, db });
   else
     defaultSearch({ db });
@@ -120,7 +120,7 @@ export const searchByTag = async ({ tags, fields, args }:
 
   const db = new DbHelper();
 
-  if (fields)
+  if (fields?.length)
     fieldSearch({ fields, db });
   else
     defaultSearch({ db });
@@ -159,7 +159,7 @@ export const searchByNameTagDescription = async ({ search, fields, args }:
 
   const db = new DbHelper();
 
-  if (fields)
+  if (fields?.length)
     fieldSearch({ fields, db });
   else
     defaultSearch({ db });
@@ -283,7 +283,7 @@ export const findSubscribedUsersByID = async ({ userId, assistanceId, select, ar
 
   db.join("assistance.id", "assistance_presence_list.assistance_id")
 
-  if (select)
+  if (select?.length)
     fieldSearch({ fields: select, db, from: "assistance_presence_list" });
   else
     defaultSearch({ db, from: "assistance_presence_list" });
@@ -358,7 +358,7 @@ export const findAllSubscribedAssistanceByUser = async ({ args, userId, select }
 
   db.join("assistance.id", "assistance_presence_list.assistance_id")
 
-  if (select)
+  if (select?.length)
     fieldSearch({ fields: select, db, from: "assistance_presence_list" });
   else
     defaultSearch({ db, from: "assistance_presence_list" });
@@ -382,7 +382,7 @@ export const findAllSubscribedAssistanceByUser = async ({ args, userId, select }
 export const findAllCreatedAssistanceByUser = async ({ userId, select, args }: { args?: FilterOptions, userId: number; select?: string[]; }) => {
   const db = new DbHelper();
 
-  if (select)
+  if (select?.length)
     fieldSearch({ fields: select, db });
   else
     defaultSearch({ db });
