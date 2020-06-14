@@ -5,7 +5,7 @@ import * as addressModel from 'src/models/addressModel';
 import { assistance as Assistance, address as Address } from 'src/helpers/dbNamespaceHelper';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { QueryOptions, addTags } from 'src/helpers/assistanceHelper';
-import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch } from 'src/helpers/utilHelper';
+import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch, decryptHexId } from 'src/helpers/utilHelper';
 import { toBoolean } from 'src/helpers/conversionHelper';
 import { decryptText } from 'src/helpers/utilHelper';
 
@@ -161,14 +161,15 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const newAssistance = await assistanceModel.create({
       available_vacancies,
-      course_id,
+      course_id: decryptHexId(course_id),
       date,
       description,
-      subject_id,
       title,
       total_vacancies,
-      owner_id: userId,
+      owner_id: decryptHexId(userId),
     });
+
+
 
     const newAddress = await (async () => {
       try {
@@ -195,12 +196,14 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       }));
     }
 
-    if (tags)
-      addTags(tags);
+    if (tags && newAssistance.insertId){
+      addTags(newAssistance.insertId, tags);
+    }
 
     res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
   }
   catch (error) {
+    console.log(error);
     return next(new CustomError({ error }));;
   }
 };
