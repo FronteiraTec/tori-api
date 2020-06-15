@@ -211,8 +211,10 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
 export const deleteById = async (req: Request, res: Response, next: NextFunction) => {
   const { assistanceId } = req.params;
 
+  console.log(assistanceId);
+
   try {
-    const response = await assistanceModel.deleteById(assistanceId);
+    // const response = await assistanceModel.deleteById(assistanceId);
     res.json("Success");
   }
   catch (error) {
