@@ -163,7 +163,6 @@ export const deleteById = async (userId: number) => {
 
     return result;
   } catch (err) {
-    // console.log(err);
     throw err;
   }
 }

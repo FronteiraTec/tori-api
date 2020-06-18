@@ -33,7 +33,7 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
 
     res.json(result);
   } catch (error) {
-
+    console.log(error)
     return next(new CustomError({
       error,
       message: "An error has occuried while retriving assistance list."
@@ -104,6 +104,7 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
     }
   }
   catch (error) {
+    console.log(error);
     return next(new CustomError({
       error,
       message: "An error has occuried while searching user"
@@ -125,6 +126,7 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
   }
 
   try {
+    console.log(userId, userFields)
     await userModel.update(userId, userFields);
 
     if (addressId)
@@ -133,6 +135,12 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
     res.json("Fields updated successfully");
   }
   catch (error) {
+    if (error.code === "ER_BAD_FIELD_ERROR")
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
+        message: "Some of fields are not valid. Please fill the userFields with valid fields."
+      }));
+
     return next(new CustomError({
       error,
       message: "An error has occuried while updating this user."
@@ -168,6 +176,12 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
     return res.json({ message: "User deleted successfully" });
   }
   catch (error) {
+    if (error.code === "ER_ROW_IS_REFERENCED_2")
+      return next(new CustomError({
+        error,
+        message: "This user has assistances or participated in one. Try disable this account instead of deleting it."
+      }));
+
     return next(new CustomError({
       error,
       message: "An error has occuried while deleting this user."

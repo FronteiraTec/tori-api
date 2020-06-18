@@ -5,12 +5,12 @@ import { allowedFields, parseQueryField } from 'src/helpers/utilHelper';
 import { decryptText, BaseEnumEncryptOptions } from 'src/helpers/utilHelper';
 
 export const verifyIfUserHasPermission = async (req: Request, res: Response, next: NextFunction) => {
-  const userId = (req as any).user as number;
+  const userId = (req as any).user;
   const { assistanceId } = req.params;
 
   try {
     const assistance = (await searchByID({
-      id: Number(assistanceId),
+      id: assistanceId,
       fields: ["owner_id"]
     }))?.assistance;
 

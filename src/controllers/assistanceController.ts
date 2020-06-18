@@ -5,7 +5,7 @@ import * as addressModel from 'src/models/addressModel';
 import { assistance as Assistance, address as Address } from 'src/helpers/dbNamespaceHelper';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { QueryOptions, addTags } from 'src/helpers/assistanceHelper';
-import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch } from 'src/helpers/utilHelper';
+import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch, decryptHexId } from 'src/helpers/utilHelper';
 import { toBoolean } from 'src/helpers/conversionHelper';
 import { decryptText } from 'src/helpers/utilHelper';
 
@@ -27,6 +27,8 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
     return res.json(allAssistance);
 
   } catch (error) {
+    console.log(error);
+
     return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }))
   }
 };
@@ -159,14 +161,15 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const newAssistance = await assistanceModel.create({
       available_vacancies,
-      course_id,
+      course_id: decryptHexId(course_id),
       date,
       description,
-      subject_id,
       title,
       total_vacancies,
-      owner_id: userId,
+      owner_id: decryptHexId(userId),
     });
+
+
 
     const newAddress = await (async () => {
       try {
@@ -193,12 +196,14 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       }));
     }
 
-    if (tags)
-      addTags(tags);
+    if (tags && newAssistance.insertId){
+      addTags(newAssistance.insertId, tags);
+    }
 
     res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
   }
   catch (error) {
+    console.log(error);
     return next(new CustomError({ error }));;
   }
 };
@@ -206,8 +211,10 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
 export const deleteById = async (req: Request, res: Response, next: NextFunction) => {
   const { assistanceId } = req.params;
 
+  console.log(assistanceId);
+
   try {
-    const response = await assistanceModel.deleteById(assistanceId);
+    // const response = await assistanceModel.deleteById(assistanceId);
     res.json("Success");
   }
   catch (error) {
@@ -304,12 +311,13 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
     });
 
     const updateAssistance = assistanceModel.update(assistanceId, {
-      available_vacancies: assistanceInfo.assistance.available_vacancies - 1
+    available_vacancies: assistanceInfo.assistance.available_vacancies - 1
     });
 
     res.json("User subscribed successfully");
 
   } catch (error) {
+    console.log(error);
     return next(new CustomError({ 
       error,
       message: "An error occuried while subscribing this user."
@@ -415,6 +423,8 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
     res.json(users);
 
   } catch (error) {
+    console.log("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+    console.log(error);
     return next(new CustomError({ 
       error,
       message: "An error occuried while getting user in this assistance."
@@ -426,16 +436,14 @@ export const assistanceGivePresence = async (req: Request, res: Response, next: 
   const { userCode } = req.body;
   const { assistanceId } = req.params;
 
-  const userId = decryptText(userCode);
-
-  if (userId === undefined)
+  if (userCode === undefined)
     return next(new CustomError({ 
       code: ErrorCode.BAD_REQUEST, 
       message: "User code invalid sent. Send a valid user code."
     }));
 
   try {
-    const response = await assistanceModel.givePresenceToUser(assistanceId, userId);
+    const response = await assistanceModel.givePresenceToUser(assistanceId, userCode);
   
     if(response.affectedRows === 0)
       return next(new CustomError({

@@ -136,6 +136,7 @@ export const decryptText = (encryptedText: string | number | undefined, base?: B
       decipher.final()
     ]).toString();
   } catch (error) {
+    console.log(error)
     return undefined;
   }
 };

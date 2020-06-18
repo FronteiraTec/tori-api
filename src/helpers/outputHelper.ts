@@ -81,6 +81,6 @@ export const saveUserUniqueQrCodeFromRawId = async (userId: string | number, sav
 
 
 export const getQrCodePath = () => {
-  return process.env.USER_UNIQUE_QR_CODE_PATH?.split("src/")[1];
+  return process.env.USER_UNIQUE_QR_CODE_PATH?.split("src")[1];
 }
 

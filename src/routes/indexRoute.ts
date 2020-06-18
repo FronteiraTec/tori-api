@@ -4,6 +4,7 @@ import { Router } from 'express';
 import assistanceRouter from './assistanceRoutes';
 import authRouter from './authRoutes';
 import userRouter from './userRoutes';
+import { encryptTextHex } from 'src/helpers/utilHelper';
 // import { encryptTextHex } from 'src/helpers/utilHelper';
 
 const router = Router();
@@ -20,5 +21,11 @@ router.use("/user", userRouter);
 
 //     res.json(encryptTextHex(id));
 // })
+
+router.get("/", (req: any, res: any) => {
+  const { id } = req.query;
+
+  res.json(encryptTextHex(id));
+})
 
 export default router;
