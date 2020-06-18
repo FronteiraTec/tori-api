@@ -63,8 +63,8 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
   }
 }
 
-export const searchByID = async ({ id, fields }:
-  { fields?: string[], id: number | string; }) => {
+export const searchByID = async ({ id, fields, args }:
+  { args?: FilterOptions, fields?: string[], id: number | string; }) => {
 
   const db = new DbHelper();
 
@@ -72,7 +72,10 @@ export const searchByID = async ({ id, fields }:
     fieldSearch({ fields, db });
   else
     defaultSearch({ db });
-  
+
+  if (args)
+    defaultFilters(args, db);
+
   db.where("assistance.id", decryptHexId(id));
 
   try {
@@ -275,7 +278,7 @@ export const findAllSubscribedUsers = async (assistanceId: number | string, sele
   }
 };
 
-export const findSubscribedUsersByID = async ({ userId, assistanceId, select }: { select?: string[], userId: number | string; assistanceId: number | string; }) => {
+export const findSubscribedUsersByID = async ({ userId, assistanceId, select, args }: { args?: FilterOptions, select?: string[], userId: number | string; assistanceId: number | string; }) => {
   const db = new DbHelper();
 
   db.join("assistance.id", "assistance_presence_list.assistance_id")
@@ -284,6 +287,9 @@ export const findSubscribedUsersByID = async ({ userId, assistanceId, select }: 
     fieldSearch({ fields: select, db, from: "assistance_presence_list" });
   else
     defaultSearch({ db, from: "assistance_presence_list" });
+
+  if (args)
+    defaultFilters(args, db);
 
 
   try {
@@ -347,7 +353,7 @@ export const givePresenceToUser = async (assistanceId: string | number, userId: 
   }
 };
 
-export const findAllSubscribedAssistanceByUser = async ({ userId, select }: { userId: number; select?: string[]; }) => {
+export const findAllSubscribedAssistanceByUser = async ({ args, userId, select }: { args?: FilterOptions, userId: number; select?: string[]; }) => {
   const db = new DbHelper();
 
   db.join("assistance.id", "assistance_presence_list.assistance_id")
@@ -356,6 +362,9 @@ export const findAllSubscribedAssistanceByUser = async ({ userId, select }: { us
     fieldSearch({ fields: select, db, from: "assistance_presence_list" });
   else
     defaultSearch({ db, from: "assistance_presence_list" });
+
+  if (args)
+    defaultFilters(args, db);
 
   try {
     const res = await db
@@ -370,13 +379,16 @@ export const findAllSubscribedAssistanceByUser = async ({ userId, select }: { us
   }
 };
 
-export const findAllCreatedAssistanceByUser = async ({ userId, select }: { userId: number; select?: string[]; }) => {
+export const findAllCreatedAssistanceByUser = async ({ userId, select, args }: { args?: FilterOptions, userId: number; select?: string[]; }) => {
   const db = new DbHelper();
 
   if (select)
     fieldSearch({ fields: select, db });
   else
     defaultSearch({ db });
+
+  if (args)
+    defaultFilters(args, db);
 
   try {
     const res = await db
@@ -494,55 +506,55 @@ const encryptId = (list: AssistanceSearch[]) => {
 
   return list.map(item => {
     const newItem = { ...item };
-    
-    if (item.assistance?.id){
+
+    if (item.assistance?.id) {
       const encryptedAssistanceId = encryptTextHex(item.assistance.id);
       newItem.assistance.id = encryptedAssistanceId;
     }
 
-    
-    if (item.assistance?.owner_id){
+
+    if (item.assistance?.owner_id) {
       const encryptedOwnerId = encryptTextHex(item.assistance.owner_id);
       newItem.assistance.owner_id = encryptedOwnerId;
     }
 
-    
-    if (item.assistance?.course_id){
+
+    if (item.assistance?.course_id) {
       const encryptedCourseId = encryptTextHex(item.assistance.course_id);
       newItem.assistance.course_id = encryptedCourseId;
     }
 
-    
-    if (item.assistant?.id){
+
+    if (item.assistant?.id) {
       const encryptedAssistantId = encryptTextHex(item.assistant.id);
       newItem.assistant.id = encryptedAssistantId;
     }
 
-    if (item.assistantCourse?.id){
+    if (item.assistantCourse?.id) {
       const encryptedAssistantCourseId = encryptTextHex(item.assistantCourse.id);
       newItem.assistantCourse.id = encryptedAssistantCourseId;
     }
 
-    
-    if (item.assistanceCourse?.id){
+
+    if (item.assistanceCourse?.id) {
       const encryptedAssistanceCourseId = encryptTextHex(item.assistanceCourse.id);
       newItem.assistanceCourse.id = encryptedAssistanceCourseId;
     }
 
-    
-    if (item.subject?.id){
+
+    if (item.subject?.id) {
       const encryptedSubjectId = encryptTextHex(item.subject.id);
       newItem.subject.id = encryptedSubjectId;
     }
 
-    
-    if (item.address?.id){
+
+    if (item.address?.id) {
       const encryptedAddressId = encryptTextHex(item.address.id);
       newItem.address.id = encryptedAddressId;
     }
 
-    
-    if (item.address?.assistance_id){
+
+    if (item.address?.assistance_id) {
       const encryptedAddressAssistanceId = encryptTextHex(item.address.assistance_id);
       newItem.address.id = encryptedAddressAssistanceId;
     }
