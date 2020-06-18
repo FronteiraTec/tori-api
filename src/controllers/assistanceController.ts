@@ -311,12 +311,13 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
     });
 
     const updateAssistance = assistanceModel.update(assistanceId, {
-      available_vacancies: assistanceInfo.assistance.available_vacancies - 1
+    available_vacancies: assistanceInfo.assistance.available_vacancies - 1
     });
 
     res.json("User subscribed successfully");
 
   } catch (error) {
+    console.log(error);
     return next(new CustomError({ 
       error,
       message: "An error occuried while subscribing this user."
@@ -422,6 +423,8 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
     res.json(users);
 
   } catch (error) {
+    console.log("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+    console.log(error);
     return next(new CustomError({ 
       error,
       message: "An error occuried while getting user in this assistance."
@@ -433,16 +436,14 @@ export const assistanceGivePresence = async (req: Request, res: Response, next: 
   const { userCode } = req.body;
   const { assistanceId } = req.params;
 
-  const userId = decryptText(userCode);
-
-  if (userId === undefined)
+  if (userCode === undefined)
     return next(new CustomError({ 
       code: ErrorCode.BAD_REQUEST, 
       message: "User code invalid sent. Send a valid user code."
     }));
 
   try {
-    const response = await assistanceModel.givePresenceToUser(assistanceId, userId);
+    const response = await assistanceModel.givePresenceToUser(assistanceId, userCode);
   
     if(response.affectedRows === 0)
       return next(new CustomError({

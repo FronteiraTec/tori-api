@@ -7,6 +7,16 @@
 -- Server version: 10.4.13-MariaDB-1:10.4.13+maria~bionic
 -- PHP Version: 7.4.5
 
+-- DROP DATABASE "myDB" -------------------------------
+DROP DATABASE IF EXISTS `myDB`;
+-- ---------------------------------------------------------
+
+
+-- CREATE DATABASE "myDB_test" -----------------------------
+CREATE DATABASE `myDB` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `myDB`;
+-- -------------
+
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";

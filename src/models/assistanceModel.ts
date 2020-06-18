@@ -246,12 +246,15 @@ export const createTag = async (assistanceTag: AssistanceTag | Object): Promise<
   }
 };
 
-export const subscribeUser = async (presenceList: AssistancePresenceList | Object): Promise<InsertResponse> => {
+export const subscribeUser = async (presenceList: AssistancePresenceList | any): Promise<InsertResponse> => {
   const db = new DbHelper();
 
   try {
     const newPresenceList = await db
-      .insert("assistance_presence_list", presenceList)
+      .insert("assistance_presence_list", {
+        assistance_id: decryptHexId(presenceList.assistance_id),
+        student_id: decryptHexId(presenceList.student_id)
+      } as AssistancePresenceList)
       .resolve() as InsertResponse;
     return newPresenceList;
   }
@@ -274,6 +277,7 @@ export const findAllSubscribedUsers = async (assistanceId: number | string, sele
     return res.length > 0 ? [...res] : undefined;
   }
   catch (err) {
+    console.log(err);
     throw err;
   }
 };
@@ -328,7 +332,7 @@ export const editSubscribedUsersByID = async ({ userId, assistanceId, fields }: 
   try {
     const result = await db.update("assistance_presence_list", fields)
       .where("assistance_presence_list.student_id", decryptHexId(userId))
-      .and("assistance_presence_list.assistance_id", assistanceId)
+      .and("assistance_presence_list.assistance_id", decryptHexId(assistanceId))
       .resolve();
 
     return result;
@@ -344,6 +348,7 @@ export const givePresenceToUser = async (assistanceId: string | number, userId: 
     return (await editSubscribedUsersByID({
       assistanceId,
       userId,
+
       fields: {
         student_presence: true
       }
