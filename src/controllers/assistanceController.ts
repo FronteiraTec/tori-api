@@ -27,8 +27,6 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
     return res.json(allAssistance);
 
   } catch (error) {
-    console.log(error);
-
     return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }))
   }
 };
@@ -203,44 +201,39 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
     res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
   }
   catch (error) {
-    console.log(error);
     return next(new CustomError({ error }));;
   }
 };
 
 export const deleteById = async (req: Request, res: Response, next: NextFunction) => {
   const { assistanceId } = req.params;
-
-  console.log(assistanceId);
-
   try {
-    // const response = await assistanceModel.deleteById(assistanceId);
+    await assistanceModel.deleteById(assistanceId);
     res.json("Success");
   }
   catch (error) {
     return next(new CustomError({ 
       error, 
-      message: "An error ocurried while deleting this assistance."  
+      message: "An error ocurred while deleting this assistance."  
     }));
   }
 };
 
 export const disableById = async (req: Request, res: Response, next: NextFunction) => {
-  const userId = (req as any).user as number;
   const { assistanceId } = req.params;
 
   try {
-    const response = await assistanceModel.update(assistanceId, {
-      suspended: 1,
+    await assistanceModel.update(assistanceId, {
+      available: 0,
       suspended_date: currentDate()
     });
 
-    res.json("Success");
+    res.json({message: "Assistance suspended successfully"});
   }
   catch (error) {
     return next(new CustomError({ 
       error,
-      message: "An error ocurried while disabling this assistance."  
+      message: "An error ocurred while disabling this assistance."  
      }));;
   }
 };
@@ -260,7 +253,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
   catch (error) {
     return next(new CustomError({ 
       error,
-      message: "An error occuried while updating this assistance."
+      message: "An error occurred while updating this assistance."
      }));;
   }
 };
@@ -272,10 +265,10 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
   try {
     const assistanceInfo = await assistanceModel.searchByID({
       id: assistanceId,
-      fields: ["owner_id", "available_vacancies", "suspended", "available"]
+      fields: ["owner_id", "available_vacancies", "available"]
     });
 
-    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.suspended) == true || toBoolean(assistanceInfo.assistance.available) == false)
+    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.available) == false)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This assistance no longer exists",
@@ -317,10 +310,9 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
     res.json("User subscribed successfully");
 
   } catch (error) {
-    console.log(error);
     return next(new CustomError({ 
       error,
-      message: "An error occuried while subscribing this user."
+      message: "An error occurred while subscribing this user."
      }));;
   }
 
@@ -335,10 +327,10 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
 
     const assistanceInfo = await assistanceModel.searchByID({
       id: assistanceId,
-      fields: ["owner_id", "available_vacancies", "suspended", "available"]
+      fields: ["owner_id", "available_vacancies", "available"]
     });
 
-    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.suspended) == true || toBoolean(assistanceInfo.assistance.available) == false)
+    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.available) == false)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This assistance no longer exists",
@@ -423,11 +415,9 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
     res.json(users);
 
   } catch (error) {
-    console.log("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
-    console.log(error);
     return next(new CustomError({ 
       error,
-      message: "An error occuried while getting user in this assistance."
+      message: "An error occurred while getting user in this assistance."
      }));
   }
 };
