@@ -34,7 +34,10 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
     res.json(result);
   } catch (error) {
 
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error,
+      message: "An error has occuried while retriving assistance list."
+    }));
   }
 
 };
@@ -101,7 +104,10 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
     }
   }
   catch (error) {
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error,
+      message: "An error has occuried while searching user" 
+    }));
   }
 };
 
@@ -127,7 +133,10 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
     res.json("Fields updated successfully");
   }
   catch (error) {
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error,
+      message: "An error has occuried while updating this user." 
+    }));
   }
 
   function verifyContentISCorrect(content: any) {
@@ -159,7 +168,10 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
     return res.json({ message: "User deleted successfully" });
   }
   catch (error) {
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error,
+      message: "An error has occuried while deleting this user."
+    }));
   }
 };
 
@@ -188,14 +200,17 @@ export const uploadImage = async (req: Request, res: Response, next: NextFunctio
     return res.json({ message: "Image uploaded successfully" });
   }
   catch (error) {
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error,
+      message: "An error has occuried while uploading this image." 
+    }));
   }
 };
 
 export const assistanceCreated = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user;
-
-  const { fields: rawFields, q, search } = req.query;
+  //TODO: complete limit, offset and active, order and complete this to retrive all too
+  const { fields: rawFields, q, search, limit, offset, active, order } = req.query;
 
   const fields = parseQueryField(rawFields);
 
@@ -232,7 +247,10 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
     }
 
   } catch (error) {
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error,
+      message: "An error has occuried retriving user's assistance list." 
+    }));
   }
 
 };
@@ -240,8 +258,9 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
 export const assistanceSubscribed = async (req: Request, res: Response, next: NextFunction) => {
   const fields = (req as any).fields;
   const userId = (req as any).user;
+  //TODO: complete limit, offset and active, order and complete this to retrive all too
 
-  const { q, search } = req.query;
+  const { q, search, limit, ofsset, active, order } = req.query;
 
   try {
     if (q === "id") {
@@ -261,7 +280,10 @@ export const assistanceSubscribed = async (req: Request, res: Response, next: Ne
 
     return res.json(userAssistanceList)
   } catch (error) {
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error,
+      message: "An error has occuried retriving user's assistance list." 
+    }));
   }
 };
 

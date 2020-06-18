@@ -13,7 +13,7 @@ router.use("/auth", authRouter);
 router.use("/user", userRouter);
 
 // TODO: test all routes
-// TODO: write meaningful error responses
+
 
 // router.get("/", (req: any, res: any) => {
 //     const {id} = req.query;

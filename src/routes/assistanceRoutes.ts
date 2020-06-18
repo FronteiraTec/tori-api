@@ -11,7 +11,6 @@ router.post("/subscribe/:assistanceId", userAuthenticated, controller.subscribeU
 router.get("/subscribers/:assistanceId", userAuthenticated, allowedSearchField, controller.getSubscribers);
 router.patch("/unsubscribe/:assistanceId", userAuthenticated, controller.unsubscribeUser);
 router.get("/search", allowedSearchField, controller.searchQuery);
-//TODO: Document thus route
 router.patch("/confirm-presence/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.assistanceGivePresence);
 
 router.post("/", userAuthenticated, controller.create);

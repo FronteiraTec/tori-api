@@ -38,7 +38,8 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
 
     if (possibleUser === undefined || possibleUser === null) {
       return next(new CustomError({
-        code: ErrorCode.UNAUTHORIZED, message: "User or password incorrect"
+        code: ErrorCode.UNAUTHORIZED, 
+        message: "User or password incorrect"
       }));
     }
 
@@ -46,7 +47,10 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
     const responseData = await defaultLoginResponse(possibleUser);
     res.json(responseData);
   } catch (error) {
-    return next(new CustomError({ error }))
+    return next(new CustomError({ 
+      error,
+      message: "An error occuried while signing in."
+    }))
   }
 };
 
@@ -80,8 +84,10 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
 
     return res.json(responseData);
   } catch (error) {
-    // TODO: SPECIFY ERROR  
-    return next(new CustomError({ error }));
+    return next(new CustomError({ 
+      error,
+      message: "An error occuried while creating this user."
+     }));
   }
 };
 
@@ -114,7 +120,9 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
   const tokenAPiUffs = await authModel.tryUffsLogin({ authenticator, password })
 
   if (tokenAPiUffs === null) {
-    return next(new CustomError({ code: ErrorCode.UNAUTHORIZED }));
+    return next(new CustomError({ 
+      code: ErrorCode.UNAUTHORIZED
+     }));
   }
 
   // Usuário autenticado pela uffs, tentar conseguir dados
@@ -166,7 +174,10 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
   }
   catch (error) {
     if (error.code !== "ER_DUP_ENTRY") {
-      return next(new CustomError({ error }));
+      return next(new CustomError({ 
+        error,
+        message: "User already signed up." 
+      }));
     }
 
     // Usuário ja possui uma conta cadastrado, "sincronizar com a conta da uffs"
@@ -211,7 +222,9 @@ export const verifyAvailability = async (req: Request, res: Response, next: Next
   }
 
   if (!search) {
-    return next(new CustomError({ code: ErrorCode.BAD_REQUEST }));
+    return next(new CustomError({ 
+      code: ErrorCode.BAD_REQUEST
+     }));
   }
 
   try {
@@ -254,7 +267,9 @@ export const verifyAvailability = async (req: Request, res: Response, next: Next
         return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "q option missing."}));
     }
   } catch (error) {
-    return next(new CustomError({error}));
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST
+    }));
   }
 }
 
