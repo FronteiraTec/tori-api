@@ -368,11 +368,11 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
         message: "User was not subscribed in this assistance",
       }));
 
-    const updateAssistance = assistanceModel.update(assistanceId, {
+    const updateAssistance = await assistanceModel.update(assistanceId, {
       available_vacancies: assistanceInfo.assistance.available_vacancies + 1
     });
 
-    return res.json("User unsubscribed successfully");
+    return res.json({message: "User unsubscribed successfully"});
 
   }
   catch (error) {
