@@ -5,10 +5,11 @@ import * as addressModel from '../models/addressModel';
 
 import { httpCode } from '../helpers/statusCodeHelper';
 import { errorResponse } from '../helpers/responseHelper';
-import { parseQueryField } from 'src/helpers/utilHelper';
+import { parseQueryField, allowedFields } from 'src/helpers/utilHelper';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { createImageName, saveImageFromBase64, saveUserUniqueQrCodeFromRawId } from 'src/helpers/outputHelper';
 import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedUsersByID } from 'src/models/assistanceModel';
+import { QueryOptions } from 'src/helpers/assistanceHelper';
 
 
 enum UserQueryOption {
@@ -36,21 +37,23 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
     console.log(error)
     return next(new CustomError({
       error,
-      message: "An error has occuried while retriving assistance list."
+      message: "An error has occurred while retrieving user list"
     }));
   }
 
 };
 
 export const searchUser = async (req: Request, res: Response, next: NextFunction) => {
-  const { q, email, id, name, fields } = req.query;
+  const { q, search, fields } = req.query;
 
   const userId = (req as any).user;
 
   const parsedFields = parseQueryField(fields);
 
-  if (userId !== id) {
-    if (!verifyUserPermission(parsedFields)) {
+  console.log(verifyUserPermission(parsedFields));
+
+  if (q !== undefined && q !== UserQueryOption.own && userId !== search) {
+    if (!allowedFields(parsedFields)) {
       return errorResponse({
         message: "Not allowed",
         res,
@@ -64,31 +67,31 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
       case UserQueryOption.own: {
         const result = await userModel.getById({
           userId,
-          fields: parsedFields ? parsedFields.join(",") : undefined
+          fields: parsedFields
         });
         return res.json(result);
       }
 
       case UserQueryOption.email: {
         const result = await userModel.getByEmail({
-          email: email,
-          fields: parsedFields ? parsedFields.join(",") : undefined
+          email: search,
+          fields: parsedFields
         });
         return res.json(result);
       }
 
       case UserQueryOption.id: {
         const result = await userModel.getById({
-          userId: id,
-          fields: parsedFields ? parsedFields.join(",") : undefined
+          userId: search,
+          fields: parsedFields
         });
         return res.json(result);
       }
 
       case UserQueryOption.name: {
         const result = await userModel.getByName({
-          name,
-          fields: parsedFields ? parsedFields.join(",") : undefined
+          name: search,
+          fields: parsedFields
         });
 
         return res.json(result);
@@ -97,7 +100,7 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
       default: {
         const result = await userModel.getById({
           userId,
-          fields: parsedFields ? parsedFields.join(",") : undefined
+          fields: parsedFields
         });
         return res.json(result);
       }
