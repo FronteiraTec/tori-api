@@ -7,9 +7,9 @@ import { multiValidate, validate } from 'src/helpers/validationHelper';
 import { generateJWT } from 'src/helpers/jwtHelper';
 import { updateOnlyNullFields } from 'src/models/userModel';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
-import { 
-  saveUserUniqueQrCodeFromRawId, 
-  getQrCodePath 
+import {
+  saveUserUniqueQrCodeFromRawId,
+  getQrCodePath
 } from 'src/helpers/outputHelper';
 import { join } from 'path';
 import { encryptText, BaseEnumEncryptOptions } from 'src/helpers/utilHelper';
@@ -38,7 +38,7 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
 
     if (possibleUser === undefined || possibleUser === null) {
       return next(new CustomError({
-        code: ErrorCode.UNAUTHORIZED, 
+        code: ErrorCode.UNAUTHORIZED,
         message: "User or password incorrect"
       }));
     }
@@ -47,7 +47,7 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
     const responseData = await defaultLoginResponse(possibleUser);
     res.json(responseData);
   } catch (error) {
-    return next(new CustomError({ 
+    return next(new CustomError({
       error,
       message: "An error occuried while signing in."
     }))
@@ -67,8 +67,6 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
 
   const validateResult = multiValidate(allValidations);
 
-  
-
   if (validateResult.length > 0) {
     return next(new CustomError({
       code: ErrorCode.BAD_REQUEST,
@@ -84,10 +82,10 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
 
     return res.json(responseData);
   } catch (error) {
-    return next(new CustomError({ 
+    return next(new CustomError({
       error,
       message: "An error occuried while creating this user."
-     }));
+    }));
   }
 };
 
@@ -112,7 +110,7 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
   if (userAlreadySigned !== null) {
     // Cadastrado, proceder o login
     const responseData = await defaultLoginResponse(userAlreadySigned);
-    
+
     return res.json(responseData);
   }
 
@@ -120,9 +118,9 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
   const tokenAPiUffs = await authModel.tryUffsLogin({ authenticator, password })
 
   if (tokenAPiUffs === null) {
-    return next(new CustomError({ 
+    return next(new CustomError({
       code: ErrorCode.UNAUTHORIZED
-     }));
+    }));
   }
 
   // Usuário autenticado pela uffs, tentar conseguir dados
@@ -153,30 +151,29 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
       name: userData.name,
       authenticator: userData.email,
       password: password,
-      id: -1,
       idUffs: userData.idUffs,
-      profilePhoto: userProfilePhoto
+      profile_picture: userProfilePhoto
     };
 
     const createdUser = await authModel.signUp(user);
 
-    const responseData = ({
-      id: createdUser.id,
-      full_name: user.name,
-      profile_photo: userProfilePhoto,
-      idUffs: user.idUffs,
-    });
-
     //criar um qrcode para o usuário;
     await saveUserUniqueQrCodeFromRawId(createdUser.id);
+
+    const responseData = await defaultLoginResponse({
+      id: createdUser.id,
+      full_name: user.name,
+      profile_picture: userProfilePhoto,
+      idUFFS: user.idUffs,
+    } as User);
 
     return res.json(responseData);
   }
   catch (error) {
     if (error.code !== "ER_DUP_ENTRY") {
-      return next(new CustomError({ 
+      return next(new CustomError({
         error,
-        message: "User already signed up." 
+        message: "User already signed up."
       }));
     }
 
@@ -222,49 +219,49 @@ export const verifyAvailability = async (req: Request, res: Response, next: Next
   }
 
   if (!search) {
-    return next(new CustomError({ 
+    return next(new CustomError({
       code: ErrorCode.BAD_REQUEST
-     }));
+    }));
   }
 
   try {
     switch (q) {
       case QueryOptions.cpf: {
-        if (validate({ data: search, type: "cpf" }) !== true) 
-          return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "CPF invalid"}));
-  
+        if (validate({ data: search, type: "cpf" }) !== true)
+          return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "CPF invalid" }));
+
         const user = await userModel.getWhere({ key: "cpf", value: search, fields: "id" });
-  
+
         if (user.length === 0)
           return res.json({ available: true });
-  
+
         return res.json({ available: false });
       }
       case QueryOptions.email: {
         if (validate({ data: search, type: "email" }) !== true)
-          return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "Email invalid"}));
-  
+          return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "Email invalid" }));
+
         const user = await userModel.getByEmail({ email: search, fields: "id" });
-  
+
         if (user.length === 0)
           return res.json({ available: true });
-          
+
         return res.json({ available: false });
       }
       case QueryOptions.username: {
-        if (validate({ data: search, type: "len=3" }) !== true) 
-          return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "Username invalid"}));
-        
+        if (validate({ data: search, type: "len=3" }) !== true)
+          return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "Username invalid" }));
+
         const user = await userModel.getWhere({ key: "idUFFS", value: search, fields: "id" });
-  
+
         if (user.length === 0)
           return res.json({ available: true });
-  
+
         return res.json({ available: false });
       }
-  
+
       default:
-        return next(new CustomError({code: ErrorCode.BAD_REQUEST, message: "q option missing."}));
+        return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "q option missing." }));
     }
   } catch (error) {
     return next(new CustomError({
@@ -281,13 +278,14 @@ async function defaultLoginResponse(user: User) {
   const qrCode = encryptText(user.id, BaseEnumEncryptOptions.hex);
   const qrCodePath = getQrCodePath();
 
-  if(qrCodePath === undefined)
+  if (qrCodePath === undefined)
     throw new Error("No qrCode path found");
 
   return {
     full_name: user.full_name,
     token,
     expiresIn,
+    profile_picture: user.profile_picture,
     qrCode: join(qrCodePath, qrCode + ".png")
   };
 }
