@@ -66,9 +66,7 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
   ];
 
   const validateResult = multiValidate(allValidations);
-
-
-
+  
   if (validateResult.length > 0) {
     return next(new CustomError({
       code: ErrorCode.BAD_REQUEST,
@@ -153,22 +151,21 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
       name: userData.name,
       authenticator: userData.email,
       password: password,
-      id: -1,
       idUffs: userData.idUffs,
-      profilePhoto: userProfilePhoto
+      profile_picture: userProfilePhoto
     };
 
     const createdUser = await authModel.signUp(user);
 
-    const responseData = ({
-      id: createdUser.id,
-      full_name: user.name,
-      profile_photo: userProfilePhoto,
-      idUffs: user.idUffs,
-    });
-
     //criar um qrcode para o usuário;
     await saveUserUniqueQrCodeFromRawId(createdUser.id);
+
+    const responseData = await defaultLoginResponse({
+      id: createdUser.id,
+      full_name: user.name,
+      profile_picture: userProfilePhoto,
+      idUFFS: user.idUffs,
+    } as User);
 
     return res.json(responseData);
   }
@@ -243,9 +240,9 @@ export const verifyAvailability = async (req: Request, res: Response, next: Next
       case QueryOptions.email: {
         if (validate({ data: search, type: "email" }) !== true)
           return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "Email invalid" }));
-
+        
         const user = await userModel.getByEmail({ email: search, fields: ["id"] });
-
+        
         if (user.length === 0)
           return res.json({ available: true });
 
@@ -288,6 +285,7 @@ async function defaultLoginResponse(user: User) {
     full_name: user.full_name,
     token,
     expiresIn,
+    profile_picture: user.profile_picture,
     qrCode: join(qrCodePath, qrCode + ".png")
   };
 }

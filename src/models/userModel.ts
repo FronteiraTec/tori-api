@@ -1,6 +1,5 @@
 import { db } from "../helpers/dbHelper";
 import { user as User } from "../helpers/dbNamespaceHelper";
-import crypto from "crypto";
 import { toBoolean } from 'src/helpers/conversionHelper';
 import { encryptTextHex, booleanToString, decryptHexId } from 'src/helpers/utilHelper';
 
