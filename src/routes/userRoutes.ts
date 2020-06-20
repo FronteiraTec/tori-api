@@ -6,7 +6,7 @@ import { allowedSearchField } from 'src/middleware/permissionMiddleware';
 
 const router = Router();
 
-router.get('/', userAuthenticated, allowedSearchField ,controller.getAll);
+router.get('/', userAuthenticated, allowedSearchField, controller.getAll);
 router.patch('/', userAuthenticated, controller.updateUser);
 router.delete("/", userAuthenticated, controller.deleteUser);
 router.get('/search', userAuthenticated, controller.searchUser);

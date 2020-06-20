@@ -66,7 +66,7 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
   ];
 
   const validateResult = multiValidate(allValidations);
-
+  
   if (validateResult.length > 0) {
     return next(new CustomError({
       code: ErrorCode.BAD_REQUEST,
@@ -240,9 +240,9 @@ export const verifyAvailability = async (req: Request, res: Response, next: Next
       case QueryOptions.email: {
         if (validate({ data: search, type: "email" }) !== true)
           return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "Email invalid" }));
-
-        const user = await userModel.getByEmail({ email: search, fields: "id" });
-
+        
+        const user = await userModel.getByEmail({ email: search, fields: ["id"] });
+        
         if (user.length === 0)
           return res.json({ available: true });
 

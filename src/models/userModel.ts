@@ -23,44 +23,41 @@ export const updateOnlyNullFields = async (userId: number | string, user: User |
 }
 
 
-export const getById = async ({ userId, fields }: { userId: number, fields?: string }) => {
+export const getById = async ({ userId, fields }: { userId: number, fields?: string[] }) => {
+  if (fields?.length)
+    db.select(fields.join(","));
+  else
+    db.select(defaultReturn());
+
+  db.from("user");
+
   try {
-
-    if (fields !== undefined)
-      db.select(fields);
-    else
-      db.select(defaultReturn());
-
-    db.from("user");
-
     db.where("id", decryptHexId(userId));
 
     const result = await db.resolve() as UserSearch[];
 
-    // const parsedResult = parseResponse(result);
-
     return encryptId(result);
+
   } catch (err) {
     throw err;
   }
 
 }
 
-export const getByEmail = async ({ email, fields }: { email: string, fields?: string }) => {
+export const getByEmail = async ({ email, fields }: { email: string, fields?: string[] }) => {
+  if (fields?.length)
+    db.select(fields.join(","));
+  else
+    db.select(defaultReturn());
+
   try {
-
-    if (fields !== undefined)
-      db.select(fields);
-    else
-      db.select(defaultReturn());
-
     db.from("user");
-
     db.where("email", email);
 
     const result = await db.resolve() as UserSearch[];
 
     return encryptId(result);
+
   } catch (err) {
     throw err;
   }
@@ -70,7 +67,7 @@ export const getWhere = async ({ key, value, fields }: { key: string, value: str
 
   try {
 
-    if (fields !== undefined)
+    if (fields?.length)
       db.select(fields);
     else
       db.select(defaultReturn());
@@ -87,21 +84,20 @@ export const getWhere = async ({ key, value, fields }: { key: string, value: str
   }
 }
 
-export const getByName = async ({ name, fields }: { name: string, fields?: string }) => {
+export const getByName = async ({ name, fields }: { name: string, fields?: string[] }) => {
+  if (fields?.length)
+    db.select(fields.join(","));
+  else
+    db.select(defaultReturn());
+
+  db.from("user");
+  db.where("full_name").like(`%${name}%`);
+
   try {
-
-    if (fields !== undefined)
-      db.select(fields);
-    else
-      db.select(defaultReturn());
-
-    db.from("user");
-
-    db.where("full_name").like(`%${name}%`);
-
     const result = await db.resolve() as UserSearch[];
 
     return encryptId(result);
+
   } catch (err) {
     throw err;
   }
@@ -112,7 +108,7 @@ export const getAll = async ({ assistant, limit, offset, fields }:
 
   try {
 
-    if (fields !== undefined)
+    if (fields?.length)
       db.select(fields);
     else
       db.select(defaultReturn());
@@ -192,8 +188,8 @@ const encryptId = (list: UserSearch[]) => {
   return list.map(item => {
     const newItem = { ...item };
 
-    
-    if (item.user?.id){
+
+    if (item.user?.id) {
       const userId = encryptTextHex(item.user.id);
       newItem.user.id = userId;
     }

@@ -1,7 +1,7 @@
 import { Response, Request, NextFunction } from "express";
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { searchByID } from "src/models/assistanceModel";
-import { allowedFields, parseQueryField } from 'src/helpers/utilHelper';
+import { allowedFields, parseQueryField, decryptTextHex } from 'src/helpers/utilHelper';
 import { decryptText, BaseEnumEncryptOptions } from 'src/helpers/utilHelper';
 
 export const verifyIfUserHasPermission = async (req: Request, res: Response, next: NextFunction) => {
@@ -13,7 +13,6 @@ export const verifyIfUserHasPermission = async (req: Request, res: Response, nex
       id: assistanceId,
       fields: ["owner_id"]
     }))?.assistance;
-
 
     if (assistance?.owner_id === undefined || assistance.owner_id != userId) {
       return next(new CustomError({

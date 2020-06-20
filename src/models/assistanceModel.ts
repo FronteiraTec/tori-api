@@ -277,7 +277,6 @@ export const findAllSubscribedUsers = async (assistanceId: number | string, sele
     return res.length > 0 ? [...res] : undefined;
   }
   catch (err) {
-    console.log(err);
     throw err;
   }
 };
@@ -488,11 +487,9 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
   if (args.available) {
     if (toBoolean(args.available.toString())) {
       db.and("assistance.available", "1");
-      db.and("assistance.suspended", "0");
     }
     else {
       db.and("assistance.available", "0");
-      db.or("assistance.suspended", "1");
     }
 
   }
@@ -507,8 +504,6 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
 };
 
 const encryptId = (list: AssistanceSearch[]) => {
-  console.log(list);
-
   return list.map(item => {
     const newItem = { ...item };
 
