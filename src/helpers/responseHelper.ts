@@ -1,5 +1,5 @@
-import { Response } from 'express';
-import { httpCode } from './statusCodeHelper';
+import { Response } from "express";
+import { httpCode } from "./statusCodeHelper";
 export function errorResponse({ message, res, code, error }: {
   error?: Error;
   code?: httpCode;

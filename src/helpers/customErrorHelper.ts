@@ -1,19 +1,19 @@
 export class CustomError extends Error {
   public code: ErrorCode;
-  public status: number;
+  public status?: number;
   public json: any;
 
-  constructor({ message, code, status, error, json }: { json?: any, message?: string | Object[] | Object; code?: ErrorCode; status?: number; error?: any }) {
+  constructor({ message, code, status, error, json }: { json?: any, message?: string | object[] | object; code?: ErrorCode; status?: number; error?: any }) {
     if(message === undefined && code !== undefined)
-      message = DefaultErrorMessage[code]
+      message = DefaultErrorMessage[code];
 
-    if (typeof message === 'string')
+    if (typeof message === "string")
       super(message);
     else
-      super(JSON.stringify(message))
+      super(JSON.stringify(message));
 
     this.code = ErrorCode.INTERNAL_ERROR;
-    this.status = 500;
+    this.status = undefined;
     this.json = undefined;
 
     if (code || status || message || json) {
@@ -23,7 +23,7 @@ export class CustomError extends Error {
         this.status = status;
       if(json)
         this.json = json;
-      if (typeof message === 'string')
+      if (typeof message === "string")
         this.message = message;
       else
         this.message = JSON.stringify(message);
@@ -31,14 +31,14 @@ export class CustomError extends Error {
     if (error) {
       if (error.code) {
         if (error.code === "ER_BAD_FIELD_ERROR")
-          this.code = ErrorCode.ER_BAD_FIELD_ERROR
+          this.code = ErrorCode.ER_BAD_FIELD_ERROR;
         if (error.code === "ER_NON_UNIQ_ERROR")
-          this.code = ErrorCode.ER_NON_UNIQ_ERROR
+          this.code = ErrorCode.ER_NON_UNIQ_ERROR;
         if (error.code === "ER_NONUNIQ_TABLE")
-          this.code = ErrorCode.ER_NONUNIQ_TABLE
+          this.code = ErrorCode.ER_NONUNIQ_TABLE;
         if (error.code === "ER_DUP_ENTRY")
-          this.code = ErrorCode.ER_DUP_ENTRY
-        if (error.code = "ER_ROW_IS_REFERENCED_2") {
+          this.code = ErrorCode.ER_DUP_ENTRY;
+        if (error.code === "ER_ROW_IS_REFERENCED_2") {
           this.code = ErrorCode.ER_ROW_IS_REFERENCED_2;
         }
       }
@@ -47,7 +47,7 @@ export class CustomError extends Error {
     }
 
     this.name = this.constructor.name;
-    if (typeof Error.captureStackTrace === 'function') {
+    if (typeof Error.captureStackTrace === "function") {
       Error.captureStackTrace(this, this.constructor);
     } else {
       this.stack = (new Error(this.code.toString())).stack;
@@ -85,4 +85,4 @@ export const DefaultErrorMessage = {
   [ErrorCode.ER_ROW_IS_REFERENCED_2]: "Can not delete it. You should delete its references before",
   [ErrorCode.VALIDATION_ERR]: "At least one field is not valid",
   [ErrorCode.INVALID_ID]: "An invalid id was found. Please send a valid id."
-}
+};

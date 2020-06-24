@@ -1,16 +1,15 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
-import * as userModel from '../models/userModel';
-import * as addressModel from '../models/addressModel';
+import * as userModel from "../models/userModel";
 
-import { httpCode } from '../helpers/statusCodeHelper';
-import { errorResponse } from '../helpers/responseHelper';
-import { parseQueryField, hashPassword, decryptTextHex, capitalizeFirstLetter, allowedFields } from 'src/helpers/utilHelper';
-import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
-import { createImageName, saveImageFromBase64, saveUserUniqueQrCodeFromRawId } from 'src/helpers/outputHelper';
-import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedUsersByID, update } from 'src/models/assistanceModel';
-import { user as User } from 'src/helpers/dbNamespaceHelper'
-import { multiValidate, ValidationFields } from 'src/helpers/validationHelper';
+import { httpCode } from "../helpers/statusCodeHelper";
+import { errorResponse } from "../helpers/responseHelper";
+import { parseQueryField, hashPassword, decryptTextHex, capitalizeFirstLetter, allowedFields } from "src/helpers/utilHelper";
+import { CustomError, ErrorCode } from "src/helpers/customErrorHelper";
+import { createImageName, saveImageFromBase64, saveUserUniqueQrCodeFromRawId } from "src/helpers/outputHelper";
+import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedAssistanceUserByID } from "src/models/assistanceModel";
+import { user as User } from "src/helpers/dbNamespaceHelper";
+import { multiValidate, ValidationFields } from "src/helpers/validationHelper";
 
 
 enum UserQueryOption {
@@ -27,11 +26,11 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
 
   try {
     const result = await userModel.getAll({
-      offset,
-      limit,
-      assistant,
+      offset: Number(offset),
+      limit: Number(limit),
+      assistant: String(assistant),
       fields
-    })
+    });
 
     res.json(result);
   } catch (error) {
@@ -48,7 +47,7 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
 
   const userId = (req as any).user;
 
-  const parsedFields = parseQueryField(fields);
+  const parsedFields = parseQueryField(fields as string);
 
   // console.log(verifyUserPermission(parsedFields));
 
@@ -74,7 +73,7 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
 
       case UserQueryOption.email: {
         const result = await userModel.getByEmail({
-          email: search,
+          email: search as string,
           fields: parsedFields
         });
         return res.json(result);
@@ -82,7 +81,7 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
 
       case UserQueryOption.id: {
         const result = await userModel.getById({
-          userId: search,
+          userId: search as string,
           fields: parsedFields
         });
         return res.json(result);
@@ -90,7 +89,7 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
 
       case UserQueryOption.name: {
         const result = await userModel.getByName({
-          name: search,
+          name: search as string,
           fields: parsedFields
         });
 
@@ -117,13 +116,13 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
 
   try {
-    const updateUser = removeUneditableFields(req.body);
+    const updateUserData = removeUneditableFields(req.body);
 
-    validateFields(updateUser);
+    validateFields(updateUserData);
 
     const userId = (req as any).user;
 
-    await userModel.update(userId, updateUser);
+    await userModel.update(userId, updateUserData);
 
     res.json({ message: "Fields updated successfully" });
 
@@ -142,7 +141,7 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
       }));
 
     if (error.code === ErrorCode.VALIDATION_ERR)
-      return next(error)
+      return next(error);
 
     return next(new CustomError({
       error,
@@ -177,14 +176,14 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
         return {
           data: user[key as keyof typeof user],
           type: "password",
-          message: 'Password is not valid.'
+          message: "Password is not valid."
         };
 
       if (key === "course_id")
         return {
           data: user[key as keyof typeof user],
           type: "number",
-          message: 'CourseId is not valid.'
+          message: "CourseId is not valid."
         };
 
       return {
@@ -194,12 +193,12 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
       };
     });
 
-    const res = multiValidate(validateData as ValidationFields[]);
+    const validationResponse = multiValidate(validateData as ValidationFields[]);
 
-    if (res.length > 0)
+    if (validationResponse.length > 0)
       throw new CustomError({
         code: ErrorCode.VALIDATION_ERR,
-        json: res
+        json: validationResponse
       });
   }
 };
@@ -262,25 +261,25 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
   const userId = (req as any).user;
   const { fields: rawFields, q, search, limit, offset, available, orderBy, filter } = req.query;
 
-  const fields = parseQueryField(rawFields);
+  const fields = parseQueryField(rawFields as string);
 
   try {
     switch (q) {
       case "id": {
 
         const userAssistance = await searchByID({
-          id: search,
+          id: search as string,
           fields,
           args: {
-            available,
-            limit,
-            offset,
-            orderBy: orderBy ? JSON.parse(orderBy) : undefined,
-            filter: filter ? JSON.parse(filter) : undefined
+            available: available as string,
+            limit: Number(limit),
+            offset: Number(offset),
+            orderBy: orderBy ? JSON.parse(orderBy as string) : undefined,
+            filter: filter ? JSON.parse(filter as string) : undefined
           }
         });
 
-        if (userAssistance?.assistance.owner_id != userId)
+        if (userAssistance?.assistance.owner_id !== userId)
           return next(new CustomError({ code: ErrorCode.UNAUTHORIZED }));
 
         return res.json(userAssistance);
@@ -291,11 +290,11 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
           userId,
           select: fields,
           args: {
-            available,
-            limit,
-            offset,
-            orderBy: orderBy ? JSON.parse(orderBy) : undefined,
-            filter: filter ? JSON.parse(filter) : undefined
+            available: available as string,
+            limit: Number(limit),
+            offset: Number(offset),
+            orderBy: orderBy ? JSON.parse(orderBy as string) : undefined,
+            filter: filter ? JSON.parse(filter as string) : undefined
           }
         });
 
@@ -308,7 +307,7 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
       return next(new CustomError({
         code: ErrorCode.INVALID_ID
       }));
-    
+
 
     return next(new CustomError({
       error,
@@ -326,16 +325,16 @@ export const assistanceSubscribed = async (req: Request, res: Response, next: Ne
 
   try {
     if (q === "id") {
-      const userAssistance = await findSubscribedUsersByID({
+      const userAssistance = await findSubscribedAssistanceUserByID({
         userId,
-        assistanceId: search,
-        select: fields,
+        assistanceId: search as string,
+        select: fields as string[],
         args: {
-          available: active,
-          offset,
-          limit,
-          orderBy: orderBy ? JSON.parse(orderBy) : undefined,
-          filter: filter ? JSON.parse(filter) : undefined
+          available: active as string,
+          offset: Number(offset),
+          limit: Number(limit),
+          orderBy: orderBy ? JSON.parse(orderBy as string) : undefined,
+          filter: filter ? JSON.parse(filter as string) : undefined
         }
       });
 
@@ -346,15 +345,15 @@ export const assistanceSubscribed = async (req: Request, res: Response, next: Ne
       userId,
       select: fields,
       args: {
-        available: active,
-        offset,
-        limit,
-        orderBy: orderBy ? JSON.parse(orderBy) : undefined,
-        filter: filter ? JSON.parse(filter) : undefined
+        available: active as string,
+        offset: Number(offset),
+        limit: Number(limit),
+        orderBy: orderBy ? JSON.parse(orderBy as string) : undefined,
+        filter: filter ? JSON.parse(filter as string) : undefined
       }
     });
 
-    return res.json(userAssistanceList)
+    return res.json(userAssistanceList);
   } catch (error) {
     return next(new CustomError({
       error,
@@ -374,7 +373,7 @@ export const generateQrCode = async (req: Request, res: Response, next: NextFunc
     next(new CustomError({ error }));
   }
 
-}
+};
 
 
 

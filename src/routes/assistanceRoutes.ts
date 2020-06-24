@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as controller from "src/controllers/assistanceController";
 import { userAuthenticated } from "src/middleware/authMiddleware";
-import { verifyIfUserHasPermission, allowedSearchField } from 'src/middleware/permissionMiddleware';
+import { verifyIfUserHasPermission, allowedSearchField } from "src/middleware/permissionMiddleware";
 
 const router = Router();
 router.delete("/:assistanceId", userAuthenticated, verifyIfUserHasPermission, controller.deleteById);

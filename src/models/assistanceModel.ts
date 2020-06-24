@@ -5,39 +5,36 @@ import {
   assistance_presence_list as AssistancePresenceList,
   user as User,
   address as Address,
-  tag as Tag,
   subject as Subject,
   course as Course
 } from "../helpers/dbNamespaceHelper";
-import { InsertResponse, DeleteResponse } from 'src/helpers/dbResponsesHelper';
-import { toBoolean } from 'src/helpers/conversionHelper';
-import { decryptHexId, encryptTextHex, decryptTextHex } from 'src/helpers/utilHelper';
-import { AnyARecord } from 'dns';
-import { format } from 'path';
-import { captureRejectionSymbol } from 'events';
+import { InsertResponse, DeleteResponse } from "src/helpers/dbResponsesHelper";
+import { toBoolean } from "src/helpers/conversionHelper";
+import { decryptHexId, encryptTextHex, decryptTextHex } from "src/helpers/utilHelper";
+
 
 interface AssistanceSearch {
-  assistance: Assistance,
-  address: Address,
-  assistant: User,
-  assistanceCourse: Course,
-  assistantCourse: Course,
-  subject: Subject
+  assistance: Assistance;
+  address: Address;
+  assistant: User;
+  assistanceCourse: Course;
+  assistantCourse: Course;
+  subject: Subject;
 }
 
 interface FilterOptions {
-  filter?: object,
-  limit?: number,
-  offset?: number,
-  orderBy?: object,
-  available?: boolean | string | number
-};
+  filter?: object;
+  limit?: number;
+  offset?: number;
+  orderBy?: object;
+  available?: boolean | string | number;
+}
 
 export const getAll = async ({ limit, offset, available, order, fields }: { fields: string[] | undefined, order: string, limit: number; offset: number; available: boolean; }) => {
   const db = new DbHelper();
 
   if (fields?.length)
-    fieldSearch({ fields, db })
+    fieldSearch({ fields, db });
   else {
     defaultSearch({ db });
   }
@@ -57,14 +54,9 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
   if (limit !== undefined && offset !== undefined)
     db.pagination(limit, offset);
 
-  try {
-    const assistanceList = await db.resolve() as AssistanceSearch[];
-    return encryptId(assistanceList);;
-  }
-  catch (err) {
-    throw err;
-  }
-}
+  const assistanceList = await db.resolve() as AssistanceSearch[];
+  return encryptId(assistanceList);
+};
 
 export const searchByID = async ({ id, fields, args }:
   { args?: FilterOptions, fields?: string[], id: number | string; }) => {
@@ -81,14 +73,9 @@ export const searchByID = async ({ id, fields, args }:
 
   db.where("assistance.id", decryptHexId(id));
 
-  try {
-    const assistance = await db.resolve() as AssistanceSearch[];
+  const assistance = await db.resolve() as AssistanceSearch[];
 
-    return assistance.length > 0 ? encryptId(assistance)[0] : undefined;
-  }
-  catch (err) {
-    throw err;
-  }
+  return assistance.length > 0 ? encryptId(assistance)[0] : undefined;
 };
 
 export const searchByName = async ({ name, fields, args }:
@@ -108,14 +95,9 @@ export const searchByName = async ({ name, fields, args }:
   if (args)
     defaultFilters(args, db);
 
-  try {
-    const assistance = await db.resolve() as AssistanceSearch[];
+  const assistance = await db.resolve() as AssistanceSearch[];
 
-    return assistance.length > 0 ? assistance : undefined;
-  }
-  catch (err) {
-    throw err;
-  }
+  return assistance.length > 0 ? assistance : undefined;
 };
 
 export const searchByTag = async ({ tags, fields, args }:
@@ -129,32 +111,29 @@ export const searchByTag = async ({ tags, fields, args }:
     defaultSearch({ db });
 
   db.leftJoin("assistance_tag as at at.assistance_id", "assistance.id")
-    .leftJoin("tag.id", "at.id")
+    .leftJoin("tag.id", "at.id");
 
   if (tags)
-    tags.map((string, i) => {
-      if (i == 0)
-        db.where("(tag.name")
+    tags.map((str, i) => {
+      if (i === 0)
+        db.where("(tag.name");
       else
-        db.or("(tag.name")
+        db.or("(tag.name");
 
-      db.like(`%${string}%`)
-        .or("assistance.title").like(`%${string}%`)
-        .or("assistance.description").like(`%${string}%`, ')');
+      db.like(`%${str}%`)
+        .or("assistance.title").like(`%${str}%`)
+        .or("assistance.description").like(`%${str}%`, ")");
     });
 
 
   if (args)
     defaultFilters(args, db);
 
-  try {
-    const assistance = await db.resolve() as { assistance: Assistance }[];
 
-    return assistance.map((item: { assistance: Assistance }) => item.assistance);
-  }
-  catch (err) {
-    throw err;
-  }
+  const assistance = await db.resolve() as { assistance: Assistance }[];
+
+  return assistance.map((item: { assistance: Assistance }) => item.assistance);
+
 };
 
 export const searchByNameTagDescription = async ({ search, fields, args }:
@@ -168,32 +147,30 @@ export const searchByNameTagDescription = async ({ search, fields, args }:
     defaultSearch({ db });
 
   db.leftJoin("assistance_tag as at at.assistance_id", "assistance.id")
-    .leftJoin("tag.id", "at.id")
+    .leftJoin("tag.id", "at.id");
 
   if (search)
-    search.map((string, i) => {
-      if (i == 0)
-        db.where("(tag.name")
+    search.map((str, i) => {
+      if (i === 0)
+        db.where("(tag.name");
       else
-        db.or("(tag.name")
+        db.or("(tag.name");
 
-      db.like(`%${string}%`)
-        .or("assistance.title").like(`%${string}%`)
-        .or("assistance.description").like(`%${string}%`, ')');
+      db.like(`%${str}%`)
+        .or("assistance.title").like(`%${str}%`)
+        .or("assistance.description").like(`%${str}%`, ")");
 
     });
 
   if (args)
     defaultFilters(args, db);
 
-  try {
-    const assistance = await db.resolve() as AssistanceSearch[];
 
-    return assistance;
-  }
-  catch (err) {
-    throw err;
-  }
+  const assistance = await db.resolve() as AssistanceSearch[];
+
+  return assistance;
+
+
 };
 
 export const deleteById = async (id: number | string) => {
@@ -202,92 +179,82 @@ export const deleteById = async (id: number | string) => {
   db.delete("assistance")
     .where("id", decryptHexId(id));
 
-  try {
-    return db.resolve();
-  }
-  catch (err) {
-    throw err;
-  }
+  return db.resolve();
 };
 
-export const create = async (assistanceData: Assistance | Object): Promise<InsertResponse> => {
+export const create = async (assistanceData: Assistance | object): Promise<InsertResponse> => {
   const db = new DbHelper();
 
-  try {
-    const newAssistance = await db.insert("assistance", assistanceData).resolve() as InsertResponse[];
-    return newAssistance[0];
-  }
-  catch (err) {
-    throw err;
-  }
+  const newAssistance = await db.insert("assistance", assistanceData).resolve() as InsertResponse[];
+  return newAssistance[0];
 };
 
-export const update = async (assistanceId: number | string, assistanceFields: Assistance | Object) => {
+export const update = async (assistanceId: number | string, assistanceFields: Assistance | object) => {
   const db = new DbHelper();
 
-  try {
-    const result = await
-      db.update("assistance", assistanceFields)
-        .where("id", decryptHexId(assistanceId))
-        .resolve();
+  const result = await
+    db.update("assistance", assistanceFields)
+      .where("id", decryptHexId(assistanceId))
+      .resolve();
 
-    return result;
-  } catch (err) {
-    throw err;
-  }
+  return result;
 };
 
-export const createTag = async (assistanceTag: AssistanceTag | Object): Promise<InsertResponse> => {
+export const createTag = async (assistanceTag: AssistanceTag | object): Promise<InsertResponse> => {
   const db = new DbHelper();
 
-  try {
-    const newTag = await db.insert("assistance_tag", assistanceTag).resolve() as InsertResponse;
-    return newTag;
-  }
-  catch (err) {
-    throw err;
-  }
+  const newTag = await db.insert("assistance_tag", assistanceTag).resolve() as InsertResponse;
+  return newTag;
 };
 
 export const subscribeUser = async (presenceList: AssistancePresenceList | any): Promise<InsertResponse> => {
   const db = new DbHelper();
 
-  try {
-    const newPresenceList = await db
-      .insert("assistance_presence_list", {
-        assistance_id: decryptHexId(presenceList.assistance_id),
-        student_id: decryptHexId(presenceList.student_id)
-      } as AssistancePresenceList)
-      .resolve() as InsertResponse;
-    return newPresenceList;
-  }
-  catch (err) {
-    throw err;
-  }
+  const newPresenceList = await db
+    .insert("assistance_presence_list", {
+      assistance_id: decryptHexId(presenceList.assistance_id),
+      student_id: decryptHexId(presenceList.student_id)
+    } as AssistancePresenceList)
+    .resolve() as InsertResponse;
+  return newPresenceList;
+
 };
 
-export const findAllSubscribedUsers = async (assistanceId: number | string, select: string) => {
+export const findAllSubscribedUsers = async (assistanceId: number | string, select?: string[]) => {
   const db = new DbHelper();
 
-  try {
-    const res = await db
-      .select(select)
-      .from("assistance_presence_list")
-      .join("user.id", "assistance_presence_list.student_id")
-      .where("assistance_presence_list.assistance_id", decryptHexId(assistanceId))
-      .resolve() as { user: User, assistance_presence_list: AssistancePresenceList }[];
+  if (select?.length)
+    db.select(select.join(", "));
+  else
+    db.select("user.id, user.full_name, user.created_at, user.email");
 
-    return res.length > 0 ? [...res] : undefined;
-  }
-  catch (err) {
-    throw err;
-  }
+
+  db.from("assistance_presence_list")
+    .join("user.id", "assistance_presence_list.student_id")
+    .where("assistance_presence_list.assistance_id", decryptHexId(assistanceId));
+
+  const res = await db.resolve() as { user: User, assistance_presence_list: AssistancePresenceList }[];
+
+  const encryptUserFields = (itemList: { user: User, assistance_presence_list: AssistancePresenceList }[]) => {
+    return itemList.map(item => {
+      return {
+        user: {
+          ...item.user,
+          id: item.user.id ? encryptTextHex(item.user.id) : undefined,
+          course_id: item.user.course_id ? encryptTextHex(item.user.course_id) : undefined
+        } as User
+      };
+    });
+  };
+
+  return encryptUserFields(res);
+
 };
 
-export const findSubscribedUsersByID = async ({ userId, assistanceId, select, args }: { args?: FilterOptions, select?: string[], userId: number | string; assistanceId: number | string; }) => {
+export const findSubscribedAssistanceUserByID = async ({ userId, assistanceId, select, args }: { args?: FilterOptions, select?: string[], userId: number | string; assistanceId: number | string; }) => {
   const db = new DbHelper();
 
-  db.join("assistance.id", "assistance_presence_list.assistance_id")
+  db.join("assistance.id", "assistance_presence_list.assistance_id");
 
   if (select?.length)
     fieldSearch({ fields: select, db, from: "assistance_presence_list" });
@@ -297,73 +264,53 @@ export const findSubscribedUsersByID = async ({ userId, assistanceId, select, ar
   if (args)
     defaultFilters(args, db);
 
+  const assistanceInfo = await db
+    .where("assistance_presence_list.student_id", decryptHexId(userId))
+    .and("assistance_presence_list.assistance_id", decryptHexId(assistanceId))
+    .resolve() as AssistanceSearch[];
 
-  try {
-    const user = await db
-      .where("assistance_presence_list.student_id", decryptHexId(userId))
-      .and("assistance_presence_list.assistance_id", decryptHexId(assistanceId))
-      .resolve() as { assistance_presence_list: AssistancePresenceList }[];
-
-    return user.length > 0 ? user[0] : undefined;
-  }
-  catch (err) {
-    throw err;
-  }
+  return encryptId(assistanceInfo);
 };
 
 export const unsubscribeUsersByID = async ({ userId, assistanceId }: { userId: number | string; assistanceId: number | string; }) => {
   const db = new DbHelper();
 
-  try {
-    const user = await db
-      .delete("assistance_presence_list")
-      .where("student_id", decryptHexId(userId))
-      .and("assistance_id", decryptHexId(assistanceId))
-      .resolve() as DeleteResponse[];
+  const user = await db
+    .delete("assistance_presence_list")
+    .where("student_id", decryptHexId(userId))
+    .and("assistance_id", decryptHexId(assistanceId))
+    .resolve() as DeleteResponse[];
 
-    return user.length > 0 ? user[0] : undefined;
-  }
-  catch (err) {
-    throw err;
-  }
+  return user.length > 0 ? user[0] : undefined;
 };
 
 export const editSubscribedUsersByID = async ({ userId, assistanceId, fields }: { fields: AssistancePresenceList | object, userId: number | string; assistanceId: number | string; }) => {
   const db = new DbHelper();
 
-  try {
-    const result = await db.update("assistance_presence_list", fields)
-      .where("assistance_presence_list.student_id", decryptHexId(userId))
-      .and("assistance_presence_list.assistance_id", decryptHexId(assistanceId))
-      .resolve();
+  const result = await db.update("assistance_presence_list", fields)
+    .where("assistance_presence_list.student_id", decryptHexId(userId))
+    .and("assistance_presence_list.assistance_id", decryptHexId(assistanceId))
+    .resolve();
 
-    return result;
-  }
-  catch (err) {
-    throw err;
-  }
+  return result;
 };
 
 export const givePresenceToUser = async (assistanceId: string | number, userId: string | number) => {
 
-  try {
-    return (await editSubscribedUsersByID({
-      assistanceId,
-      userId,
+  return (await editSubscribedUsersByID({
+    assistanceId,
+    userId,
 
-      fields: {
-        student_presence: true
-      }
-    }))[0] as InsertResponse;
-  } catch (error) {
-    throw error;
-  }
+    fields: {
+      student_presence: true
+    }
+  }))[0] as InsertResponse;
 };
 
 export const findAllSubscribedAssistanceByUser = async ({ args, userId, select }: { args?: FilterOptions, userId: number; select?: string[]; }) => {
   const db = new DbHelper();
 
-  db.join("assistance.id", "assistance_presence_list.assistance_id")
+  db.join("assistance.id", "assistance_presence_list.assistance_id");
 
   if (select?.length)
     fieldSearch({ fields: select, db, from: "assistance_presence_list" });
@@ -373,17 +320,11 @@ export const findAllSubscribedAssistanceByUser = async ({ args, userId, select }
   if (args)
     defaultFilters(args, db);
 
-  try {
-    const res = await db
-      .where("assistance_presence_list.student_id", decryptHexId(userId))
-      .resolve() as { user: User, assistance_presence_list: AssistancePresenceList }[];
+  const assistanceInfo = await db
+    .where("assistance_presence_list.student_id", decryptHexId(userId))
+    .resolve() as AssistanceSearch[];
 
-
-    return [...res];
-  }
-  catch (err) {
-    throw err;
-  }
+  return encryptId(assistanceInfo);
 };
 
 export const findAllCreatedAssistanceByUser = async ({ userId, select, args }: { args?: FilterOptions, userId: number; select?: string[]; }) => {
@@ -397,16 +338,11 @@ export const findAllCreatedAssistanceByUser = async ({ userId, select, args }: {
   if (args)
     defaultFilters(args, db);
 
-  try {
-    db.where("assistance.owner_id", decryptHexId(userId))
+  db.where("assistance.owner_id", decryptHexId(userId));
 
-    const res = await db.resolve() as AssistanceSearch[];
+  const res = await db.resolve() as AssistanceSearch[];
 
-    return encryptId(res);
-  }
-  catch (err) {
-    throw err;
-  }
+  return encryptId(res);
 };
 
 const fieldSearch = ({ fields, db, from }: { from?: string, fields: string[]; db: DbHelper; }) => {
@@ -482,13 +418,13 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
   if (args.filter) {
     const filters = args.filter;
 
-    let i = 0;
+    const i = 0;
 
     for (const key of Object.keys(filters)) {
-      let value = filters[key as keyof typeof filters] as string;
+      const value = filters[key as keyof typeof filters] as string;
 
       const query = findAndDecryptId(key, value.trim());
-  
+
       db.where(query);
     }
   }
@@ -505,7 +441,7 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
 
 
   if (args.orderBy) {
-    for (const key in args.orderBy) {
+    for (const key of Object.keys(args.orderBy)) {
       const value = args.orderBy[key as keyof typeof args.orderBy];
       db.orderBy(key, value);
       break;
@@ -543,7 +479,7 @@ function findAndDecryptId(key: string, value: string) {
     return `${key} ${value}`;
   }
 
-  if (firstLetterOrNumber >= 1){
+  if (firstLetterOrNumber >= 1) {
     return `${key} ${value}`;
   }
 
@@ -608,4 +544,4 @@ const encryptId = (list: AssistanceSearch[]) => {
 
     return newItem;
   });
-}
+};
