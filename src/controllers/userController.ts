@@ -5,11 +5,12 @@ import * as addressModel from '../models/addressModel';
 
 import { httpCode } from '../helpers/statusCodeHelper';
 import { errorResponse } from '../helpers/responseHelper';
-import { parseQueryField } from 'src/helpers/utilHelper';
+import { parseQueryField, hashPassword, decryptTextHex, capitalizeFirstLetter } from 'src/helpers/utilHelper';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { createImageName, saveImageFromBase64, saveUserUniqueQrCodeFromRawId } from 'src/helpers/outputHelper';
-import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedUsersByID } from 'src/models/assistanceModel';
-
+import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedUsersByID, update } from 'src/models/assistanceModel';
+import { user as User } from 'src/helpers/dbNamespaceHelper'
+import { multiValidate, ValidationFields } from 'src/helpers/validationHelper';
 
 enum UserQueryOption {
   own = "own",
@@ -113,26 +114,18 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
 };
 
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
-  const { userFields, addressId, addressFields } = req.body;
-
-  const userId = (req as any).user;
-
-  verifyContentISCorrect(userFields);
-  verifyObjectHasEmptyValues(userFields);
-
-  if (addressId) {
-    verifyContentISCorrect(addressFields);
-    verifyObjectHasEmptyValues(addressFields);
-  }
 
   try {
-    console.log(userId, userFields)
-    await userModel.update(userId, userFields);
+    const updateUser = removeUneditableFields(req.body);
 
-    if (addressId)
-      await addressModel.update(addressId, addressFields);
+    validateFields(updateUser);
 
-    res.json("Fields updated successfully");
+    const userId = (req as any).user;
+
+    await userModel.update(userId, updateUser);
+
+    res.json({ message: "Fields updated successfully" });
+
   }
   catch (error) {
     if (error.code === "ER_BAD_FIELD_ERROR")
@@ -141,29 +134,72 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
         message: "Some of fields are not valid. Please fill the userFields with valid fields."
       }));
 
+    if (error.code === "ERR_INVALID_ARG_VALUE")
+      return next(new CustomError({
+        code: ErrorCode.BAD_REQUEST,
+        message: "Course id is not valid."
+      }));
+
+    if (error.code === ErrorCode.VALIDATION_ERR)
+      return next(error)
+
     return next(new CustomError({
       error,
       message: "An error has occuried while updating this user."
     }));
   }
 
-  function verifyContentISCorrect(content: any) {
-    if (content === undefined || content === "" || !(content instanceof Object) || content.length === 0) {
-      return next(new CustomError({
-        code: ErrorCode.BAD_REQUEST,
-        message: "field \"userFields\" is malformed"
-      }));
+  function removeUneditableFields(user: User | any) {
+    try {
+      return {
+        ...user,
+        id: undefined,
+        cpf: undefined,
+        created_at: undefined,
+        matricula: undefined,
+        student_stars: undefined,
+        verified_assistant: undefined,
+        assistant_stars: undefined,
+        idUFFS: undefined,
+        password: user.password ? hashPassword(user.password) : undefined,
+        course_id: user.course_id ? decryptTextHex(user.course_id) : undefined
+      } as User;
+    }
+    catch (error) {
+      throw error;
     }
   }
 
-  function verifyObjectHasEmptyValues(object: object) {
-    for (let i in userFields) {
-      const field = userFields[i];
+  function validateFields(user: User) {
+    const validateData = Object.keys(user).map((key) => {
+      if (key === "password")
+        return {
+          data: user[key as keyof typeof user],
+          type: "password",
+          message: 'Password is not valid.'
+        };
 
-      if (field === "")
-        return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "One field is empty" }));
-    };
+      if (key === "course_id")
+        return {
+          data: user[key as keyof typeof user],
+          type: "number",
+          message: 'CourseId is not valid.'
+        };
 
+      return {
+        data: user[key as keyof typeof user],
+        type: "len=3",
+        message: `${capitalizeFirstLetter(key)} is not valid.`
+      };
+    });
+
+    const res = multiValidate(validateData as ValidationFields[]);
+
+    if (res.length > 0)
+      throw new CustomError({
+        code: ErrorCode.VALIDATION_ERR,
+        json: res
+      });
   }
 };
 

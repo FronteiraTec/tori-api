@@ -320,9 +320,7 @@ export default class DbHelper {
       if (typeof fieldsObject[i as keyof typeof fieldsObject] === 'undefined')
         delete fieldsObject[i as keyof typeof fieldsObject];
 
-
     const fieldNames = Object.keys(fieldsObject) as Array<keyof typeof fieldsObject>;
-
 
     const insertDataObject = fieldNames.map((field: keyof typeof fieldsObject, i: number) => {
       return { [`insert${i}`]: fieldsObject[field] };
