@@ -1,41 +1,35 @@
-import { db } from "../helpers/dbHelper";
+import dbHelper from "../helpers/dbHelper";
 import { address as AddressInterface } from "../helpers/dbNamespaceHelper";
 import { InsertResponse } from "src/helpers/dbResponsesHelper";
 import { decryptHexId } from "src/helpers/utilHelper";
 
 
 export const update = async (addressId: number, address: AddressInterface | object) => {
-  try {
-    const result = await
-      db.update("address", address)
-        .where("id", decryptHexId(addressId))
-        .resolve();
+  const db = new dbHelper();
 
-    return result;
-  } catch (err) {
-    throw err;
-  }
+  const result = await
+    db.update("address", address)
+      .where("id", decryptHexId(addressId))
+      .resolve();
+
+  return result;
 };
 
 export const create = async (address: AddressInterface | object) => {
-  try {
-    const result = await
-      db.insert("address", address).resolve();
+  const db = new dbHelper();
 
-    return result.length > 0 ? result[0] as InsertResponse : undefined;
-  } catch (err) {
-    throw err;
-  }
+  const result = await
+    db.insert("address", address).resolve();
+
+  return result.length > 0 ? result[0] as InsertResponse : undefined;
 };
 
 export const deleteById = async (addressId: number) => {
-  try {
-      const res = await db.from("address")
-      .delete()
-      .where("id", decryptHexId(addressId))
-      .resolve();
-    return res;
-  } catch (err) {
-    throw err;
-  }
+  const db = new dbHelper();
+
+  const res = await db.from("address")
+    .delete()
+    .where("id", decryptHexId(addressId))
+    .resolve();
+  return res;
 };

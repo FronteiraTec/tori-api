@@ -1,4 +1,4 @@
-import { db } from "../helpers/dbHelper";
+import dbHelper from "../helpers/dbHelper";
 import { user as User } from "../helpers/dbNamespaceHelper";
 
 import {
@@ -20,6 +20,8 @@ enum AuthenticatorType {
 export const signUp = async ({ name, cpf, authenticator, password, idUffs, profile_picture }:
   { name: string; cpf: string; authenticator: string; password: string; profile_picture?: string; idUffs?: string }) => {
 
+    const db = new dbHelper();
+
   const hashedPassword = hashPassword(password);
 
   const newUserData = {
@@ -34,23 +36,19 @@ export const signUp = async ({ name, cpf, authenticator, password, idUffs, profi
   if (profile_picture)
     newUserData.profile_picture = profile_picture;
 
-  try {
-    const newUser = await db.insert("user", newUserData)
-      .resolve() as { insertId: string }[];
+  const newUser = await db.insert("user", newUserData)
+    .resolve() as { insertId: string }[];
 
-    return {
-      id: encryptTextHex(newUser[0].insertId),
-      full_name: name,
-      profile_picture
-    } as User;
-
-  } catch (err) {
-    throw err;
-  }
+  return {
+    id: encryptTextHex(newUser[0].insertId),
+    full_name: name,
+    profile_picture
+  } as User;
 };
 
 
 const getAuthenticatorType = (authenticator: string) => {
+  const db = new dbHelper();
 
   // Email
   if (authenticator.search("@") >= 0)
@@ -66,53 +64,46 @@ const getAuthenticatorType = (authenticator: string) => {
 export const signIn = async ({ authenticator, password }:
   { authenticator: string; password?: string; }) => {
 
+  const db = new dbHelper();
+
   const authType = getAuthenticatorType(authenticator);
 
-  try {
-    db.select("full_name, id, profile_picture")
-      .from("user");
+  db.select("full_name, id, profile_picture")
+    .from("user");
 
-    if (authType === AuthenticatorType.email)
-      db.where("email", authenticator);
+  if (authType === AuthenticatorType.email)
+    db.where("email", authenticator);
 
-    else if (authType === AuthenticatorType.cpf)
-      db.where("cpf", authenticator);
+  else if (authType === AuthenticatorType.cpf)
+    db.where("cpf", authenticator);
 
-    else if (authType === AuthenticatorType.idUFFS)
-      db.where("idUFFS", authenticator);
+  else if (authType === AuthenticatorType.idUFFS)
+    db.where("idUFFS", authenticator);
 
-    if (password !== undefined) {
-      const hashedPassword = hashPassword(password);
-      db.and("password", hashedPassword);
-    }
-
-    const user = await db.resolve() as { user: User }[];
-
-    if (user[0] !== undefined){
-      const userId = user[0].user.id;
-      const encryptedUserId = encryptTextHex(userId);
-
-      if(encryptedUserId)
-        user[0].user.id = encryptedUserId;
-
-      return user[0].user;
-    }
-
-    return null;
-
-  } catch (err) {
-    throw err;
+  if (password !== undefined) {
+    const hashedPassword = hashPassword(password);
+    db.and("password", hashedPassword);
   }
+
+  const user = await db.resolve() as { user: User }[];
+
+  if (user[0] !== undefined) {
+    const userId = user[0].user.id;
+    const encryptedUserId = encryptTextHex(userId);
+
+    if (encryptedUserId)
+      user[0].user.id = encryptedUserId;
+
+    return user[0].user;
+  }
+
+  return null;
 };
 
 export const tryUffsLogin = async ({ authenticator, password }:
   { authenticator: string, password: string }): Promise<string | null> => {
-  try {
-    const { tokenId } = await getTokenFromStudentPortal({ authenticator, password });
-    return tokenId ? String(tokenId) : null;
-  } catch (err) {
-    throw err;
-  }
+  const { tokenId } = await getTokenFromStudentPortal({ authenticator, password });
+  return tokenId ? String(tokenId) : null;
 };
 
 export const getDataFromStudentPortal = async ({ authenticator, token }:
@@ -126,35 +117,26 @@ export const getDataFromStudentPortal = async ({ authenticator, token }:
   }
   else idUFFS = authenticator;
 
-  try {
-    const userData = await getUserInfo({ IdUFFS: idUFFS, token });
+  const userData = await getUserInfo({ IdUFFS: idUFFS, token });
 
-    return {
-      idUffs: userData.username,
-      email: userData.mail.length > 0 ? userData.mail[0] : null, // Get only the first one
-      name: capitalizeFirstLetter(String(userData.givenname) + " " + String(userData.sn)), // nome EM CAPS
-      activeStudent: String(userData.inetuserstatus), // util no futuro
-      cpf: String(userData.employeeNumber) // cpf
-    } as {
-      idUffs: string,
-      email: string,
-      name: string,
-      activeStudent: string,
-      cpf: string
-    };
-  } catch (err) {
-    throw err;
-  }
+  return {
+    idUffs: userData.username,
+    email: userData.mail.length > 0 ? userData.mail[0] : null, // Get only the first one
+    name: capitalizeFirstLetter(String(userData.givenname) + " " + String(userData.sn)), // nome EM CAPS
+    activeStudent: String(userData.inetuserstatus), // util no futuro
+    cpf: String(userData.employeeNumber) // cpf
+  } as {
+    idUffs: string,
+    email: string,
+    name: string,
+    activeStudent: string,
+    cpf: string
+  };
 };
 
 export const getProfilePictureFromMoodle = async (authenticator: string, password: string) => {
-  try {
-
-    const userPicture = await getUserPictureFromMoodle({ authenticator, password });
-    return userPicture as string;
-  } catch (err) {
-    throw err;
-  }
+  const userPicture = await getUserPictureFromMoodle({ authenticator, password });
+  return userPicture as string;
 };
 
 

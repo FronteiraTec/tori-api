@@ -1,14 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 
 import * as userModel from "../models/userModel";
-import * as addressModel from "../models/addressModel";
 
 import { httpCode } from "../helpers/statusCodeHelper";
 import { errorResponse } from "../helpers/responseHelper";
 import { parseQueryField, hashPassword, decryptTextHex, capitalizeFirstLetter, allowedFields } from "src/helpers/utilHelper";
 import { CustomError, ErrorCode } from "src/helpers/customErrorHelper";
 import { createImageName, saveImageFromBase64, saveUserUniqueQrCodeFromRawId } from "src/helpers/outputHelper";
-import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedUsersByID, update } from "src/models/assistanceModel";
+import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedAssistanceUserByID } from "src/models/assistanceModel";
 import { user as User } from "src/helpers/dbNamespaceHelper";
 import { multiValidate, ValidationFields } from "src/helpers/validationHelper";
 
@@ -326,10 +325,10 @@ export const assistanceSubscribed = async (req: Request, res: Response, next: Ne
 
   try {
     if (q === "id") {
-      const userAssistance = await findSubscribedUsersByID({
+      const userAssistance = await findSubscribedAssistanceUserByID({
         userId,
         assistanceId: search as string,
-        select: fields,
+        select: fields as string[],
         args: {
           available: active as string,
           offset: Number(offset),

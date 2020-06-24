@@ -5,9 +5,8 @@ import * as addressModel from "src/models/addressModel";
 import { assistance as Assistance, address as Address } from "src/helpers/dbNamespaceHelper";
 import { CustomError, ErrorCode } from "src/helpers/customErrorHelper";
 import { QueryOptions, addTags } from "src/helpers/assistanceHelper";
-import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch, decryptHexId } from "src/helpers/utilHelper";
+import { parseQueryField, currentDate, notAllowedFieldsSearch, decryptHexId } from "src/helpers/utilHelper";
 import { toBoolean } from "src/helpers/conversionHelper";
-import { off } from "process";
 
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -59,7 +58,7 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
 
   const searchParsed = parseQueryField(search as string);
 
-  if ( q !== QueryOptions.id)
+  if (q !== QueryOptions.id)
     return next(new CustomError({ code: ErrorCode.BAD_Q_QUERY }));
 
   try {
@@ -194,7 +193,7 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       }));
     }
 
-    if (tags && newAssistance.insertId){
+    if (tags && newAssistance.insertId) {
       addTags(newAssistance.insertId, tags);
     }
 
@@ -209,7 +208,7 @@ export const deleteById = async (req: Request, res: Response, next: NextFunction
   const { assistanceId } = req.params;
   try {
     await assistanceModel.deleteById(assistanceId);
-    res.json("Success");
+    res.json({message: "Assistance deleted successfully"});
   }
   catch (error) {
     return next(new CustomError({
@@ -228,13 +227,13 @@ export const disableById = async (req: Request, res: Response, next: NextFunctio
       suspended_date: currentDate()
     });
 
-    res.json({message: "Assistance suspended successfully"});
+    res.json({ message: "Assistance suspended successfully" });
   }
   catch (error) {
     return next(new CustomError({
       error,
       message: "An error ocurred while disabling this assistance."
-     }));
+    }));
   }
 };
 
@@ -254,7 +253,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     return next(new CustomError({
       error,
       message: "An error occurred while updating this assistance."
-     }));
+    }));
   }
 };
 
@@ -286,7 +285,7 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
         message: "This assistance has no empty vacancies",
       }));
 
-    const isSubscribed = await assistanceModel.findSubscribedUsersByID({
+    const isSubscribed = await assistanceModel.findSubscribedAssistanceUserByID({
       userId,
       assistanceId,
       select: ["assistance_presence_list.id"]
@@ -304,7 +303,7 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
     });
 
     const updateAssistance = assistanceModel.update(assistanceId, {
-    available_vacancies: assistanceInfo.assistance.available_vacancies - 1
+      available_vacancies: assistanceInfo.assistance.available_vacancies - 1
     });
 
     res.json("User subscribed successfully");
@@ -313,7 +312,7 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
     return next(new CustomError({
       error,
       message: "An error occurred while subscribing this user."
-     }));
+    }));
   }
 
 };
@@ -364,7 +363,7 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
       available_vacancies: assistanceInfo.assistance.available_vacancies + 1
     });
 
-    return res.json({message: "User unsubscribed successfully"});
+    return res.json({ message: "User unsubscribed successfully" });
 
   }
   catch (error) {
@@ -387,7 +386,7 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
       fields: ["owner_id"]
     }))?.assistance;
 
-    const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId, select: ["assistance_presence_list.id"] });
+    const user = await assistanceModel.findSubscribedAssistanceUserByID({ userId, assistanceId, select: ["assistance_presence_list.id"] });
 
     if (user === undefined && userId !== assistance?.owner_id)
       return next(new CustomError({
@@ -410,7 +409,7 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
     const users = await assistanceModel
       .findAllSubscribedUsers(
         assistanceId,
-        fields.join(",")
+        fields
       );
     res.json(users);
 
@@ -418,7 +417,7 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
     return next(new CustomError({
       error,
       message: "An error occurred while getting user in this assistance."
-     }));
+    }));
   }
 };
 
@@ -429,19 +428,19 @@ export const assistanceGivePresence = async (req: Request, res: Response, next: 
   if (userCode === undefined)
     return next(new CustomError({
       code: ErrorCode.BAD_REQUEST,
-      message: "User code invalid sent. Send a valid user code."
+      message: "User code is invalid. Send a valid user code."
     }));
 
   try {
     const response = await assistanceModel.givePresenceToUser(assistanceId, userCode);
 
-    if(response.affectedRows === 0)
+    if (response.affectedRows === 0)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "User not subscribed on this assistance."
       }));
 
-    res.json(true);
+    res.json({ message: "Presence confirmed successfully" });
   } catch (error) {
     return next(new CustomError({
       code: ErrorCode.INTERNAL_ERROR,

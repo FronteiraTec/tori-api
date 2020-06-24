@@ -1,6 +1,6 @@
 export class CustomError extends Error {
   public code: ErrorCode;
-  public status: number;
+  public status?: number;
   public json: any;
 
   constructor({ message, code, status, error, json }: { json?: any, message?: string | object[] | object; code?: ErrorCode; status?: number; error?: any }) {
@@ -13,7 +13,7 @@ export class CustomError extends Error {
       super(JSON.stringify(message));
 
     this.code = ErrorCode.INTERNAL_ERROR;
-    this.status = 500;
+    this.status = undefined;
     this.json = undefined;
 
     if (code || status || message || json) {

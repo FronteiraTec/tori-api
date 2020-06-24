@@ -82,13 +82,12 @@ function emailValidator(email: string) {
 }
 
 function passwordValidator(password: string) {
-  const strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{6,})");
+  const strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*\?])(?=.{6,})");
 
-  if (password.length > 3)
+  if (password.search(strongRegex) === 0)
     return true;
 
     return false;
-
 }
 
 

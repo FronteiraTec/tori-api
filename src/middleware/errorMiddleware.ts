@@ -18,7 +18,7 @@ export const errorHandler = (error: CustomError, req: Request, res: Response, ne
     status = httpCode["Bad Request"];
 
   return res
-    .status(status)
+    .status(error.status ? error.status : status)
     .json({
       message: error.message ? error.message : DefaultErrorMessage[error.code],
       code: error.code,

@@ -13,6 +13,7 @@ import {
 } from "src/helpers/outputHelper";
 import { join } from "path";
 import { encryptText, BaseEnumEncryptOptions } from "src/helpers/utilHelper";
+import { httpCode } from "src/helpers/statusCodeHelper";
 
 
 export const signIn = async (req: Request, res: Response, next: NextFunction) => {
@@ -25,8 +26,8 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
 
   if (validateResult.length > 0) {
     return next(new CustomError({
-      code: ErrorCode.BAD_REQUEST,
-      message: validateResult
+      code: ErrorCode.VALIDATION_ERR,
+      json: validateResult
     }));
   }
 
@@ -69,8 +70,8 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
 
   if (validateResult.length > 0) {
     return next(new CustomError({
-      code: ErrorCode.BAD_REQUEST,
-      message: validateResult
+      code: ErrorCode.VALIDATION_ERR,
+      json: validateResult
     }));
   }
 
@@ -82,9 +83,15 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
 
     return res.json(responseData);
   } catch (error) {
+    if(error.code === "ER_DUP_ENTRY")
+      return next(new CustomError({
+        status: httpCode.Conflict,
+        message: "User already exists."
+      }));
+
     return next(new CustomError({
       error,
-      message: "An error occuried while creating this user."
+      message: "An error occurred while creating this user."
     }));
   }
 };
@@ -99,8 +106,8 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
 
   if (validateResult.length > 0) {
     return next(new CustomError({
-      code: ErrorCode.BAD_REQUEST,
-      message: validateResult
+      code: ErrorCode.VALIDATION_ERR,
+      json: validateResult
     }));
   }
 
