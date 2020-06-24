@@ -69,23 +69,96 @@ export default class DbHelper {
     let where: string;
     let key: string = args[0];
     let val: string = args[1];
+    let op = "";
 
     if (args.length === 1) {
-      if (args[0].search("=") >= 0) {
-        const parameters = key.split("=");
-        const argsSplited = parameters.map((value) => value.trim());
+      // where = `WHERE ${key} $_e4.1g`;
+      // this.querySQL = this.querySQL.replace("$_e4g", where);
 
-        key = argsSplited[0];
-        val = argsSplited[1];
+      //TODO encontras as operações possíeis;
+      //LIKE
+      //<=
+      //>=
+      // =
+      // >
+      // <
+
+      const equal = key.search("=");
+      const lesser = key.search("<");
+      const bigger = key.search(">");
+      const like = key.search(/like|LIKE/);
+      
+      if(like > -1) {
+        val = key.substring(like + 4);
+        key = key.substring(0, like - 1);
+        op = "LIKE";
       }
+      else if(equal > -1 && lesser > -1) {
+        val = key.substring(equal + 1);
+        key = key.substring(0, lesser - 1);
+        op = "<=";
+
+      }
+
+      else if(equal > -1 && bigger > -1) {
+        val = key.substring(equal + 1);
+        key = key.substring(0, bigger - 1);
+        op = ">=";
+
+      }
+
+      else if(equal > -1) {
+        val = key.substring(equal + 1);
+        key = key.substring(0, equal - 1);
+        op = "=";
+      }
+
+      else if(bigger > -1) {
+        val = key.substring(bigger + 1);
+        key = key.substring(0, bigger - 1);
+        op = ">";
+      }
+
+      else if(lesser > -1) {
+        val = key.substring(lesser + 1);
+        key = key.substring(0, lesser - 1);
+        op = "<";
+      }
+
       else {
-        where = `WHERE ${key} $_e4.1g`;
-        this.querySQL = this.querySQL.replace("$_e4g", where);
-        return this;
+        throw new Error("Where is being used incorrectly");
       }
     }
 
-    where = `WHERE (${key} = :where${this._whereCount}) $_e4.1g `;
+    else if(args[0].search("=") >= 0 ) {
+      const parameters = key.split("=");
+      const argsSplited = parameters.map((value) => value.trim());
+
+      key = argsSplited[0];
+      val = argsSplited[1];
+    }
+
+    if (this._data.where !== undefined) {
+      const data = (this._data.where as any).where0;
+
+      this.querySQL = this.querySQL.replace("WHERE", "$_e4g AND");
+      this.querySQL = this.querySQL.replace(":where0", `:and${this._andCount}`);
+
+      if (this._data.and === undefined)
+        this._data.and = { [`and${this._andCount++}`]: data };
+      else {
+        this._data.and = Object.assign({}, this._data.and, { [`and${this._andCount++}`]: data });
+      }
+
+      this._data.where = undefined;
+      this._whereCount = 0;
+    }
+
+    if(op !== "")
+      where = `WHERE (${key} ${op} :where${this._whereCount}) $_e4.1g `;
+    else
+      where = `WHERE (${key} = :where${this._whereCount}) $_e4.1g `;
+
     this._data.where = { [`where${this._whereCount++}`]: val };
 
     this.querySQL = this.querySQL.replace("$_e4g", where);
@@ -430,7 +503,7 @@ export default class DbHelper {
     for (const i in args)
       if (typeof args[i as keyof typeof args] === 'undefined')
         delete args[i as keyof typeof args];
-        
+
     const fieldNames = Object.keys(args) as Array<keyof typeof args>;
 
     const setQuery = fieldNames.map((field: keyof typeof args, i) => `\`${field}\` = COALESCE(\`${field}\`, :update${i}), `).join("").slice(0, -2);
@@ -451,14 +524,14 @@ export default class DbHelper {
   }
 
   resolve(): Promise<object[]> {
-    this.querySQL = this.querySQL.replace("$_e1g", "");
-    this.querySQL = this.querySQL.replace("$_e2g", "");
-    this.querySQL = this.querySQL.replace("$_e3g", "");
-    this.querySQL = this.querySQL.replace("$_e4g", "");
-    this.querySQL = this.querySQL.replace("$_e4.1g", "");
-    this.querySQL = this.querySQL.replace("$_e5g", "");
-    this.querySQL = this.querySQL.replace("$_e6g", "");
-    this.querySQL = this.querySQL.replace("$_e7g", "");
+    this.querySQL = this.querySQL.replace(/(?:\$_e1g)/g, "");
+    this.querySQL = this.querySQL.replace(/(?:\$_e2g)/g, "");
+    this.querySQL = this.querySQL.replace(/(?:\$_e3g)/g, "");
+    this.querySQL = this.querySQL.replace(/(?:\$_e4g)/g, "");
+    this.querySQL = this.querySQL.replace(/(?:\$_e4.1g)/g, "");
+    this.querySQL = this.querySQL.replace(/(?:\$_e5g)/g, "");
+    this.querySQL = this.querySQL.replace(/(?:\$_e6g)/g, "");
+    this.querySQL = this.querySQL.replace(/(?:\$_e7g)/g, "");
 
     const sql = this.querySQL;
 

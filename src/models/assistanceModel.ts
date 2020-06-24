@@ -11,7 +11,10 @@ import {
 } from "../helpers/dbNamespaceHelper";
 import { InsertResponse, DeleteResponse } from 'src/helpers/dbResponsesHelper';
 import { toBoolean } from 'src/helpers/conversionHelper';
-import { decryptHexId, encryptTextHex } from 'src/helpers/utilHelper';
+import { decryptHexId, encryptTextHex, decryptTextHex } from 'src/helpers/utilHelper';
+import { AnyARecord } from 'dns';
+import { format } from 'path';
+import { captureRejectionSymbol } from 'events';
 
 interface AssistanceSearch {
   assistance: Assistance,
@@ -395,11 +398,11 @@ export const findAllCreatedAssistanceByUser = async ({ userId, select, args }: {
     defaultFilters(args, db);
 
   try {
-    const res = await db
-      .where("assistance.owner_id", decryptHexId(userId))
-      .resolve() as { user: User, assistance_presence_list: AssistancePresenceList }[];
+    db.where("assistance.owner_id", decryptHexId(userId))
 
-    return [...res];
+    const res = await db.resolve() as AssistanceSearch[];
+
+    return encryptId(res);
   }
   catch (err) {
     throw err;
@@ -477,22 +480,29 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
     db.pagination(args.limit, args.offset);
 
   if (args.filter) {
-    for (const key in args.filter) {
-      const value = args.filter[key as keyof typeof args.filter];
+    const filters = args.filter;
 
-      db.and(key, value);
+    let i = 0;
+
+    for (const key of Object.keys(filters)) {
+      let value = filters[key as keyof typeof filters] as string;
+
+      const query = findAndDecryptId(key, value.trim());
+  
+      db.where(query);
     }
   }
+
 
   if (args.available) {
     if (toBoolean(args.available.toString())) {
-      db.and("assistance.available", "1");
+      db.where("assistance.available", "1");
     }
     else {
-      db.and("assistance.available", "0");
+      db.where("assistance.available", "0");
     }
-
   }
+
 
   if (args.orderBy) {
     for (const key in args.orderBy) {
@@ -502,6 +512,43 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
     }
   }
 };
+
+
+function findAndDecryptId(key: string, value: string) {
+  if (key.search("id") > -1) {
+    const indexOfPassword = value.search(/[A-Za-z]|[A-Za-z0-9]/);
+    let operation = "=";
+    let password = "";
+
+    if (indexOfPassword === 0) {
+      if (value.search(/like|LIKE/) > -1) {
+        operation = "LIKE";
+        password = value.substring(5).trimLeft().trimRight();
+      }
+    }
+
+    if (operation !== "LIKE") {
+      password = value.substring(indexOfPassword - 1).trimLeft().trimRight();
+
+      if (indexOfPassword >= 1)
+        operation = value.substring(0, indexOfPassword - 1);
+    }
+
+    return `${key} ${operation} ${decryptTextHex(password)}`;
+  }
+
+  const firstLetterOrNumber = value.search(/[A-Za-z]|[A-Za-z0-9]/);
+
+  if (value.search(/like|LIKE/) > -1) {
+    return `${key} ${value}`;
+  }
+
+  if (firstLetterOrNumber >= 1){
+    return `${key} ${value}`;
+  }
+
+  return `${key} = ${value}`;
+}
 
 const encryptId = (list: AssistanceSearch[]) => {
   return list.map(item => {
