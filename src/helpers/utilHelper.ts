@@ -125,7 +125,9 @@ export const encryptText = (text: number | string, base?: BaseEnumEncryptOptions
 
 export const decryptText = (encryptedText: string | number | undefined, base?: BaseEnumEncryptOptions) => {
   if (encryptedText === null || encryptedText === undefined || encryptedText === '') {
-    return encryptedText;
+    throw new CustomError({
+      code: ErrorCode.INVALID_ID
+    });
   }
   
   const config = getCryptConfigAES();
@@ -147,7 +149,6 @@ export const encryptTextHex = (text: number | string) => {
 };
 
 export const decryptTextHex = (encryptedText: string | number | undefined) => {
-  
     return decryptText(encryptedText, BaseEnumEncryptOptions.hex);
 
 };

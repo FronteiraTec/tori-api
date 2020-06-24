@@ -5,7 +5,7 @@ import * as addressModel from '../models/addressModel';
 
 import { httpCode } from '../helpers/statusCodeHelper';
 import { errorResponse } from '../helpers/responseHelper';
-import { parseQueryField, hashPassword, decryptTextHex, capitalizeFirstLetter } from 'src/helpers/utilHelper';
+import { parseQueryField, hashPassword, decryptTextHex, capitalizeFirstLetter, allowedFields } from 'src/helpers/utilHelper';
 import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
 import { createImageName, saveImageFromBase64, saveUserUniqueQrCodeFromRawId } from 'src/helpers/outputHelper';
 import { findAllSubscribedAssistanceByUser, findAllCreatedAssistanceByUser, searchByID, findSubscribedUsersByID, update } from 'src/models/assistanceModel';
@@ -35,7 +35,6 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
 
     res.json(result);
   } catch (error) {
-    console.log(error)
     return next(new CustomError({
       error,
       message: "An error has occurred while retrieving user list"
@@ -51,7 +50,7 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
 
   const parsedFields = parseQueryField(fields);
 
-  console.log(verifyUserPermission(parsedFields));
+  // console.log(verifyUserPermission(parsedFields));
 
   if (q !== undefined && q !== UserQueryOption.own && userId !== search) {
     if (!allowedFields(parsedFields)) {
@@ -108,10 +107,9 @@ export const searchUser = async (req: Request, res: Response, next: NextFunction
     }
   }
   catch (error) {
-    console.log(error);
     return next(new CustomError({
       error,
-      message: "An error has occuried while searching user"
+      message: "An error has occurred while searching user"
     }));
   }
 };
@@ -148,7 +146,7 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
 
     return next(new CustomError({
       error,
-      message: "An error has occuried while updating this user."
+      message: "An error has occurred while updating this user."
     }));
   }
 
@@ -218,12 +216,12 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
     if (error.code === "ER_ROW_IS_REFERENCED_2")
       return next(new CustomError({
         error,
-        message: "This user has assistances or participated in one. Try disable this account instead of deleting it."
+        message: "This user has an assistance or participated in one. Try disable this account instead of deleting it."
       }));
 
     return next(new CustomError({
       error,
-      message: "An error has occuried while deleting this user."
+      message: "An error has occurred while deleting this user."
     }));
   }
 };
@@ -255,21 +253,16 @@ export const uploadImage = async (req: Request, res: Response, next: NextFunctio
   catch (error) {
     return next(new CustomError({
       error,
-      message: "An error has occuried while uploading this image."
+      message: "An error has occurred while uploading this image."
     }));
   }
 };
 
 export const assistanceCreated = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user;
-  const { fields: rawFields, q, search, limit, offset, active, orderBy, filter } = req.query;
+  const { fields: rawFields, q, search, limit, offset, available, orderBy, filter } = req.query;
 
   const fields = parseQueryField(rawFields);
-
-  const ownerIdIndex = fields?.findIndex(element => element === "assistance.owner_id");
-
-  if (ownerIdIndex === -1)
-    fields?.push("assistance.owner_id");
 
   try {
     switch (q) {
@@ -279,7 +272,7 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
           id: search,
           fields,
           args: {
-            available: active,
+            available,
             limit,
             offset,
             orderBy: orderBy ? JSON.parse(orderBy) : undefined,
@@ -289,8 +282,6 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
 
         if (userAssistance?.assistance.owner_id != userId)
           return next(new CustomError({ code: ErrorCode.UNAUTHORIZED }));
-        if (ownerIdIndex === -1)
-          delete userAssistance?.assistance.owner_id;
 
         return res.json(userAssistance);
       }
@@ -300,7 +291,7 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
           userId,
           select: fields,
           args: {
-            available: active,
+            available,
             limit,
             offset,
             orderBy: orderBy ? JSON.parse(orderBy) : undefined,
@@ -313,9 +304,15 @@ export const assistanceCreated = async (req: Request, res: Response, next: NextF
     }
 
   } catch (error) {
+    if (error.code === "ERR_INVALID_ARG_VALUE")
+      return next(new CustomError({
+        code: ErrorCode.INVALID_ID
+      }));
+    
+
     return next(new CustomError({
       error,
-      message: "An error has occuried retriving user's assistance list."
+      message: "An error has occurred retrieving user's assistance list."
     }));
   }
 
@@ -361,7 +358,7 @@ export const assistanceSubscribed = async (req: Request, res: Response, next: Ne
   } catch (error) {
     return next(new CustomError({
       error,
-      message: "An error has occuried retriving user's assistance list."
+      message: "An error has occurred retrieving user's assistance list."
     }));
   }
 };
