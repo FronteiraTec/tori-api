@@ -138,8 +138,7 @@ export const decryptText = (encryptedText: string | number | undefined, base?: B
       decipher.final()
     ]).toString();
   } catch (error) {
-    console.log(error)
-    return undefined;
+    throw error;
   }
 };
 
@@ -184,4 +183,17 @@ export const booleanToString = (string?: string) => {
   if (string === "0") return "0";
 
   return "1";
+};
+
+export const hashPassword = (password: string | number) => {
+  if(typeof password === "string")
+    return crypto.createHash("sha256").update(password).digest("hex");
+  else
+    return crypto.createHash("sha256").update(password.toString()).digest("hex");
+};
+
+export const capitalizeFirstLetter = (text: string) => {
+  return text.toLowerCase().split(' ')
+    .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
+    .join(' ');
 };

@@ -1,6 +1,5 @@
 import { db } from "../helpers/dbHelper";
 import { user as User } from "../helpers/dbNamespaceHelper";
-import crypto from "crypto";
 
 import {
   getTokenFromStudentPortal,
@@ -8,7 +7,8 @@ import {
   getUserInfo,
   getUserPictureFromMoodle
 } from 'src/helpers/loginUffsHelper';
-import { encryptTextHex } from 'src/helpers/utilHelper';
+import { encryptTextHex, capitalizeFirstLetter, hashPassword } from 'src/helpers/utilHelper';
+
 
 
 enum AuthenticatorType {
@@ -155,19 +155,6 @@ export const getProfilePictureFromMoodle = async (authenticator: string, passwor
   } catch (err) {
     throw err;
   }
-}
-
-function hashPassword(password: string | number) {
-  if(typeof password === "string")
-    return crypto.createHash("sha256").update(password).digest("hex");
-  else
-    return crypto.createHash("sha256").update(password.toString()).digest("hex");
-}
-
-const capitalizeFirstLetter = (text: string) => {
-  return text.toLowerCase().split(' ')
-    .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
-    .join(' ')
 }
 
 

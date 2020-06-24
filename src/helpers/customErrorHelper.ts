@@ -1,10 +1,12 @@
-import { json } from 'body-parser';
-
 export class CustomError extends Error {
   public code: ErrorCode;
   public status: number;
+  public json: any;
 
-  constructor({ message, code, status, error }: { message?: string | Object[] | Object; code?: ErrorCode; status?: number; error?: any }) {
+  constructor({ message, code, status, error, json }: { json?: any, message?: string | Object[] | Object; code?: ErrorCode; status?: number; error?: any }) {
+    if(message === undefined && code !== undefined)
+      message = DefaultErrorMessage[code]
+
     if (typeof message === 'string')
       super(message);
     else
@@ -12,12 +14,15 @@ export class CustomError extends Error {
 
     this.code = ErrorCode.INTERNAL_ERROR;
     this.status = 500;
+    this.json = undefined;
 
-    if (code || status || message) {
+    if (code || status || message || json) {
       if (code)
         this.code = code;
       if (status)
         this.status = status;
+      if(json)
+        this.json = json;
       if (typeof message === 'string')
         this.message = message;
       else
@@ -61,7 +66,8 @@ export enum ErrorCode {
   BAD_Q_QUERY,
   ER_NONUNIQ_TABLE,
   ER_DUP_ENTRY,
-  ER_ROW_IS_REFERENCED_2
+  ER_ROW_IS_REFERENCED_2,
+  VALIDATION_ERR
 }
 
 export const DefaultErrorMessage = {
@@ -75,5 +81,6 @@ export const DefaultErrorMessage = {
   [ErrorCode.BAD_Q_QUERY]: "q param is missing. Please define a q.",
   [ErrorCode.ER_NONUNIQ_TABLE]: "Not unique key or alias, please type tableName.tableField and not only tableField.",
   [ErrorCode.ER_DUP_ENTRY]: "Duple entry in one of fields.",
-  [ErrorCode.ER_ROW_IS_REFERENCED_2]: "Can not delete it. You should delete its references before"
+  [ErrorCode.ER_ROW_IS_REFERENCED_2]: "Can not delete it. You should delete its references before",
+  [ErrorCode.VALIDATION_ERR]: "At least one field is not valid"
 }

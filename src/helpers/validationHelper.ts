@@ -1,4 +1,4 @@
-interface ValidationFields {
+export interface ValidationFields {
   type?: string,
   len?: number,
   mustHas?: string,
@@ -9,12 +9,15 @@ interface ValidationFields {
 
 function multiValidate(obj: ValidationFields[]) {
   const response = [] as { message: string }[];
-  obj.forEach(validation => {
+  for (const validation of obj) {
+    if(validation.data === undefined) 
+      continue;
+
     const res = validate(validation);
 
     if (res !== true)
       response.push(res);
-  });
+  };
 
   return response;
 }
@@ -51,6 +54,11 @@ function validate({ data, type, len, mustHas, message }: ValidationFields) {
       return true;
   }
 
+  if (type === "number") {
+    if (!isNaN(Number(data)))
+      return true;
+  }
+
   if(type) {
     if(type.search("len=") >= 0) {
       const len = parseInt(type.split("=")[1]);
@@ -76,10 +84,11 @@ function emailValidator(email: string) {
 function passwordValidator(password: string) {
   const strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{6,})");
   
-  if (password.search(strongRegex) === -1)
+  if (password.length > 3)
+    return true
+    
     return false;
 
-  return true
 }
 
 
