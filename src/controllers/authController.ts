@@ -1,18 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
-import * as authModel from 'src/models/authModel';
-import * as userModel from 'src/models/userModel';
-import { user as User } from 'src/helpers/dbNamespaceHelper';
-import { multiValidate, validate } from 'src/helpers/validationHelper';
-import { generateJWT } from 'src/helpers/jwtHelper';
-import { updateOnlyNullFields } from 'src/models/userModel';
-import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
+import * as authModel from "src/models/authModel";
+import * as userModel from "src/models/userModel";
+import { user as User } from "src/helpers/dbNamespaceHelper";
+import { multiValidate, validate } from "src/helpers/validationHelper";
+import { generateJWT } from "src/helpers/jwtHelper";
+import { updateOnlyNullFields } from "src/models/userModel";
+import { CustomError, ErrorCode } from "src/helpers/customErrorHelper";
 import {
   saveUserUniqueQrCodeFromRawId,
   getQrCodePath
-} from 'src/helpers/outputHelper';
-import { join } from 'path';
-import { encryptText, BaseEnumEncryptOptions } from 'src/helpers/utilHelper';
+} from "src/helpers/outputHelper";
+import { join } from "path";
+import { encryptText, BaseEnumEncryptOptions } from "src/helpers/utilHelper";
 
 
 export const signIn = async (req: Request, res: Response, next: NextFunction) => {
@@ -50,7 +50,7 @@ export const signIn = async (req: Request, res: Response, next: NextFunction) =>
     return next(new CustomError({
       error,
       message: "An error occuried while signing in."
-    }))
+    }));
   }
 };
 
@@ -66,7 +66,7 @@ export const signUp = async (req: Request, res: Response, next: NextFunction) =>
   ];
 
   const validateResult = multiValidate(allValidations);
-  
+
   if (validateResult.length > 0) {
     return next(new CustomError({
       code: ErrorCode.BAD_REQUEST,
@@ -115,7 +115,7 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
   }
 
   // Se não, tentar realizar o login com as credenciais uffs
-  const tokenAPiUffs = await authModel.tryUffsLogin({ authenticator, password })
+  const tokenAPiUffs = await authModel.tryUffsLogin({ authenticator, password });
 
   if (tokenAPiUffs === null) {
     return next(new CustomError({
@@ -150,14 +150,14 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
       cpf: userData.cpf,
       name: userData.name,
       authenticator: userData.email,
-      password: password,
+      password,
       idUffs: userData.idUffs,
       profile_picture: userProfilePhoto
     };
 
     const createdUser = await authModel.signUp(user);
 
-    //criar um qrcode para o usuário;
+    // criar um qrcode para o usuário;
     await saveUserUniqueQrCodeFromRawId(createdUser.id);
 
     const responseData = await defaultLoginResponse({
@@ -193,7 +193,7 @@ export const signInUFFS = async (req: Request, res: Response, next: NextFunction
         cpf: userData.cpf,
         full_name: userData.name,
         email: userData.email,
-        password: password,
+        password,
         idUFFS: userData.idUffs,
         profile_picture: userProfilePhoto
       });
@@ -240,9 +240,9 @@ export const verifyAvailability = async (req: Request, res: Response, next: Next
       case QueryOptions.email: {
         if (validate({ data: search, type: "email" }) !== true)
           return next(new CustomError({ code: ErrorCode.BAD_REQUEST, message: "Email invalid" }));
-        
+
         const user = await userModel.getByEmail({ email: search, fields: ["id"] });
-        
+
         if (user.length === 0)
           return res.json({ available: true });
 
@@ -268,7 +268,7 @@ export const verifyAvailability = async (req: Request, res: Response, next: Next
       code: ErrorCode.BAD_REQUEST
     }));
   }
-}
+};
 
 async function defaultLoginResponse(user: User) {
   const { token, expiresIn } = await generateJWT({

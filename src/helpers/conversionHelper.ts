@@ -1,13 +1,13 @@
-export function toBoolean(string?: string | boolean | number) {
-  if (string === undefined)
-    return undefined;
-  if (string == "false")
+export function toBoolean(str?: string | boolean | number) {
+  if (str === undefined)
+    throw new Error("Boolean should not be undefined");
+  if (str === "false")
     return false;
-  if (string == "0")
+  if (str === "0")
     return false;
-  if (string == false)
+  if (str === false)
     return false;
-  if (string == 0)
+  if (str === 0)
     return false;
 
   return true;

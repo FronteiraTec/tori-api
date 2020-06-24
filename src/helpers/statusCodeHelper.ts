@@ -35,7 +35,7 @@ export enum httpCode {
   "Unsupported Media Type" = 415,
   "Requested Range Not Satisfiable" = 416,
   "Expectation Failed" = 417,
-  "I\"m a teapot" = 418,
+  'I"m a teapot' = 418,
   "Unprocessable Entity" = 422,
   "Locked" = 423,
   "Failed Dependency" = 424,

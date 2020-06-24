@@ -1,5 +1,5 @@
-import { createFolder } from './outputHelper';
-import { CustomError } from './customErrorHelper';
+import { createFolder } from "./outputHelper";
+import { CustomError } from "./customErrorHelper";
 
 export const createFolders = () => {
   const imagePath = process.env.PROFILE_PIC_PATH;
@@ -11,8 +11,8 @@ export const createFolders = () => {
 
     if (userQrCodePath === undefined) throw new CustomError({ message: "USER_UNIQUE_QR_CODE_PATH not found in env file" });
     createFolder(userQrCodePath);
-    
+
   } catch (error) {
     throw error;
   }
-}
+};

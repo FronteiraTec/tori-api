@@ -6,8 +6,8 @@ import {
   getIdUFFS,
   getUserInfo,
   getUserPictureFromMoodle
-} from 'src/helpers/loginUffsHelper';
-import { encryptTextHex, capitalizeFirstLetter, hashPassword } from 'src/helpers/utilHelper';
+} from "src/helpers/loginUffsHelper";
+import { encryptTextHex, capitalizeFirstLetter, hashPassword } from "src/helpers/utilHelper";
 
 
 
@@ -23,11 +23,11 @@ export const signUp = async ({ name, cpf, authenticator, password, idUffs, profi
   const hashedPassword = hashPassword(password);
 
   const newUserData = {
-    cpf: cpf,
+    cpf,
     email: authenticator,
     password: hashedPassword,
     full_name: name,
-  } as User
+  } as User;
 
   if (idUffs)
     newUserData.idUFFS = idUffs;
@@ -47,21 +47,21 @@ export const signUp = async ({ name, cpf, authenticator, password, idUffs, profi
   } catch (err) {
     throw err;
   }
-}
+};
 
 
 const getAuthenticatorType = (authenticator: string) => {
 
-  //Email
+  // Email
   if (authenticator.search("@") >= 0)
-    return AuthenticatorType.email
-  //CPF
+    return AuthenticatorType.email;
+  // CPF
   else if (!isNaN(Number(authenticator)))
     return AuthenticatorType.cpf;
-  //IDUFFS
+  // IDUFFS
   else
     return AuthenticatorType.idUFFS;
-}
+};
 
 export const signIn = async ({ authenticator, password }:
   { authenticator: string; password?: string; }) => {
@@ -94,7 +94,7 @@ export const signIn = async ({ authenticator, password }:
 
       if(encryptedUserId)
         user[0].user.id = encryptedUserId;
-        
+
       return user[0].user;
     }
 
@@ -103,7 +103,7 @@ export const signIn = async ({ authenticator, password }:
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const tryUffsLogin = async ({ authenticator, password }:
   { authenticator: string, password: string }): Promise<string | null> => {
@@ -113,7 +113,7 @@ export const tryUffsLogin = async ({ authenticator, password }:
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const getDataFromStudentPortal = async ({ authenticator, token }:
   { authenticator: string; token: string; }) => {
@@ -131,10 +131,10 @@ export const getDataFromStudentPortal = async ({ authenticator, token }:
 
     return {
       idUffs: userData.username,
-      email: userData.mail.length > 0 ? userData.mail[0] : null, //Get only the first one
+      email: userData.mail.length > 0 ? userData.mail[0] : null, // Get only the first one
       name: capitalizeFirstLetter(String(userData.givenname) + " " + String(userData.sn)), // nome EM CAPS
       activeStudent: String(userData.inetuserstatus), // util no futuro
-      cpf: String(userData.employeeNumber) //cpf
+      cpf: String(userData.employeeNumber) // cpf
     } as {
       idUffs: string,
       email: string,
@@ -145,7 +145,7 @@ export const getDataFromStudentPortal = async ({ authenticator, token }:
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const getProfilePictureFromMoodle = async (authenticator: string, password: string) => {
   try {
@@ -155,7 +155,7 @@ export const getProfilePictureFromMoodle = async (authenticator: string, passwor
   } catch (err) {
     throw err;
   }
-}
+};
 
 
 export { AuthenticatorType, getAuthenticatorType };

@@ -1,15 +1,15 @@
 /* spell-checker: disable */
 
 import pool from "./dbConnectHelper";
-import { CustomError, ErrorCode } from './customErrorHelper';
+import { CustomError, ErrorCode } from "./customErrorHelper";
 
 
 interface Data {
-  where?: {},
-  or?: {},
-  and?: {},
-  insert?: {},
-  update?: {}
+  where?: {};
+  or?: {};
+  and?: {};
+  insert?: {};
+  update?: {};
 }
 
 
@@ -22,7 +22,7 @@ export default class DbHelper {
   private _andCount = 0;
 
   public constructor(tableName: string = "") {
-    if (tableName != "")
+    if (tableName !== "")
       this._from = tableName;
 
   }
@@ -72,22 +72,11 @@ export default class DbHelper {
     let op = "";
 
     if (args.length === 1) {
-      // where = `WHERE ${key} $_e4.1g`;
-      // this.querySQL = this.querySQL.replace("$_e4g", where);
-
-      //TODO encontras as operações possíeis;
-      //LIKE
-      //<=
-      //>=
-      // =
-      // >
-      // <
-
       const equal = key.search("=");
       const lesser = key.search("<");
       const bigger = key.search(">");
       const like = key.search(/like|LIKE/);
-      
+
       if(like > -1) {
         val = key.substring(like + 4);
         key = key.substring(0, like - 1);
@@ -286,10 +275,10 @@ export default class DbHelper {
 
   private joinQueryBuilder(joinType: string, table1: string, table2: string) {
     interface JoinField {
-      alias?: string,
-      tableName: string,
-      unionField: string
-    };
+      alias?: string;
+      tableName: string;
+      unionField: string;
+    }
 
     const parseJoin = (table: string): JoinField => {
       const searchQuery = " as ";
@@ -321,7 +310,7 @@ export default class DbHelper {
 
         return res;
       }
-    }
+    };
 
 
     const objTable1 = parseJoin(table1);
@@ -369,7 +358,7 @@ export default class DbHelper {
     const argsObjectList = args.map((val, i) => {
       return {
         [`:insert${i}`]: val
-      }
+      };
     });
 
     this._data.insert = Object.assign({}, ...argsObjectList);
@@ -388,12 +377,12 @@ export default class DbHelper {
    * @param {object} args objeto onde a chave é o nome da tabela no campo e a key é o valor
    * {nome_campo: valor_a_ser_inserido}
    */
-  insert(tableName: string = "", fieldsObject: Object): this {
+  insert(tableName: string = "", fieldsObject: object): this {
     for (const i in fieldsObject)
-      if (typeof fieldsObject[i as keyof typeof fieldsObject] === 'undefined')
+      if (typeof fieldsObject[i as keyof typeof fieldsObject] === "undefined")
         delete fieldsObject[i as keyof typeof fieldsObject];
 
-    const fieldNames = Object.keys(fieldsObject) as Array<keyof typeof fieldsObject>;
+    const fieldNames = Object.keys(fieldsObject) as (keyof typeof fieldsObject)[];
 
     const insertDataObject = fieldNames.map((field: keyof typeof fieldsObject, i: number) => {
       return { [`insert${i}`]: fieldsObject[field] };
@@ -428,7 +417,7 @@ export default class DbHelper {
     let deleteQuery;
 
     if (tableName === "") {
-      deleteQuery = `DELETE $_e1g`;
+      deleteQuery = "DELETE $_e1g";
 
       if (this._from !== "")
         deleteQuery = deleteQuery.replace("$_e1g", `FROM ${this._from}`);
@@ -456,24 +445,24 @@ export default class DbHelper {
    * The WHERE clause specifies which record(s) that should be updated.
    * If you omit the WHERE clause, all records in the table will be updated!
    */
-  update(tableName: string = "", args: Object): this {
+  update(tableName: string = "", args: object): this {
     for (const i in args)
-      if (typeof args[i as keyof typeof args] === 'undefined')
+      if (typeof args[i as keyof typeof args] === "undefined")
         delete args[i as keyof typeof args];
 
-    const fieldNames = Object.keys(args) as Array<keyof typeof args>;
+    const fieldNames = Object.keys(args) as (keyof typeof args)[];
 
     const setQuery = fieldNames.map((field: keyof typeof args, i) => `${field} = :update${i}, `).join("").slice(0, -2);
 
     const valuesArray = fieldNames.map((field: keyof typeof args, i: number) => {
       if (args[field] as any === true) {
-        return { [`update${i}`]: "1" }
+        return { [`update${i}`]: "1" };
       }
       if (args[field] as any === false) {
-        return { [`update${i}`]: "0" }
+        return { [`update${i}`]: "0" };
       }
 
-      return { [`update${i}`]: args[field] }
+      return { [`update${i}`]: args[field] };
     });
 
     if (tableName === "") tableName = this._from;
@@ -501,15 +490,15 @@ export default class DbHelper {
    */
   updateOnlyNullFields(tableName: string = "", args: object): this {
     for (const i in args)
-      if (typeof args[i as keyof typeof args] === 'undefined')
+      if (typeof args[i as keyof typeof args] === "undefined")
         delete args[i as keyof typeof args];
 
-    const fieldNames = Object.keys(args) as Array<keyof typeof args>;
+    const fieldNames = Object.keys(args) as (keyof typeof args)[];
 
     const setQuery = fieldNames.map((field: keyof typeof args, i) => `\`${field}\` = COALESCE(\`${field}\`, :update${i}), `).join("").slice(0, -2);
 
     const valuesArray = fieldNames.map((field: keyof typeof args, i: number) => {
-      return { [`update${i}`]: args[field] }
+      return { [`update${i}`]: args[field] };
     });
 
     if (tableName === "") tableName = this._from;

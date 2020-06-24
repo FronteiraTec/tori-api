@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync } from "fs";
 import jwt from "jsonwebtoken";
 
 export const generateJWT = async ({ id, expireTime, secret }: { id: string; expireTime?: string, secret?: string }) => {
@@ -16,20 +16,20 @@ export const generateJWT = async ({ id, expireTime, secret }: { id: string; expi
 
   if (secret && process.env.NODE_ENV !== "production") {
     secretToSign = secret;
-    dataToSign = { expiresIn }
-    // expiresDate = 
+    dataToSign = { expiresIn };
+    // expiresDate =
   }
   else {
     // STRING
     if (process.env.JWT_SECRET_STRING) {
       secretToSign = process.env.JWT_SECRET_STRING;
-      dataToSign = { expiresIn }
+      dataToSign = { expiresIn };
     }
     if (process.env.JWT_SECRET_PRIVATE_KEY) {
       let algorithm;
 
       if (process.env.JWT_SECRET_PRIVATE_KEY_ALGORITHM) {
-        algorithm = readFileSync(process.env.JWT_SECRET_PRIVATE_KEY_ALGORITHM)
+        algorithm = readFileSync(process.env.JWT_SECRET_PRIVATE_KEY_ALGORITHM);
       }
       else throw new Error("No JWT_SECRET_PRIVATE_KEY_ALGORITHM provided in .env file");
 
@@ -49,11 +49,11 @@ export const generateJWT = async ({ id, expireTime, secret }: { id: string; expi
       secretToSign,
       dataToSign
     );
-    return { token, expiresIn: expires }
+    return { token, expiresIn: expires };
   } catch (err) {
     throw err;
   }
-}
+};
 
 
 export const validateJWT = async ({ token, secret }: { token: string; secret?: string }) => {
@@ -72,7 +72,7 @@ export const validateJWT = async ({ token, secret }: { token: string; secret?: s
       let algorithm;
 
       if (process.env.JWT_SECRET_PRIVATE_KEY_ALGORITHM) {
-        algorithm = readFileSync(process.env.JWT_SECRET_PRIVATE_KEY_ALGORITHM)
+        algorithm = readFileSync(process.env.JWT_SECRET_PRIVATE_KEY_ALGORITHM);
       }
       else throw new Error("No JWT_SECRET_PRIVATE_KEY_ALGORITHM provided in .env file");
 
@@ -86,7 +86,7 @@ export const validateJWT = async ({ token, secret }: { token: string; secret?: s
   } catch (err) {
     throw err;
   }
-}
+};
 
 function daysToSeconds(days: number) {
   return days * 24 * 60 * 60;

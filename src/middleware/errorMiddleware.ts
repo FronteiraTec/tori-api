@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from 'express';
-import { CustomError, ErrorCode, DefaultErrorMessage } from 'src/helpers/customErrorHelper';
-import { httpCode } from 'src/helpers/statusCodeHelper';
+import { NextFunction, Request, Response } from "express";
+import { CustomError, ErrorCode, DefaultErrorMessage } from "src/helpers/customErrorHelper";
+import { httpCode } from "src/helpers/statusCodeHelper";
 
 export const errorHandler = (error: CustomError, req: Request, res: Response, next: NextFunction) => {
   let status = 500;
@@ -16,7 +16,7 @@ export const errorHandler = (error: CustomError, req: Request, res: Response, ne
     status = httpCode["Internal Server Error"];
   if (error.code === ErrorCode.ER_BAD_FIELD_ERROR)
     status = httpCode["Bad Request"];
-  
+
   return res
     .status(status)
     .json({
@@ -24,4 +24,4 @@ export const errorHandler = (error: CustomError, req: Request, res: Response, ne
       code: error.code,
       info: error.json
     });
-}
+};

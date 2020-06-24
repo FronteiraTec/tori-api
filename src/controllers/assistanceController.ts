@@ -1,13 +1,13 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
-import * as assistanceModel from 'src/models/assistanceModel';
-import * as addressModel from 'src/models/addressModel';
-import { assistance as Assistance, address as Address } from 'src/helpers/dbNamespaceHelper';
-import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
-import { QueryOptions, addTags } from 'src/helpers/assistanceHelper';
-import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch, decryptHexId } from 'src/helpers/utilHelper';
-import { toBoolean } from 'src/helpers/conversionHelper';
-import { decryptText } from 'src/helpers/utilHelper';
+import * as assistanceModel from "src/models/assistanceModel";
+import * as addressModel from "src/models/addressModel";
+import { assistance as Assistance, address as Address } from "src/helpers/dbNamespaceHelper";
+import { CustomError, ErrorCode } from "src/helpers/customErrorHelper";
+import { QueryOptions, addTags } from "src/helpers/assistanceHelper";
+import { parseQueryField, allowedFields, currentDate, notAllowedFieldsSearch, decryptHexId } from "src/helpers/utilHelper";
+import { toBoolean } from "src/helpers/conversionHelper";
+import { off } from "process";
 
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -17,17 +17,17 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
 
   try {
     const allAssistance = await assistanceModel.getAll({
-      limit,
-      offset,
-      available,
-      order,
+      limit: Number(limit),
+      offset: Number(offset),
+      available: Boolean(available),
+      order: order as string,
       fields
     });
 
     return res.json(allAssistance);
 
   } catch (error) {
-    return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }))
+    return next(new CustomError({ code: ErrorCode.INTERNAL_ERROR }));
   }
 };
 
@@ -40,7 +40,7 @@ export const getByID = async (req: Request, res: Response, next: NextFunction) =
     res.json(assistance);
 
   } catch (error) {
-    return next(new CustomError({ error }))
+    return next(new CustomError({ error }));
   }
 };
 
@@ -57,23 +57,23 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
 
   const fields = (req as any).fields;
 
-  const searchParsed = parseQueryField(search);
+  const searchParsed = parseQueryField(search as string);
 
   if ( q !== QueryOptions.id)
     return next(new CustomError({ code: ErrorCode.BAD_Q_QUERY }));
 
   try {
-    switch (q) {
+    switch (q as string) {
       case QueryOptions.all: {
         const assistance = await assistanceModel.searchByNameTagDescription({
           search: searchParsed,
           fields,
           args: {
-            available,
-            limit,
-            offset,
-            orderBy: orderBy ? JSON.parse(orderBy) : undefined,
-            filter: filter ? JSON.parse(filter) : undefined
+            available: available as string,
+            limit: Number(limit),
+            offset: Number(offset),
+            orderBy: orderBy ? JSON.parse(orderBy as string) : undefined,
+            filter: filter ? JSON.parse(filter as string) : undefined
           }
         });
 
@@ -93,11 +93,11 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
             name: searchParsed[0],
             fields,
             args: {
-              available,
-              limit,
-              offset,
-              orderBy: orderBy ? JSON.parse(orderBy) : undefined,
-              filter: filter ? JSON.parse(filter) : undefined
+              available: available as string,
+              limit: Number(limit),
+              offset: Number(offset),
+              orderBy: orderBy ? JSON.parse(orderBy as string) : undefined,
+              filter: filter ? JSON.parse(filter as string) : undefined
             }
           });
 
@@ -105,17 +105,17 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
         }
       }
       case QueryOptions.tag: {
-        const searchParsed = parseQueryField(search);
+        const tagsParsed = parseQueryField(search as string);
 
         const assistance = await assistanceModel.searchByTag({
-          tags: searchParsed,
+          tags: tagsParsed,
           fields,
           args: {
-            available,
-            limit,
-            offset,
-            orderBy: orderBy ? JSON.parse(orderBy) : undefined,
-            filter: filter ? JSON.parse(filter) : undefined
+            available: available as string,
+            limit: Number(limit),
+            offset: Number(offset),
+            orderBy: orderBy ? JSON.parse(orderBy as string) : undefined,
+            filter: filter ? JSON.parse(filter as string) : undefined
           }
         });
         return res.json(assistance);
@@ -150,7 +150,7 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
     complement,
     latitude,
     longitude,
-    number,
+    number: addressNumber,
     reference,
     street,
     nickname,
@@ -176,7 +176,7 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
           complement,
           latitude,
           longitude,
-          number,
+          number: addressNumber,
           reference,
           street,
           nickname,
@@ -201,7 +201,7 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
     res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
   }
   catch (error) {
-    return next(new CustomError({ error }));;
+    return next(new CustomError({ error }));
   }
 };
 
@@ -212,9 +212,9 @@ export const deleteById = async (req: Request, res: Response, next: NextFunction
     res.json("Success");
   }
   catch (error) {
-    return next(new CustomError({ 
-      error, 
-      message: "An error ocurred while deleting this assistance."  
+    return next(new CustomError({
+      error,
+      message: "An error ocurred while deleting this assistance."
     }));
   }
 };
@@ -231,10 +231,10 @@ export const disableById = async (req: Request, res: Response, next: NextFunctio
     res.json({message: "Assistance suspended successfully"});
   }
   catch (error) {
-    return next(new CustomError({ 
+    return next(new CustomError({
       error,
-      message: "An error ocurred while disabling this assistance."  
-     }));;
+      message: "An error ocurred while disabling this assistance."
+     }));
   }
 };
 
@@ -251,10 +251,10 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     res.json("Success");
   }
   catch (error) {
-    return next(new CustomError({ 
+    return next(new CustomError({
       error,
       message: "An error occurred while updating this assistance."
-     }));;
+     }));
   }
 };
 
@@ -268,11 +268,11 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
       fields: ["owner_id", "available_vacancies", "available"]
     });
 
-    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.available) == false)
+    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.available) === false)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This assistance no longer exists",
-      }));;
+      }));
 
     if (assistanceInfo.assistance.owner_id === userId)
       return next(new CustomError({
@@ -287,8 +287,8 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
       }));
 
     const isSubscribed = await assistanceModel.findSubscribedUsersByID({
-      userId: userId,
-      assistanceId: assistanceId,
+      userId,
+      assistanceId,
       select: ["assistance_presence_list.id"]
     });
 
@@ -310,10 +310,10 @@ export const subscribeUser = async (req: Request, res: Response, next: NextFunct
     res.json("User subscribed successfully");
 
   } catch (error) {
-    return next(new CustomError({ 
+    return next(new CustomError({
       error,
       message: "An error occurred while subscribing this user."
-     }));;
+     }));
   }
 
 };
@@ -330,11 +330,11 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
       fields: ["owner_id", "available_vacancies", "available"]
     });
 
-    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.available) == false)
+    if (assistanceInfo === undefined || toBoolean(assistanceInfo.assistance.available) === false)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "This assistance no longer exists",
-      }));;
+      }));
 
     if (assistanceInfo.assistance.owner_id === userId)
       return next(new CustomError({
@@ -376,7 +376,7 @@ export const unsubscribeUser = async (req: Request, res: Response, next: NextFun
 };
 
 export const getSubscribers = async (req: Request, res: Response, next: NextFunction) => {
-  const userId = (req as any).user as number;
+  const userId = (req as any).user;
   const { assistanceId } = req.params;
 
   const fields = (req as any).fields;
@@ -387,9 +387,9 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
       fields: ["owner_id"]
     }))?.assistance;
 
-    const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId: assistanceId, select: ["assistance_presence_list.id"] });
-    
-    if (user === undefined && userId != assistance?.owner_id)
+    const user = await assistanceModel.findSubscribedUsersByID({ userId, assistanceId, select: ["assistance_presence_list.id"] });
+
+    if (user === undefined && userId !== assistance?.owner_id)
       return next(new CustomError({
         code: ErrorCode.BAD_REQUEST,
         message: "User was not subscribed in this assistance",
@@ -415,7 +415,7 @@ export const getSubscribers = async (req: Request, res: Response, next: NextFunc
     res.json(users);
 
   } catch (error) {
-    return next(new CustomError({ 
+    return next(new CustomError({
       error,
       message: "An error occurred while getting user in this assistance."
      }));
@@ -427,24 +427,24 @@ export const assistanceGivePresence = async (req: Request, res: Response, next: 
   const { assistanceId } = req.params;
 
   if (userCode === undefined)
-    return next(new CustomError({ 
-      code: ErrorCode.BAD_REQUEST, 
+    return next(new CustomError({
+      code: ErrorCode.BAD_REQUEST,
       message: "User code invalid sent. Send a valid user code."
     }));
 
   try {
     const response = await assistanceModel.givePresenceToUser(assistanceId, userCode);
-  
+
     if(response.affectedRows === 0)
       return next(new CustomError({
-        code: ErrorCode.BAD_REQUEST, 
+        code: ErrorCode.BAD_REQUEST,
         message: "User not subscribed on this assistance."
       }));
-  
+
     res.json(true);
   } catch (error) {
     return next(new CustomError({
-      code: ErrorCode.INTERNAL_ERROR, 
+      code: ErrorCode.INTERNAL_ERROR,
       message: "User not subscribed on this assistance."
     }));
   }

@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router } from "express";
 
 
-import assistanceRouter from './assistanceRoutes';
-import authRouter from './authRoutes';
-import userRouter from './userRoutes';
-import { encryptTextHex, decryptTextHex } from 'src/helpers/utilHelper';
+import assistanceRouter from "./assistanceRoutes";
+import authRouter from "./authRoutes";
+import userRouter from "./userRoutes";
+import { encryptTextHex, decryptTextHex } from "src/helpers/utilHelper";
 // import { encryptTextHex } from 'src/helpers/utilHelper';
 
 const router = Router();
@@ -26,12 +26,12 @@ router.get("/", (req: any, res: any) => {
   const { id } = req.query;
 
   res.json(encryptTextHex(id));
-})
+});
 
 router.get("/d", (req: any, res: any) => {
   const { id } = req.query;
 
   res.json(decryptTextHex(id));
-})
+});
 
 export default router;

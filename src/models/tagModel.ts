@@ -1,9 +1,9 @@
 import { db } from "../helpers/dbHelper";
 import { tag as Tag } from "../helpers/dbNamespaceHelper";
-import { InsertResponse } from 'src/helpers/dbResponsesHelper';
-import { encryptTextHex } from 'src/helpers/utilHelper';
+import { InsertResponse } from "src/helpers/dbResponsesHelper";
+import { encryptTextHex } from "src/helpers/utilHelper";
 
-export const create = async (tag: Tag | Object) => {
+export const create = async (tag: Tag | object) => {
   try {
     const result = await
       db.insert("tag", tag).resolve();
@@ -12,7 +12,7 @@ export const create = async (tag: Tag | Object) => {
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const findByName = async (tagName: string) => {
   const lowerName = tagName.toLowerCase();
@@ -28,7 +28,7 @@ export const findByName = async (tagName: string) => {
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const deleteById = async (tagId: number | string) => {
   try {
@@ -40,4 +40,4 @@ export const deleteById = async (tagId: number | string) => {
   } catch (err) {
     throw err;
   }
-}
+};

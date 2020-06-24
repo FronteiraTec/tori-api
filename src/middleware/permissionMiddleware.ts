@@ -1,8 +1,8 @@
 import { Response, Request, NextFunction } from "express";
-import { CustomError, ErrorCode } from 'src/helpers/customErrorHelper';
+import { CustomError, ErrorCode } from "src/helpers/customErrorHelper";
 import { searchByID } from "src/models/assistanceModel";
-import { allowedFields, parseQueryField, decryptTextHex } from 'src/helpers/utilHelper';
-import { decryptText, BaseEnumEncryptOptions } from 'src/helpers/utilHelper';
+import { allowedFields, parseQueryField, decryptTextHex } from "src/helpers/utilHelper";
+import { decryptText, BaseEnumEncryptOptions } from "src/helpers/utilHelper";
 
 export const verifyIfUserHasPermission = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user;
@@ -14,7 +14,7 @@ export const verifyIfUserHasPermission = async (req: Request, res: Response, nex
       fields: ["owner_id"]
     }))?.assistance;
 
-    if (assistance?.owner_id === undefined || assistance.owner_id != userId) {
+    if (assistance?.owner_id === undefined || assistance.owner_id !== userId) {
       return next(new CustomError({
         message: "User has no permission to complete this operation",
         code: ErrorCode.UNAUTHORIZED,
@@ -63,22 +63,22 @@ export const decriptAssistanceId = (req: Request, res: Response, next: NextFunct
   try {
     if(assistanceId ){
       const decryptedId = decryptText(assistanceId, BaseEnumEncryptOptions.hex);
-  
+
       req.params.assistanceId = decryptedId ? decryptedId : req.params.assistanceId;
     }
-  
+
     if(assistanceIdQuery ){
       const decryptedId = decryptText(assistanceIdQuery, BaseEnumEncryptOptions.hex);
-  
+
       req.query.assistanceId = decryptedId ? decryptedId : req.query.assistanceId;
     }
-  
+
     if(q === "id") {
       if(id){
         const decryptedId = decryptText(id, BaseEnumEncryptOptions.hex);
         req.query.id = decryptedId ? decryptedId : req.query.id;
       }
-  
+
       if(search){
         const decryptedId = decryptText(search, BaseEnumEncryptOptions.hex);
         req.query.search = decryptedId ? decryptedId : req.query.search;
@@ -86,10 +86,10 @@ export const decriptAssistanceId = (req: Request, res: Response, next: NextFunct
     }
     next();
   } catch (error) {
-    return next(new CustomError({ 
+    return next(new CustomError({
       code: ErrorCode.BAD_REQUEST,
       message: "Assistance id invalid"
      }));
-    
+
   }
 };

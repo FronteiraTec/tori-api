@@ -1,10 +1,10 @@
 import { db } from "../helpers/dbHelper";
 import { address as AddressInterface } from "../helpers/dbNamespaceHelper";
-import { InsertResponse } from 'src/helpers/dbResponsesHelper';
-import { decryptHexId } from 'src/helpers/utilHelper';
+import { InsertResponse } from "src/helpers/dbResponsesHelper";
+import { decryptHexId } from "src/helpers/utilHelper";
 
 
-export const update = async (addressId: number, address: AddressInterface | Object) => {
+export const update = async (addressId: number, address: AddressInterface | object) => {
   try {
     const result = await
       db.update("address", address)
@@ -15,9 +15,9 @@ export const update = async (addressId: number, address: AddressInterface | Obje
   } catch (err) {
     throw err;
   }
-}
+};
 
-export const create = async (address: AddressInterface | Object) => {
+export const create = async (address: AddressInterface | object) => {
   try {
     const result = await
       db.insert("address", address).resolve();
@@ -26,7 +26,7 @@ export const create = async (address: AddressInterface | Object) => {
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const deleteById = async (addressId: number) => {
   try {
@@ -38,4 +38,4 @@ export const deleteById = async (addressId: number) => {
   } catch (err) {
     throw err;
   }
-}
+};

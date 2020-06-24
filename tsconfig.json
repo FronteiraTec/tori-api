@@ -12,24 +12,9 @@
     "strict": true,
     "target": "es6",
     "moduleResolution": "node",
-    "paths": {
-      "@entities/*": [
-        "src/entities/*"
-      ],
-      "@shared/*": [
-        "src/shared/*"
-      ],
-      "@server": [
-        "src/Server"
-      ]
-    },
     "types": [
       "node"
     ],
-    "typeRoots": [
-      "types.d.ts",
-      // "node_modules/@types"
-    ]
   },
   "include": [
     "src/**/*.ts",

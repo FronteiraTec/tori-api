@@ -1,11 +1,11 @@
 import { Response, Request, NextFunction } from "express";
-import { errorResponse } from '../helpers/responseHelper';
-import { httpCode } from '../helpers/statusCodeHelper';
-import { validateJWT } from '../helpers/jwtHelper';
+import { errorResponse } from "../helpers/responseHelper";
+import { httpCode } from "../helpers/statusCodeHelper";
+import { validateJWT } from "../helpers/jwtHelper";
 
 export const userAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
-  function getToken(req: Request) {
-    const authHeader = req.headers.authorization;
+  function getToken(request: Request) {
+    const authHeader = request.headers.authorization;
 
     if (authHeader) {
       return authHeader.split(" ")[1];
@@ -24,7 +24,7 @@ export const userAuthenticated = async (req: Request, res: Response, next: NextF
     const userId = Object(tokenDecoded).data.id;
 
     (req as any).user = userId;
-    
+
     next();
   } catch (err) {
     if (err.name === "TokenExpiredError")
@@ -33,4 +33,4 @@ export const userAuthenticated = async (req: Request, res: Response, next: NextF
     return errorResponse({ message: "Token malformed", code: httpCode["Bad Request"], res });
   }
 
-}
+};

@@ -1,14 +1,14 @@
 import { db } from "../helpers/dbHelper";
 import { user as User } from "../helpers/dbNamespaceHelper";
-import { toBoolean } from 'src/helpers/conversionHelper';
-import { encryptTextHex, booleanToString, decryptHexId } from 'src/helpers/utilHelper';
+import { toBoolean } from "src/helpers/conversionHelper";
+import { encryptTextHex, booleanToString, decryptHexId } from "src/helpers/utilHelper";
 
 interface UserSearch {
-  user: User
+  user: User;
 }
 
 
-export const updateOnlyNullFields = async (userId: number | string, user: User | Object) => {
+export const updateOnlyNullFields = async (userId: number | string, user: User | object) => {
 
   try {
     const result = await
@@ -20,10 +20,10 @@ export const updateOnlyNullFields = async (userId: number | string, user: User |
   } catch (err) {
     throw err;
   }
-}
+};
 
 
-export const getById = async ({ userId, fields }: { userId: number, fields?: string[] }) => {
+export const getById = async ({ userId, fields }: { userId: string, fields?: string[] }) => {
   if (fields?.length)
     db.select(fields.join(","));
   else
@@ -42,7 +42,7 @@ export const getById = async ({ userId, fields }: { userId: number, fields?: str
     throw err;
   }
 
-}
+};
 
 export const getByEmail = async ({ email, fields }: { email: string, fields?: string[] }) => {
   if (fields?.length)
@@ -61,7 +61,7 @@ export const getByEmail = async ({ email, fields }: { email: string, fields?: st
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const getWhere = async ({ key, value, fields }: { key: string, value: string | number, fields?: string }) => {
 
@@ -82,7 +82,7 @@ export const getWhere = async ({ key, value, fields }: { key: string, value: str
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const getByName = async ({ name, fields }: { name: string, fields?: string[] }) => {
   if (fields?.length)
@@ -101,7 +101,7 @@ export const getByName = async ({ name, fields }: { name: string, fields?: strin
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const getAll = async ({ assistant, limit, offset, fields }:
   { assistant?: string, limit: number, offset: number, fields?: string }) => {
@@ -127,7 +127,7 @@ export const getAll = async ({ assistant, limit, offset, fields }:
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const update = async (userId: number, user: User | any) => {
 
@@ -146,7 +146,7 @@ export const update = async (userId: number, user: User | any) => {
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const deleteById = async (userId: number) => {
   try {
@@ -160,7 +160,7 @@ export const deleteById = async (userId: number) => {
   } catch (err) {
     throw err;
   }
-}
+};
 
 export const updateProfilePicture = async ({ userId, imagePath }: { userId: number, imagePath: string }) => {
   try {
@@ -173,7 +173,7 @@ export const updateProfilePicture = async ({ userId, imagePath }: { userId: numb
   } catch (err) {
     throw err;
   }
-}
+};
 
 function defaultReturn() {
   return `
@@ -201,4 +201,4 @@ const encryptId = (list: UserSearch[]) => {
 
     return newItem;
   });
-}
+};

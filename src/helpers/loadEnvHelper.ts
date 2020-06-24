@@ -1,12 +1,12 @@
-import dotenv from 'dotenv';
-import commandLineArgs from 'command-line-args';
+import dotenv from "dotenv";
+import commandLineArgs from "command-line-args";
 
 // Setup command line options
 const options = commandLineArgs([
     {
-        name: 'env',
-        alias: 'e',
-        defaultValue: 'production',
+        name: "env",
+        alias: "e",
+        defaultValue: "production",
         type: String,
     },
 ]);

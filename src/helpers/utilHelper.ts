@@ -1,5 +1,5 @@
-import { CustomError, ErrorCode } from './customErrorHelper';
-import crypto from 'crypto';
+import { CustomError, ErrorCode } from "./customErrorHelper";
+import crypto from "crypto";
 
 export const parseQueryField = (fields?: string) =>{
   if (fields === undefined || fields === "")
@@ -9,7 +9,7 @@ export const parseQueryField = (fields?: string) =>{
     .trim()
     .split(",")
     .map((field: string) => `${field.trim()}`);
-}
+};
 
 export const currentDate = () => {
   /* cspell: disable-next-line */
@@ -17,7 +17,7 @@ export const currentDate = () => {
     .split("-");
   const time = date[2].split(" ");
   return `${time[0]}-${date[0]}-${date[1]} ${time[1]}`;
-}
+};
 
 export const allowedFields = (fields: string[]) => {
   const availableSearchFields = [
@@ -63,7 +63,7 @@ export const allowedFields = (fields: string[]) => {
     "student.full_name",
     "student.created_at",
     "user.is_assistant",
-    "user.id",  
+    "user.id",
     "student.student_stars",
     "student.email",
     "student.course_id",
@@ -80,7 +80,7 @@ export const allowedFields = (fields: string[]) => {
       return false;
   }
   return true;
-}
+};
 
 export const notAllowedFieldsSearch = (fields?: string[]) => {
   if (fields === undefined)
@@ -104,39 +104,39 @@ export const notAllowedFieldsSearch = (fields?: string[]) => {
     }
   }
   return false;
-}
+};
 
 
 export const encryptText = (text: number | string, base?: BaseEnumEncryptOptions) => {
 
   const config = getCryptConfigAES();
-  const cipher = crypto.createCipheriv('aes-256-cbc', config.cryptKey, config.iv)
+  const cipher = crypto.createCipheriv("aes-256-cbc", config.cryptKey, config.iv);
   const textBuffer = Buffer.from(String(text));
 
   try {
     return Buffer.concat([
       cipher.update(textBuffer),
       cipher.final()
-    ]).toString(base ? base : 'base64');
+    ]).toString(base ? base : "base64");
   } catch (error) {
     throw error;
   }
 };
 
 export const decryptText = (encryptedText: string | number | undefined, base?: BaseEnumEncryptOptions) => {
-  if (encryptedText === null || encryptedText === undefined || encryptedText === '') {
+  if (encryptedText === null || encryptedText === undefined || encryptedText === "") {
     throw new CustomError({
       code: ErrorCode.INVALID_ID
     });
   }
-  
+
   const config = getCryptConfigAES();
 
-  const decipher = crypto.createDecipheriv('aes-256-cbc', config.cryptKey, config.iv)
+  const decipher = crypto.createDecipheriv("aes-256-cbc", config.cryptKey, config.iv);
 
   try {
     return Buffer.concat([
-      decipher.update(encryptedText.toString(), base ? base : 'base64'), // Expect `text` to be a base64 string
+      decipher.update(encryptedText.toString(), base ? base : "base64"), // Expect `text` to be a base64 string
       decipher.final()
     ]).toString();
   } catch (error) {
@@ -161,8 +161,8 @@ const getCryptConfigAES = () => {
   }
 
   return {
-    cryptKey: crypto.createHash('sha256').update(password).digest(),
-    iv: 'a2xhCgAAAAAAAAAA'
+    cryptKey: crypto.createHash("sha256").update(password).digest(),
+    iv: "a2xhCgAAAAAAAAAA"
   };
 };
 
@@ -177,11 +177,11 @@ export const decryptHexId = (id: string | number) => {
   return Number(decryptTextHex(id));
 };
 
-export const booleanToString = (string?: string) => {
-  if (string === undefined) return undefined;
+export const booleanToString = (str?: string) => {
+  if (str === undefined) return undefined;
 
-  if (string === "false") return "0";
-  if (string === "0") return "0";
+  if (str === "false") return "0";
+  if (str === "0") return "0";
 
   return "1";
 };
@@ -194,7 +194,7 @@ export const hashPassword = (password: string | number) => {
 };
 
 export const capitalizeFirstLetter = (text: string) => {
-  return text.toLowerCase().split(' ')
+  return text.toLowerCase().split(" ")
     .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
-    .join(' ');
+    .join(" ");
 };

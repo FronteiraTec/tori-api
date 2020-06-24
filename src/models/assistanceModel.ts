@@ -9,35 +9,35 @@ import {
   subject as Subject,
   course as Course
 } from "../helpers/dbNamespaceHelper";
-import { InsertResponse, DeleteResponse } from 'src/helpers/dbResponsesHelper';
-import { toBoolean } from 'src/helpers/conversionHelper';
-import { decryptHexId, encryptTextHex, decryptTextHex } from 'src/helpers/utilHelper';
-import { AnyARecord } from 'dns';
-import { format } from 'path';
-import { captureRejectionSymbol } from 'events';
+import { InsertResponse, DeleteResponse } from "src/helpers/dbResponsesHelper";
+import { toBoolean } from "src/helpers/conversionHelper";
+import { decryptHexId, encryptTextHex, decryptTextHex } from "src/helpers/utilHelper";
+import { AnyARecord } from "dns";
+import { format } from "path";
+import { captureRejectionSymbol } from "events";
 
 interface AssistanceSearch {
-  assistance: Assistance,
-  address: Address,
-  assistant: User,
-  assistanceCourse: Course,
-  assistantCourse: Course,
-  subject: Subject
+  assistance: Assistance;
+  address: Address;
+  assistant: User;
+  assistanceCourse: Course;
+  assistantCourse: Course;
+  subject: Subject;
 }
 
 interface FilterOptions {
-  filter?: object,
-  limit?: number,
-  offset?: number,
-  orderBy?: object,
-  available?: boolean | string | number
-};
+  filter?: object;
+  limit?: number;
+  offset?: number;
+  orderBy?: object;
+  available?: boolean | string | number;
+}
 
 export const getAll = async ({ limit, offset, available, order, fields }: { fields: string[] | undefined, order: string, limit: number; offset: number; available: boolean; }) => {
   const db = new DbHelper();
 
   if (fields?.length)
-    fieldSearch({ fields, db })
+    fieldSearch({ fields, db });
   else {
     defaultSearch({ db });
   }
@@ -59,12 +59,12 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
 
   try {
     const assistanceList = await db.resolve() as AssistanceSearch[];
-    return encryptId(assistanceList);;
+    return encryptId(assistanceList);
   }
   catch (err) {
     throw err;
   }
-}
+};
 
 export const searchByID = async ({ id, fields, args }:
   { args?: FilterOptions, fields?: string[], id: number | string; }) => {
@@ -129,18 +129,18 @@ export const searchByTag = async ({ tags, fields, args }:
     defaultSearch({ db });
 
   db.leftJoin("assistance_tag as at at.assistance_id", "assistance.id")
-    .leftJoin("tag.id", "at.id")
+    .leftJoin("tag.id", "at.id");
 
   if (tags)
-    tags.map((string, i) => {
-      if (i == 0)
-        db.where("(tag.name")
+    tags.map((str, i) => {
+      if (i === 0)
+        db.where("(tag.name");
       else
-        db.or("(tag.name")
+        db.or("(tag.name");
 
-      db.like(`%${string}%`)
-        .or("assistance.title").like(`%${string}%`)
-        .or("assistance.description").like(`%${string}%`, ')');
+      db.like(`%${str}%`)
+        .or("assistance.title").like(`%${str}%`)
+        .or("assistance.description").like(`%${str}%`, ")");
     });
 
 
@@ -168,18 +168,18 @@ export const searchByNameTagDescription = async ({ search, fields, args }:
     defaultSearch({ db });
 
   db.leftJoin("assistance_tag as at at.assistance_id", "assistance.id")
-    .leftJoin("tag.id", "at.id")
+    .leftJoin("tag.id", "at.id");
 
   if (search)
-    search.map((string, i) => {
-      if (i == 0)
-        db.where("(tag.name")
+    search.map((str, i) => {
+      if (i === 0)
+        db.where("(tag.name");
       else
-        db.or("(tag.name")
+        db.or("(tag.name");
 
-      db.like(`%${string}%`)
-        .or("assistance.title").like(`%${string}%`)
-        .or("assistance.description").like(`%${string}%`, ')');
+      db.like(`%${str}%`)
+        .or("assistance.title").like(`%${str}%`)
+        .or("assistance.description").like(`%${str}%`, ")");
 
     });
 
@@ -210,7 +210,7 @@ export const deleteById = async (id: number | string) => {
   }
 };
 
-export const create = async (assistanceData: Assistance | Object): Promise<InsertResponse> => {
+export const create = async (assistanceData: Assistance | object): Promise<InsertResponse> => {
   const db = new DbHelper();
 
   try {
@@ -222,7 +222,7 @@ export const create = async (assistanceData: Assistance | Object): Promise<Inser
   }
 };
 
-export const update = async (assistanceId: number | string, assistanceFields: Assistance | Object) => {
+export const update = async (assistanceId: number | string, assistanceFields: Assistance | object) => {
   const db = new DbHelper();
 
   try {
@@ -237,7 +237,7 @@ export const update = async (assistanceId: number | string, assistanceFields: As
   }
 };
 
-export const createTag = async (assistanceTag: AssistanceTag | Object): Promise<InsertResponse> => {
+export const createTag = async (assistanceTag: AssistanceTag | object): Promise<InsertResponse> => {
   const db = new DbHelper();
 
   try {
@@ -287,7 +287,7 @@ export const findAllSubscribedUsers = async (assistanceId: number | string, sele
 export const findSubscribedUsersByID = async ({ userId, assistanceId, select, args }: { args?: FilterOptions, select?: string[], userId: number | string; assistanceId: number | string; }) => {
   const db = new DbHelper();
 
-  db.join("assistance.id", "assistance_presence_list.assistance_id")
+  db.join("assistance.id", "assistance_presence_list.assistance_id");
 
   if (select?.length)
     fieldSearch({ fields: select, db, from: "assistance_presence_list" });
@@ -363,7 +363,7 @@ export const givePresenceToUser = async (assistanceId: string | number, userId: 
 export const findAllSubscribedAssistanceByUser = async ({ args, userId, select }: { args?: FilterOptions, userId: number; select?: string[]; }) => {
   const db = new DbHelper();
 
-  db.join("assistance.id", "assistance_presence_list.assistance_id")
+  db.join("assistance.id", "assistance_presence_list.assistance_id");
 
   if (select?.length)
     fieldSearch({ fields: select, db, from: "assistance_presence_list" });
@@ -398,7 +398,7 @@ export const findAllCreatedAssistanceByUser = async ({ userId, select, args }: {
     defaultFilters(args, db);
 
   try {
-    db.where("assistance.owner_id", decryptHexId(userId))
+    db.where("assistance.owner_id", decryptHexId(userId));
 
     const res = await db.resolve() as AssistanceSearch[];
 
@@ -482,13 +482,13 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
   if (args.filter) {
     const filters = args.filter;
 
-    let i = 0;
+    const i = 0;
 
     for (const key of Object.keys(filters)) {
-      let value = filters[key as keyof typeof filters] as string;
+      const value = filters[key as keyof typeof filters] as string;
 
       const query = findAndDecryptId(key, value.trim());
-  
+
       db.where(query);
     }
   }
@@ -505,7 +505,7 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
 
 
   if (args.orderBy) {
-    for (const key in args.orderBy) {
+    for (const key of Object.keys(args.orderBy)) {
       const value = args.orderBy[key as keyof typeof args.orderBy];
       db.orderBy(key, value);
       break;
@@ -543,7 +543,7 @@ function findAndDecryptId(key: string, value: string) {
     return `${key} ${value}`;
   }
 
-  if (firstLetterOrNumber >= 1){
+  if (firstLetterOrNumber >= 1) {
     return `${key} ${value}`;
   }
 
@@ -608,4 +608,4 @@ const encryptId = (list: AssistanceSearch[]) => {
 
     return newItem;
   });
-}
+};

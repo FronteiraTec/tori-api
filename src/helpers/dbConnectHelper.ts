@@ -1,4 +1,4 @@
-import mariadb from 'mariadb';
+import mariadb from "mariadb";
 
 const dbConnect = mariadb.createPool({
     connectionLimit: 15,
