@@ -50,7 +50,6 @@ export namespace assistanceFields {
     export type created_at = Date;
     export type course_id = number | string | null;
     export type subject_id = number | string| null;
-    export type suspended = boolean;
     export type suspended_date = Date | null;
 }
 
@@ -66,7 +65,6 @@ export interface assistance {
     created_at: assistanceFields.created_at;
     course_id: assistanceFields.course_id;
     subject_id: assistanceFields.subject_id;
-    suspended: assistanceFields.suspended;
     suspended_date: assistanceFields.suspended_date;
 
 }

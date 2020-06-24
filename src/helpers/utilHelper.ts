@@ -62,6 +62,8 @@ export const allowedFields = (fields: string[]) => {
     "userCourse.description",
     "student.full_name",
     "student.created_at",
+    "user.is_assistant",
+    "user.id",  
     "student.student_stars",
     "student.email",
     "student.course_id",

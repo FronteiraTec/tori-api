@@ -10,18 +10,17 @@ import {
 import { encryptTextHex, capitalizeFirstLetter, hashPassword } from 'src/helpers/utilHelper';
 
 
+
 enum AuthenticatorType {
   email,
   idUFFS,
   cpf
 }
 
-export const signUp = async ({ name, cpf, authenticator, password, idUffs, profilePicture }:
-  { name: string; cpf: string; authenticator: string; password: string; profilePicture?: string; idUffs?: string }) => {
+export const signUp = async ({ name, cpf, authenticator, password, idUffs, profile_picture }:
+  { name: string; cpf: string; authenticator: string; password: string; profile_picture?: string; idUffs?: string }) => {
 
   const hashedPassword = hashPassword(password);
-
-  console.log(idUffs);
 
   const newUserData = {
     cpf: cpf,
@@ -32,8 +31,8 @@ export const signUp = async ({ name, cpf, authenticator, password, idUffs, profi
 
   if (idUffs)
     newUserData.idUFFS = idUffs;
-  if (profilePicture)
-    newUserData.profile_picture = profilePicture;
+  if (profile_picture)
+    newUserData.profile_picture = profile_picture;
 
   try {
     const newUser = await db.insert("user", newUserData)
@@ -41,8 +40,10 @@ export const signUp = async ({ name, cpf, authenticator, password, idUffs, profi
 
     return {
       id: encryptTextHex(newUser[0].insertId),
-      full_name: name
+      full_name: name,
+      profile_picture
     } as User;
+
   } catch (err) {
     throw err;
   }
@@ -68,7 +69,7 @@ export const signIn = async ({ authenticator, password }:
   const authType = getAuthenticatorType(authenticator);
 
   try {
-    db.select("full_name, id")
+    db.select("full_name, id, profile_picture")
       .from("user");
 
     if (authType === AuthenticatorType.email)
