@@ -46,8 +46,8 @@ export namespace assistanceFields {
     export type available = boolean;
     export type available_vacancies = number;
     export type description = string;
-    export type date = Date;
-    export type created_at = Date;
+    export type date = Date | string;
+    export type created_at = Date | string;
     export type course_id = number | string | null;
     export type subject_id = number | string| null;
     export type suspended_date = Date | null;
@@ -62,10 +62,10 @@ export interface assistance {
     available_vacancies: assistanceFields.available_vacancies;
     description: assistanceFields.description;
     date: assistanceFields.date;
-    created_at: assistanceFields.created_at;
-    course_id: assistanceFields.course_id;
-    subject_id: assistanceFields.subject_id;
-    suspended_date: assistanceFields.suspended_date;
+    created_at?: assistanceFields.created_at;
+    course_id?: assistanceFields.course_id;
+    subject_id?: assistanceFields.subject_id;
+    suspended_date?: assistanceFields.suspended_date;
 
 }
 

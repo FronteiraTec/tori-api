@@ -5,6 +5,7 @@
     "object-literal-sort-keys": false,
     "ordered-imports": false,
     "quotemark": [true, "double", "avoid-escape", "avoid-template"],
+    "no-trailing-whitespace": [false],
     "semicolon": [true, "always"],
     "no-console": {
       "options": [true, "log"],

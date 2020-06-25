@@ -3,14 +3,11 @@ export class CustomError extends Error {
   public status?: number;
   public json: any;
 
-  constructor({ message, code, status, error, json }: { json?: any, message?: string | object[] | object; code?: ErrorCode; status?: number; error?: any }) {
+  constructor({ message, code, status, error, json }: { json?: any, message?: string; code?: ErrorCode; status?: number; error?: any }) {
     if(message === undefined && code !== undefined)
       message = DefaultErrorMessage[code];
 
-    if (typeof message === "string")
-      super(message);
-    else
-      super(JSON.stringify(message));
+    super(message);
 
     this.code = ErrorCode.INTERNAL_ERROR;
     this.status = undefined;
@@ -23,10 +20,8 @@ export class CustomError extends Error {
         this.status = status;
       if(json)
         this.json = json;
-      if (typeof message === "string")
+      if (message)
         this.message = message;
-      else
-        this.message = JSON.stringify(message);
     }
     if (error) {
       if (error.code) {
@@ -47,6 +42,7 @@ export class CustomError extends Error {
     }
 
     this.name = this.constructor.name;
+
     if (typeof Error.captureStackTrace === "function") {
       Error.captureStackTrace(this, this.constructor);
     } else {

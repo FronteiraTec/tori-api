@@ -6,7 +6,8 @@ import {
   user as User,
   address as Address,
   subject as Subject,
-  course as Course
+  course as Course,
+  assistance
 } from "../helpers/dbNamespaceHelper";
 import { InsertResponse, DeleteResponse } from "src/helpers/dbResponsesHelper";
 import { toBoolean } from "src/helpers/conversionHelper";
@@ -30,7 +31,7 @@ interface FilterOptions {
   available?: boolean | string | number;
 }
 
-export const getAll = async ({ limit, offset, available, order, fields }: { fields: string[] | undefined, order: string, limit: number; offset: number; available: boolean; }) => {
+export const getAll = async ({ args, order, fields }: { fields: string[] | undefined, order: string, args?: FilterOptions }) => {
   const db = new DbHelper();
 
   if (fields?.length)
@@ -39,20 +40,14 @@ export const getAll = async ({ limit, offset, available, order, fields }: { fiel
     defaultSearch({ db });
   }
 
-  if (order)
-    db.orderBy("assistance.id", order);
-  else {
-    db.orderBy("assistance.id", "DESC");
+  if (order && !args?.orderBy)
+    db.orderBy("assistance.date", order);
+  else if (!args?.orderBy) {
+    db.orderBy("assistance.date", "DESC");
   }
 
-
-  if (available !== undefined) {
-    if (Boolean(available) === true)
-      db.where("available", String(available));
-  }
-
-  if (limit !== undefined && offset !== undefined)
-    db.pagination(limit, offset);
+  if (args)
+    defaultFilters(args, db);
 
   const assistanceList = await db.resolve() as AssistanceSearch[];
   return encryptId(assistanceList);
@@ -73,9 +68,9 @@ export const searchByID = async ({ id, fields, args }:
 
   db.where("assistance.id", decryptHexId(id));
 
-  const assistance = await db.resolve() as AssistanceSearch[];
+  const assistanceResponse = await db.resolve() as AssistanceSearch[];
 
-  return assistance.length > 0 ? encryptId(assistance)[0] : undefined;
+  return assistanceResponse.length > 0 ? encryptId(assistanceResponse)[0] : undefined;
 };
 
 export const searchByName = async ({ name, fields, args }:
@@ -95,9 +90,9 @@ export const searchByName = async ({ name, fields, args }:
   if (args)
     defaultFilters(args, db);
 
-  const assistance = await db.resolve() as AssistanceSearch[];
+  const assistanceResponse = await db.resolve() as AssistanceSearch[];
 
-  return assistance.length > 0 ? assistance : undefined;
+  return assistanceResponse.length > 0 ? assistanceResponse : undefined;
 };
 
 export const searchByTag = async ({ tags, fields, args }:
@@ -130,9 +125,9 @@ export const searchByTag = async ({ tags, fields, args }:
     defaultFilters(args, db);
 
 
-  const assistance = await db.resolve() as { assistance: Assistance }[];
+  const assistanceResponse = await db.resolve() as { assistance: Assistance }[];
 
-  return assistance.map((item: { assistance: Assistance }) => item.assistance);
+  return assistanceResponse.map((item: { assistance: Assistance }) => item.assistance);
 
 };
 
@@ -165,12 +160,9 @@ export const searchByNameTagDescription = async ({ search, fields, args }:
   if (args)
     defaultFilters(args, db);
 
+  const assistanceResponse = await db.resolve() as AssistanceSearch[];
 
-  const assistance = await db.resolve() as AssistanceSearch[];
-
-  return assistance;
-
-
+  return assistanceResponse;
 };
 
 export const deleteById = async (id: number | string) => {
@@ -182,10 +174,18 @@ export const deleteById = async (id: number | string) => {
   return db.resolve();
 };
 
-export const create = async (assistanceData: Assistance | object): Promise<InsertResponse> => {
+export const create = async (assistanceData: Assistance): Promise<InsertResponse> => {
   const db = new DbHelper();
 
-  const newAssistance = await db.insert("assistance", assistanceData).resolve() as InsertResponse[];
+  const newAssistance = await db.insert("assistance", {
+    ...assistanceData,
+    course_id: assistanceData?.course_id ? decryptHexId(assistanceData.course_id) : undefined,
+    owner_id: decryptHexId(assistanceData.owner_id)
+  } as assistance).resolve() as InsertResponse[];
+
+  if (newAssistance[0].affectedRows === 1 && newAssistance[0].insertId)
+    newAssistance[0].insertId = encryptTextHex(newAssistance[0].insertId);
+
   return newAssistance[0];
 };
 
@@ -429,7 +429,6 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
     }
   }
 
-
   if (args.available) {
     if (toBoolean(args.available.toString())) {
       db.where("assistance.available", "1");
@@ -495,18 +494,15 @@ const encryptId = (list: AssistanceSearch[]) => {
       newItem.assistance.id = encryptedAssistanceId;
     }
 
-
     if (item.assistance?.owner_id) {
       const encryptedOwnerId = encryptTextHex(item.assistance.owner_id);
       newItem.assistance.owner_id = encryptedOwnerId;
     }
 
-
     if (item.assistance?.course_id) {
       const encryptedCourseId = encryptTextHex(item.assistance.course_id);
       newItem.assistance.course_id = encryptedCourseId;
     }
-
 
     if (item.assistant?.id) {
       const encryptedAssistantId = encryptTextHex(item.assistant.id);
@@ -518,28 +514,24 @@ const encryptId = (list: AssistanceSearch[]) => {
       newItem.assistantCourse.id = encryptedAssistantCourseId;
     }
 
-
     if (item.assistanceCourse?.id) {
       const encryptedAssistanceCourseId = encryptTextHex(item.assistanceCourse.id);
       newItem.assistanceCourse.id = encryptedAssistanceCourseId;
     }
-
 
     if (item.subject?.id) {
       const encryptedSubjectId = encryptTextHex(item.subject.id);
       newItem.subject.id = encryptedSubjectId;
     }
 
-
     if (item.address?.id) {
       const encryptedAddressId = encryptTextHex(item.address.id);
       newItem.address.id = encryptedAddressId;
     }
 
-
     if (item.address?.assistance_id) {
       const encryptedAddressAssistanceId = encryptTextHex(item.address.assistance_id);
-      newItem.address.id = encryptedAddressAssistanceId;
+      newItem.address.assistance_id = encryptedAddressAssistanceId;
     }
 
     return newItem;
