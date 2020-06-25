@@ -1,6 +1,6 @@
 export interface InsertResponse {
   affectedRows?: number;
-  insertId?: number;
+  insertId?: number | string;
   warningStatus?: number;
 }
 

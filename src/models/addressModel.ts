@@ -15,11 +15,14 @@ export const update = async (addressId: number, address: AddressInterface | obje
   return result;
 };
 
-export const create = async (address: AddressInterface | object) => {
+export const create = async (address: AddressInterface | any) => {
   const db = new dbHelper();
 
   const result = await
-    db.insert("address", address).resolve();
+    db.insert("address", {
+      ...address,
+      assistance_id: decryptHexId(address.assistance_id)
+    }).resolve();
 
   return result.length > 0 ? result[0] as InsertResponse : undefined;
 };

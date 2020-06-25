@@ -5,22 +5,27 @@ import * as addressModel from "src/models/addressModel";
 import { assistance as Assistance, address as Address } from "src/helpers/dbNamespaceHelper";
 import { CustomError, ErrorCode } from "src/helpers/customErrorHelper";
 import { QueryOptions, addTags } from "src/helpers/assistanceHelper";
-import { parseQueryField, currentDate, notAllowedFieldsSearch, decryptHexId } from "src/helpers/utilHelper";
+import { parseQueryField, currentDate, notAllowedFieldsSearch } from "src/helpers/utilHelper";
 import { toBoolean } from "src/helpers/conversionHelper";
+import { multiValidate } from "src/helpers/validationHelper";
 
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
-  const { limit, offset, available, order } = req.query;
+  const { limit, offset, available, order, filter, orderBy } = req.query;
 
   const fields = (req as any).fields;
 
   try {
     const allAssistance = await assistanceModel.getAll({
-      limit: Number(limit),
-      offset: Number(offset),
-      available: Boolean(available),
       order: order as string,
-      fields
+      fields,
+      args: {
+        available: available as string,
+        limit: Number(limit),
+        offset: Number(offset),
+        orderBy: orderBy ? JSON.parse(orderBy as string) : undefined,
+        filter: filter ? JSON.parse(filter as string) : undefined
+      }
     });
 
     return res.json(allAssistance);
@@ -130,7 +135,6 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
   catch (error) {
     return next(new CustomError({ error }));
   }
-
 };
 
 export const create = async (req: Request, res: Response, next: NextFunction) => {
@@ -141,7 +145,6 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
     course_id,
     date,
     description,
-    subject_id,
     title,
     total_vacancies,
     tags,
@@ -155,39 +158,52 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
     nickname,
   } = req.body;
 
+  const validationResult = multiValidate([
+    { data: course_id, message: "Course id is not valid.", type: "len=8" },
+    { data: date, message: "Date is not valid. Valid format should be yyyy-mm-dd hh:mm:ss or yyyy-mm-dd", type: "len=10" },
+    { data: description, message: "Description is not valid. It need to has at least 15 letters", type: "len=15" },
+    { data: title, message: "Title is not valid. It need to has at least 5 letters", type: "len=5" },
+    { data: total_vacancies, message: "Total vacancies is not valid. It should be a number", type: "number" },
+    { data: cep, message: "Cep is not valid. Format 00000000", type: "len=8" },
+    { data: addressNumber, message: "Address number is not valid", type: "number" },
+    { data: street, message: "Address street name is not valid. It need to has at least 10 letters", type: "len=10" },
+    { data: nickname, message: "Address nickname id not valid. it should has at least 3 letter and can not have numbers", type: "len=3" }
+  ]);
+
+  if (validationResult.length)
+    return next(new CustomError({
+      json: validationResult,
+      message: "Validation failed",
+      code: ErrorCode.VALIDATION_ERR
+    }));
+
+  const availableVacanciesLimit = available_vacancies > total_vacancies ? total_vacancies : available_vacancies;
+
   try {
     const newAssistance = await assistanceModel.create({
-      available_vacancies,
-      course_id: decryptHexId(course_id),
-      date,
-      description,
-      title,
-      total_vacancies,
-      owner_id: decryptHexId(userId),
+      available_vacancies: availableVacanciesLimit ? Number(availableVacanciesLimit) : total_vacancies,
+      course_id: course_id ? String(course_id) : undefined,
+      date: String(date),
+      description: String(description),
+      title: String(title),
+      total_vacancies: Number(total_vacancies),
+      owner_id: String(userId),
+    } as any);
+
+    const newAddress = await addressModel.create({
+      cep,
+      complement,
+      latitude,
+      longitude,
+      number: addressNumber,
+      reference,
+      street,
+      nickname,
+      assistance_id: newAssistance.insertId
     });
 
-
-
-    const newAddress = await (async () => {
-      try {
-        return await addressModel.create({
-          cep,
-          complement,
-          latitude,
-          longitude,
-          number: addressNumber,
-          reference,
-          street,
-          nickname,
-          id: newAssistance.insertId
-        });
-      } catch (error) {
-        return next(new CustomError({ error }));
-      }
-    })();
-
     if (newAddress instanceof Error || newAddress === undefined || newAddress.affectedRows === undefined) {
-      return next(new CustomError({
+      throw next(new CustomError({
         code: ErrorCode.INTERNAL_ERROR,
         message: "An error occurred while creating the address",
       }));
@@ -197,9 +213,16 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       addTags(newAssistance.insertId, tags);
     }
 
-    res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
+    return res.json({ message: "Assistance created", assistanceId: newAssistance.insertId });
   }
   catch (error) {
+    if (error.code === "ER_BAD_FIELD_ERROR")
+      return next(new CustomError({
+        error,
+        code: ErrorCode.ER_BAD_FIELD_ERROR,
+        message: "One or more fields are wrong. It can be the field name or the field data type. Please try consult the documentation"
+      }));
+
     return next(new CustomError({ error }));
   }
 };
@@ -208,7 +231,7 @@ export const deleteById = async (req: Request, res: Response, next: NextFunction
   const { assistanceId } = req.params;
   try {
     await assistanceModel.deleteById(assistanceId);
-    res.json({message: "Assistance deleted successfully"});
+    res.json({ message: "Assistance deleted successfully" });
   }
   catch (error) {
     return next(new CustomError({
