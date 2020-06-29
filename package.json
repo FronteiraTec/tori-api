@@ -10,6 +10,7 @@
   "devDependencies": {
     "@types/cheerio": "^0.22.18",
     "@types/command-line-args": "^5.0.0",
+    "@types/cron": "^1.7.2",
     "@types/express": "^4.17.4",
     "@types/fs-extra": "^8.1.0",
     "@types/jsonwebtoken": "^8.5.0",
@@ -44,6 +45,7 @@
     "cheerio": "^1.0.0-rc.3",
     "command-line-args": "^5.1.1",
     "cors": "^2.8.5",
+    "cron": "^1.8.2",
     "crypto": "^1.0.1",
     "express": "^4.17.1",
     "helmet": "^3.22.0",

@@ -344,6 +344,18 @@ export const findAllCreatedAssistanceByUser = async ({ userId, select, args }: {
   return encryptId(res);
 };
 
+export const updateAllByDate = async (date: string, assistanceFields: Assistance | object) => {
+  const db = new DbHelper();
+
+  const result = await
+    db.update("assistance", assistanceFields)
+      .where(`date <= ${date}`)
+      .and("available", true)
+      .resolve() as InsertResponse[];
+
+  return result;
+};
+
 const fieldSearch = ({ fields, db, from }: { from?: string, fields: string[]; db: DbHelper; }) => {
   const fieldsString = fields.join(",");
   db.select(fieldsString);
