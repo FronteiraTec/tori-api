@@ -1,10 +1,10 @@
 import dbHelper from "../helpers/dbHelper";
 import { address as AddressInterface } from "../helpers/dbNamespaceHelper";
 import { InsertResponse } from "src/helpers/dbResponsesHelper";
-import { decryptHexId } from "src/helpers/utilHelper";
+import { decryptHexId, encryptTextHex } from "src/helpers/utilHelper";
 
 
-export const update = async (addressId: number, address: AddressInterface | object) => {
+export const update = async (addressId: string, address: AddressInterface | object) => {
   const db = new dbHelper();
 
   const result = await
@@ -13,6 +13,35 @@ export const update = async (addressId: number, address: AddressInterface | obje
       .resolve();
 
   return result;
+};
+
+export const updateByAssistanceId = async (assistanceId: string, address: AddressInterface | object) => {
+  const db = new dbHelper();
+
+  const result = await
+    db.update("address", address)
+      .where("assistance_id", decryptHexId(assistanceId))
+      .resolve();
+
+  return result;
+};
+
+export const getByAssistanceId = async (assistanceId: string) => {
+  const db = new dbHelper();
+
+  const result = await
+    db.select("*")
+      .from("address")
+      .where("id", decryptHexId(assistanceId))
+      .resolve() as AddressInterface[];
+
+    const address = {
+      ...result[0],
+      assistance_id: assistanceId,
+      id: encryptTextHex(result[0].id)
+    };
+
+  return address;
 };
 
 export const create = async (address: AddressInterface | any) => {

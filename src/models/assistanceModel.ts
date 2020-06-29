@@ -432,9 +432,11 @@ const defaultFilters = (args: FilterOptions, db: DbHelper) => {
   if (args.available) {
     if (toBoolean(args.available.toString())) {
       db.where("assistance.available", "1");
+      db.and("suspended_date IS NULL");
     }
     else {
       db.where("assistance.available", "0");
+      db.or("suspended_date IS NOT NULL");
     }
   }
 

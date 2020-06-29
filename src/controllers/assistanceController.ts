@@ -7,7 +7,7 @@ import { CustomError, ErrorCode } from "src/helpers/customErrorHelper";
 import { QueryOptions, addTags } from "src/helpers/assistanceHelper";
 import { parseQueryField, currentDate, notAllowedFieldsSearch } from "src/helpers/utilHelper";
 import { toBoolean } from "src/helpers/conversionHelper";
-import { multiValidate } from "src/helpers/validationHelper";
+import { multiValidate, ValidationFields } from "src/helpers/validationHelper";
 
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -266,17 +266,115 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
   const assistanceUpdate = req.body as Assistance & Address;
 
   try {
-    const response = await assistanceModel.update(assistanceId, {
-      ...assistanceUpdate, id: undefined
-    });
+    const tablesToUpdate = validateFields(assistanceUpdate);
 
-    res.json("Success");
+    if(tablesToUpdate instanceof CustomError)
+      return next(tablesToUpdate);
+    
+    if(tablesToUpdate && tablesToUpdate.assistance){
+      await assistanceModel.update(assistanceId, {
+        ...assistanceUpdate
+      });
+    }
+
+    if(tablesToUpdate && tablesToUpdate.address){
+      await addressModel.updateByAssistanceId(assistanceId, {
+        ...assistanceUpdate
+      });
+    }
+
+    res.json({ message: "Assistance updated successfully" });
   }
   catch (error) {
-    return next(new CustomError({
-      error,
-      message: "An error occurred while updating this assistance."
-    }));
+    if (error instanceof CustomError)
+      return next(error);
+
+    else
+      return next(new CustomError({
+        error,
+        message: "An error occurred while updating this assistance."
+      }));
+  }
+
+  function validateFields(assistance: any) {
+    if (assistance.id || assistance.owner_id || assistance.created_at){
+      return new CustomError({
+        message: "One field can not be edited.",
+        code: ErrorCode.UNAUTHORIZED
+      });
+    }
+
+    let assistanceIsSet = false;
+    let address = false;
+
+    const validationFields = [];
+
+    if (assistance.course_id) {
+      validationFields.push({ data: assistance.course_id, message: "Course id is not valid.", type: "len=8" });
+      assistanceIsSet = true;
+    }
+
+    if (assistance.date) {
+      validationFields.push({ data: assistance.date, message: "Date is not valid. Valid format should be yyyy-mm-dd hh:mm:ss or yyyy-mm-dd", type: "len=10" });
+      assistanceIsSet = true;
+    }
+
+    if (assistance.description) {
+      validationFields.push({ data: assistance.description, message: "Description is not valid. It need to has at least 15 letters", type: "len=15" });
+      assistanceIsSet = true;
+    }
+
+    if (assistance.title) {
+      validationFields.push({ data: assistance.title, message: "Title is not valid. It need to has at least 5 letters", type: "len=5" });
+      assistanceIsSet = true;
+    }
+
+    if (assistance.total_vacancies) {
+      validationFields.push({ data: assistance.total_vacancies, message: "Total vacancies is not valid. It should be a number", type: "number" });
+      assistanceIsSet = true;
+    }
+
+    if (assistance.available_vacancies) {
+      validationFields.push({ data: assistance.available_vacancies, message: "Available vacancies is not valid. It should be a number", type: "number" });
+      assistanceIsSet = true;
+    }
+
+    if (assistance.cep) {
+      validationFields.push({ data: assistance.cep, message: "Cep is not valid. Format 00000000", type: "len=8" });
+      address = true;
+    }
+
+    if (assistance.addressNumber) {
+      validationFields.push({ data: assistance.addressNumber, message: "Address number is not valid", type: "number" });
+      address = true;
+    }
+
+    if (assistance.street) {
+      validationFields.push({ data: assistance.street, message: "Address street name is not valid. It need to has at least 10 letters", type: "len=10" });
+      address = true;
+    }
+
+    if (assistance.nickname) {
+      validationFields.push({ data: assistance.nickname, message: "Address nickname id not valid. it should has at least 3 letter and can not have numbers", type: "len=3" });
+      address = true;
+    }
+
+    if (validationFields.length === 0)
+      return new CustomError({
+        message: "No valid field was sent. Please send at least one valid field.",
+        code: ErrorCode.BAD_REQUEST
+      });
+
+    const validationResult = multiValidate(validationFields as ValidationFields[]);
+
+    if (validationResult.length)
+      return new CustomError({
+        json: validationResult,
+        message: "Validation failed",
+        code: ErrorCode.VALIDATION_ERR
+      });
+
+    return { assistance: assistanceIsSet, address };
   }
 };
 
