@@ -69,7 +69,7 @@ export default class DbHelper {
     let where: string;
     let key: string = args[0];
     let val: string = args[1];
-    let op = "";
+    let op: string | undefined = "";
 
     if (args.length === 1) {
       const equal = key.search("=");
@@ -115,7 +115,7 @@ export default class DbHelper {
       }
 
       else {
-        throw new Error("Where is being used incorrectly");
+        op = undefined;
       }
     }
 
@@ -143,10 +143,14 @@ export default class DbHelper {
       this._whereCount = 0;
     }
 
-    if(op !== "")
+    if(op === undefined){
+      where = `WHERE (${key}) $_e4.1g `;
+    }
+    else if(op !== "")
       where = `WHERE (${key} ${op} :where${this._whereCount}) $_e4.1g `;
-    else
+    else{
       where = `WHERE (${key} = :where${this._whereCount}) $_e4.1g `;
+    }
 
     this._data.where = { [`where${this._whereCount++}`]: val };
 
