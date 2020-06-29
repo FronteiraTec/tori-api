@@ -63,9 +63,6 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
 
   const searchParsed = parseQueryField(search as string);
 
-  if (q !== QueryOptions.id)
-    return next(new CustomError({ code: ErrorCode.BAD_Q_QUERY }));
-
   try {
     switch (q as string) {
       case QueryOptions.all: {
@@ -122,6 +119,7 @@ export const searchQuery = async (req: Request, res: Response, next: NextFunctio
             filter: filter ? JSON.parse(filter as string) : undefined
           }
         });
+
         return res.json(assistance);
       }
       default: {

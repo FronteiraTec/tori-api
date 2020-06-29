@@ -71,7 +71,9 @@ export const allowedFields = (fields: string[]) => {
     "student.course_id",
     "studentCourse.id",
     "studentCourse.name",
-    "studentCourse.description"
+    "studentCourse.description",
+    "tag.id",
+    "tag.name"
   ];
 
   for (const field of fields) {

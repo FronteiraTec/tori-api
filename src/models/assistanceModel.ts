@@ -92,7 +92,7 @@ export const searchByName = async ({ name, fields, args }:
 
   const assistanceResponse = await db.resolve() as AssistanceSearch[];
 
-  return assistanceResponse.length > 0 ? assistanceResponse : undefined;
+  return encryptId(assistanceResponse);
 };
 
 export const searchByTag = async ({ tags, fields, args }:
@@ -105,8 +105,8 @@ export const searchByTag = async ({ tags, fields, args }:
   else
     defaultSearch({ db });
 
-  db.leftJoin("assistance_tag as at at.assistance_id", "assistance.id")
-    .leftJoin("tag.id", "at.id");
+  db.rightJoin("assistance_tag as at at.assistance_id", "assistance.id")
+    .rightJoin("tag.id", "at.id");
 
   if (tags)
     tags.map((str, i) => {
@@ -124,10 +124,9 @@ export const searchByTag = async ({ tags, fields, args }:
   if (args)
     defaultFilters(args, db);
 
+  const assistanceResponse = await db.resolve() as AssistanceSearch[];
 
-  const assistanceResponse = await db.resolve() as { assistance: Assistance }[];
-
-  return assistanceResponse.map((item: { assistance: Assistance }) => item.assistance);
+  return encryptId(assistanceResponse);
 
 };
 
@@ -162,7 +161,7 @@ export const searchByNameTagDescription = async ({ search, fields, args }:
 
   const assistanceResponse = await db.resolve() as AssistanceSearch[];
 
-  return assistanceResponse;
+  return encryptId(assistanceResponse);
 };
 
 export const deleteById = async (id: number | string) => {
