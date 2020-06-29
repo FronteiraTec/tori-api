@@ -16,7 +16,9 @@
   - [O banco](#o-banco)
   - [Encerrando o docker](#encerrando-o-docker)
   - [Php myadmin](#php-myadmin)
-- [Endpoints](#endpoints)
+- [Documentação](#endpoints)
+  - [Swagger](#swagger)
+  - [Local](#local)
 
 
 
@@ -38,6 +40,8 @@ As principais features do projeto são:
 * Inscrever-se como monitor;
 * Inscrever-se em uma monitoria;
 * Gerenciar usuário
+* Geração de QrCode unico por usuário
+* Confirmação de presença em monitoria
 
 ## Começando
 Caso tenha interesse em rodar localmente o projeto, siga os passos abaixo. A maneira mais simples é utizando o docker.
@@ -50,7 +54,7 @@ Instale o Yarn ou npm em seu computador, após isso utilize:
 
 ``` bash
     yarn install
-    ## ou 
+    # ou 
     npm i
 ```
 
@@ -65,7 +69,7 @@ Para rodar o programa em modo de desenvolvimento use:
 
 ``` bash 
     yarn start:dev
-    ## ou
+    # ou
     npm run start:dev
 ```
 
@@ -77,7 +81,9 @@ PS: O banco de dados também deve ser instalado
 ### Script do banco
 
 Pode-se encontrar o plugin de instalação do banco de dados em [db.sql](util/db.sql).  
-Juntamente com o banco existe um arquivo com dados fictícios que podem ser utuilizados para desenvolvimento em [dummyData.sql](util/dummyData.sql).  
+Juntamente com o banco existe um arquivo com dados fictícios que podem ser utuilizados para desenvolvimento em [dummyData.sql](util/dummyData.sql).
+
+O diagrama do banco pode ser encontrado em [diagrama.png](docs/diagranDB.png)
 
 ## Utilizando o docker
 
@@ -89,7 +95,7 @@ Utilize:
 
 ``` bash
     docker-compose up ## adicione -d caso queira rodar em segundo plano
-    ## ou 
+    # ou 
     npm run dup
 ```
 
@@ -109,7 +115,7 @@ Caso iniciado com a flag -d pode-se encerrar o container utilizando:
 
 ``` bash
     docker-compose down 
-    ## ou 
+    # ou 
     npm run ddown
 ```
 
@@ -128,7 +134,9 @@ Ou seja, acessar a api requer:
 
 http://localhost:3000
 
+### Swagger
 
+É possível acessar a documentação a partir desta [url](https://app.swaggerhub.com/apis-docs/fersasil/tori-api/0.1). É altamente recomendável que utilize este link e não o local.
 
-Lista dos endpoints:  
-- [Monitorias](docs/assistances.md)
+### Local
+A documentação também esta disponível localmente em: https://fronteiratec.github.io/tori-api
