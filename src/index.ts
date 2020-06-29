@@ -5,12 +5,12 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 
-import "./helpers/loadEnvHelper";
+import "src/helpers/loadEnvHelper";
 
-
-import indexRoute from "./routes/indexRoute";
-import { errorHandler } from "./middleware/errorMiddleware";
-import { createFolders } from "./helpers/startConfigurationsHelper";
+import indexRoute from "src/routes/indexRoute";
+import { errorHandler } from "src/middleware/errorMiddleware";
+import { createFolders } from "src/helpers/startConfigurationsHelper";
+import { closeAssistanceByDateJob } from "src/helpers/cronHelper";
 
 // Create folders
 createFolders();
@@ -41,6 +41,10 @@ app.use(errorHandler);
 
 // Server settings
 const port = process.env.PORT;
+
+// activate cron jobs
+closeAssistanceByDateJob.start();
+
 
 app.listen(port, () => {
   // tslint:disable:no-console
