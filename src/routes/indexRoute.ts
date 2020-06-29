@@ -22,14 +22,14 @@ router.use("/user", userRouter);
 //     res.json(encryptTextHex(id));
 // })
 
-router.get("/", (req: any, res: any) => {
-  const { id } = req.query;
+router.get("/:id", (req: any, res: any) => {
+  const { id } = req.params;
 
   res.json(encryptTextHex(id));
 });
 
-router.get("/d", (req: any, res: any) => {
-  const { id } = req.query;
+router.get("/d/:id", (req: any, res: any) => {
+  const { id } = req.params;
 
   res.json(decryptTextHex(id));
 });
