@@ -22,6 +22,7 @@ export const currentDate = () => {
 export const allowedFields = (fields: string[]) => {
   const availableSearchFields = [
     "assistance.id",
+    "assistance.suspended_date",
     "assistance.title",
     "assistance.description",
     "assistance.available",

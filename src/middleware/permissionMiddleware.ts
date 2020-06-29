@@ -1,7 +1,7 @@
 import { Response, Request, NextFunction } from "express";
 import { CustomError, ErrorCode } from "src/helpers/customErrorHelper";
 import { searchByID } from "src/models/assistanceModel";
-import { allowedFields, parseQueryField, decryptTextHex } from "src/helpers/utilHelper";
+import { allowedFields, parseQueryField } from "src/helpers/utilHelper";
 import { decryptText, BaseEnumEncryptOptions } from "src/helpers/utilHelper";
 
 export const verifyIfUserHasPermission = async (req: Request, res: Response, next: NextFunction) => {
