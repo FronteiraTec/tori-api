@@ -1,0 +1,937 @@
+openapi: 3.0.1
+info:
+  title: Monitoria API
+  description: Monitoria
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: gfersasil@gmail.com
+  license:
+    name: Apache 2.0
+    #url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: "0.1"
+servers:
+- url: http://localhost:3000
+- url: http://uffs.tk:3000
+tags:
+- name: auth
+  description: Autenticação
+- name: user
+  description: Usuário
+- name: assistance
+  description: Usuário
+paths:
+  /auth/sign-up:
+    post:
+      tags:
+      - auth
+      summary: Create user
+      description: This can only be done by the logged in user.
+      operationId: createUser
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              required:
+              - cpf
+              - email
+              - name
+              - password
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Nome completo
+                email:
+                  type: string
+                password:
+                  type: string
+                  description: Senha com caracteres especiais
+                cpf:
+                  type: string
+        required: true
+      responses:
+        200:
+          $ref: '#/components/responses/TokenResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        406:
+          $ref: '#/components/responses/NotAcceptable'
+        409:
+          $ref: '#/components/responses/Conflict'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+      
+      x-codegen-request-body-name: body
+  /auth/sign-in:
+    post:
+      tags:
+      - auth
+      summary: Realiza o login
+      description: Funciona com o cpf, nome de usuário e o email
+      requestBody:
+        description: Campos necessários para o login
+        content:
+          '*/*':
+            schema:
+              required:
+              - authenticator
+              - password
+              type: object
+              properties:
+                authenticator:
+                  type: string
+                  description: CPF, nome de usuário ou email são aceitos
+                password:
+                  type: string
+        required: true
+      responses:
+        200:
+          $ref: '#/components/responses/TokenResponse'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        406:
+          $ref: '#/components/responses/NotAcceptable'
+      x-codegen-request-body-name: body
+  /auth/uffs/sign-in:
+    post:
+      tags:
+      - auth
+      summary: Logar com o idUFFS
+      description: Loga no sistema com o IDUFFS do usuário. Usuário não precisa estar
+        cadastrado no sistema para logar com o IDUFFS
+      requestBody:
+        description: Items necessários para o login
+        content:
+          '*/*':
+            schema:
+              required:
+              - authenticator
+              - password
+              type: object
+              properties:
+                authenticator:
+                  type: string
+                  description: CPF ou IDUFFS
+                password:
+                  type: string
+                  description: Senha
+        required: false
+      responses:
+        200:
+          $ref: '#/components/responses/TokenResponse'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        406:
+          $ref: '#/components/responses/NotAcceptable'
+      x-codegen-request-body-name: body
+  /auth/available:
+    get:
+      tags:
+      - auth
+      parameters:
+      - name: q
+        in: query
+        description: Option to search
+        required: true
+        schema:
+          type: string
+          enum:
+          - "email"
+          - "cpf"
+          - "usernmae"
+      - name: search
+        in: query
+        description: Item a ser pesquisado
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Retorna um booleano indicando a disponibilidade da sting buscada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+        400:
+          $ref: '#/components/responses/BadRequest'
+        500:
+          $ref: '#/components/responses/InternalServerError' 
+  /user:
+    get:
+      summary: "Busca usuário"
+      tags:
+      - user
+      parameters:
+      - name: limit
+        in: query
+        description: Número de usuários a retornar
+        schema:
+          type: number
+      - name: offset
+        in: query
+        description: Deslocamento dos usuários
+        schema:
+          type: number
+      - name: assistant
+        in: query
+        description: Retorna apenas monitores
+        schema:
+          type: boolean
+          default: false
+      - name: fields
+        in: query
+        description: Campos a serem pesquisados
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      summary: "Deleta usuário"
+      tags:
+      - user
+      #description: "Deleta seu usuário"
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: "Usuário deletado com sucesso"
+        
+    patch:
+      summary: "Atualiza usuário"
+      tags:
+      - user
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+
+      responses:
+        200:
+          description: OK
+          content: {}
+  
+  /user/search:
+    get:
+      summary: Buscar usuário
+      description: Campos a serem pesquisados. Buscar sem nenhum parametro e com token retorna o usuário
+      tags:
+      - user
+      parameters:
+      - name: q
+        in: query
+        description: Buscar por email, nome ou id
+        schema:
+          type: string
+          enum:
+            - id
+            - email
+            - name
+      - name: fields
+        in: query
+        description: Campos a serem retornados, os valores são os mesmos do usuário no banco de dados. Os dados que podem ser buscados estão limitados, por exemplo, não é possível buscar o cpf de um usuário
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: search
+        description: id do usuário, ou nome, ou email do usuário que deseja pesquisar. Deve ser usado em conjunto com o q
+        in: query
+        schema:
+          type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: 
+            application/json: {}
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /user/profile-picture:
+    put:
+      summary: "Atualizar imagem de perfil"
+      description: Atualiza a imagem de perfil do usuário. A imagem deve ter menos de 9mb e deve ser mandada convertida com base64
+      tags:
+      - user
+      
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  description: base64 imagem
+                  type: string
+                extension:
+                  description:
+                    "Extensão da image, sem ponto"
+                  type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+  /user/assistance/created:
+    get:
+      summary: Assistencias criadas pelo usuário
+      description: Assistencias que o usuário criou
+      tags:
+      - user
+      parameters:
+      - name: q
+        in: query
+        description: Opção de busca, caso seja deixado em branco sera retornado uma lista de todas as monitorias
+        schema:
+          type: string
+          enum:
+          - id
+          - all
+          default: id
+      - name: limit
+        in: query
+        description: Número de monitorias a serem retornadas
+        schema:
+          type: number
+      - name: offset
+        in: query
+        description: Deslocamento a ser retornado
+        schema:
+          type: number
+      - name: orderBy
+        in: query
+        description: Ordena a busca por campos do banco de dados. Apenas um campo deve ser enviado. Qualquer campo quantificado pode ser usado. O nome deve ser o mesmo contido no banco de dados
+        content:
+          application/json:
+            schema:
+              type: object
+              format: "json"
+              properties:
+                assistance.id:
+                  type: string
+                  enum: 
+                    - ASC
+                    - DESC
+                assistance.date:
+                  type: string
+                  enum: 
+                    - ASC
+                    - DESC
+                    
+      - name: filter
+        in: query
+        description: Filtros adicionais, por exemplo id do curso. Pode ser utilizado de diversas formas, por exemplo \"{\"assistance.date" \:">2020-07-03"}" ou \"{\"assistance.date" \:"2020-07-03"}" ou \"{\"assistance.date" \:"like 2020-07-02T13:42:38.000Z"}". Todas as operações básicas estão disponíveis
+        content:
+          application/json:
+            schema:
+              type: object
+              format: "json"
+              properties:
+                assistance.id:
+                  type: string
+                assistance.date:
+                  type: string
+      - name: available
+        in: query
+        description: Retorna apenas monitorias ativas na busca
+        schema:
+          type: boolean
+      - name: fields
+        in: query
+        description: Campos a serem retornados, os valores são os mesmos do usuário no banco de dados. Os dados que podem ser buscados estão limitados, por exemplo, não é possível recuperar dados privados de uma monitoria que não foi criada pelo usuário realizando a busca. 
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+  /user/assistance/subscribed:
+    get:
+      summary: Assistencias inscritas
+      description: Assistencias que o usuário se inscreveu
+      tags:
+      - user
+      parameters:
+      - name: q
+        in: query
+        description: Opção de busca, caso seja deixado em branco sera retornado uma lista de todas as monitorias
+        schema:
+          type: string
+          enum:
+          - id
+          - all
+          default: id
+      - name: limit
+        in: query
+        description: Número de monitorias a serem retornadas
+        schema:
+          type: number
+      - name: offset
+        in: query
+        description: Deslocamento a ser retornado
+        schema:
+          type: number
+      - name: orderBy
+        in: query
+        description: Ordena a busca por campos do banco de dados. Apenas um campo deve ser enviado. Qualquer campo quantificado pode ser usado. O nome deve ser o mesmo contido no banco de dados
+        content:
+          application/json:
+            schema:
+              type: object
+              format: "json"
+              properties:
+                assistance.id:
+                  type: string
+                  enum: 
+                    - ASC
+                    - DESC
+                assistance.date:
+                  type: string
+                  enum: 
+                    - ASC
+                    - DESC
+                    
+      - name: filter
+        in: query
+        description: Filtros adicionais, por exemplo id do curso. Pode ser utilizado de diversas formas, por exemplo \"{\"assistance.date" \:">2020-07-03"}" ou \"{\"assistance.date" \:"2020-07-03"}" ou \"{\"assistance.date" \:"like 2020-07-02T13:42:38.000Z"}". Todas as operações básicas estão disponíveis
+        content:
+          application/json:
+            schema:
+              type: object
+              format: "json"
+              properties:
+                assistance.id:
+                  type: string
+                assistance.date:
+                  type: string
+      - name: available
+        in: query
+        description: Retorna apenas monitorias ativas na busca
+        schema:
+          type: boolean
+      - name: fields
+        in: query
+        description: Campos a serem retornados, os valores são os mesmos do usuário no banco de dados. Os dados que podem ser buscados estão limitados, por exemplo, não é possível recuperar dados privados de uma monitoria que não foi criada pelo usuário realizando a busca. 
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+  /assistance:
+    get:
+      summary: Retornar monitorias
+      tags:
+      - assistance
+      parameters:
+      - name: limit
+        in: query
+        description: Número de monitorias a serem retornadas
+        schema:
+          type: number
+      - name: offset
+        in: query
+        description: Deslocamento das monitorias
+        schema:
+          type: number
+      - name: available
+        in: query
+        description: Filtra por monitorias ativas
+        schema:
+          type: boolean
+          default: true
+      - name: order
+        in: query
+        description: Ordem dos itens retornados, pode ser crescente ou descrente por data de criação. Não pode ser usado em conjunto com o orderBy. Caso ambos sejam enviados, a preferencia sera dada ao orderBy
+        schema:
+          type: string
+          enum: 
+            - ASC
+            - DESC
+          default: DESC
+      - name: fields
+        in: query
+        description: Campos a serem retornados, os valores são os mesmos do usuário no banco de dados. Os dados que podem ser buscados estão limitados, por exemplo, não é possível recuperar dados privados de uma monitoria que não foi criada pelo usuário realizando a busca. 
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: orderBy
+        in: query
+        description: Ordena a busca por campos do banco de dados. Apenas um campo deve ser enviado. Qualquer campo quantificado pode ser usado. O nome deve ser o mesmo contido no banco de dados
+        content:
+          application/json:
+            schema:
+              type: object
+              format: "json"
+              properties:
+                assistance.id:
+                  type: string
+                  enum: 
+                    - ASC
+                    - DESC
+                assistance.date:
+                  type: string
+                  enum: 
+                    - ASC
+                    - DESC
+                    
+      - name: filter
+        in: query
+        description: Filtros adicionais, por exemplo id do curso. Pode ser utilizado de diversas formas, por exemplo \"{\"assistance.date" \:">2020-07-03"}" ou \"{\"assistance.date" \:"2020-07-03"}" ou \"{\"assistance.date" \:"like 2020-07-02T13:42:38.000Z"}". Todas as operações básicas estão disponíveis
+        content:
+          application/json:
+            schema:
+              type: object
+              format: "json"
+              properties:
+                assistance.id:
+                  type: string
+                assistance.date:
+                  type: string
+      responses:
+        200:
+          description: Lista de monitorias
+          content: 
+            application/json: {}
+    post:
+      tags:
+      - assistance
+      summary: Criar monitoria
+      description: Endpoint de criação de monitoria.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                available_vacancies:
+                  type: integer
+                  
+                course_id:
+                  type: string
+                date:
+                  type: string
+                description:
+                  type: string
+                subject_id:
+                  type: string
+                title:
+                  type: string
+                total_vacancies:
+                  type: integer
+                tags:
+                  type: array
+                  items:
+                    type: string
+                cep:
+                  type: string
+                complement:
+                  type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+                number:
+                  type: string
+                reference:
+                  type: string
+                street:
+                  type: string
+                nickname:
+                  type: string
+              required: 
+              - course_id
+              - date
+              - description
+              - title
+              - total_vacancies
+              - cep
+              - number
+              - street
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+  /assistance/{id}:
+    delete:
+        summary: Deleta assistencia
+        description: Deleta uma monitoria a partir de seu id. Apenas é possível deletar monitorias criadas pelo usuário.
+        tags:
+        - assistance
+        
+        parameters: 
+        - name: id
+          description: Id da monitoria a ser deletada
+          in: path
+          required: true
+          schema:
+            type: integer
+        security:
+        - bearerAuth: []
+        responses:
+          200:
+            description: OK
+            content: {}
+    patch:
+      summary: Alterar monitoria
+      description: Alterar algum campo da monitoria a partir de seu id
+      tags:
+      - assistance
+      parameters:
+      - name: id
+        in: path
+        description: description
+        schema:
+          type: string
+        required: true
+      requestBody:
+        description: Campos da monitoria a serem alterados de acordo com o banco de dados
+        content:
+          application/json:
+            
+            schema:
+              type: object
+              
+      security:
+        - bearerAuth: []    
+      responses:
+        200:
+          description: OK
+          content: {}
+  /assistance/search:
+    get:
+      summary: Retorna uma monitoria.
+      description: Dados protegidos só podem ser buscados pelo autor da monitoria
+      tags:
+      - assistance
+      parameters:
+      - name: q
+        in: query
+        description: Campo a ser usado para a buscar o usuário.
+        schema:
+          type: string
+          description: All - busca por uma palavra chave na descrição tag ou nome da monitoria.
+          enum: 
+            - all
+            - id
+            - name
+            - tag
+      - name: search
+        in: query
+        description: Dados do que devem ser buscado, pode ser uma array ou uma string. Caso seja uma array o formato deve ser [item1, item2]. As chaves são obrigatórias
+        style: form
+        explode: false
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+            
+      - name: limit
+        in: query
+        description: Número de usuários máximos a serem retornados
+        schema:
+          type: number
+      - name: offset
+        in: query
+        description: Deslocamento a ser retornado
+        schema:
+          type: number
+      - name: orderBy
+        in: query
+        description: Ordena a busca por campos do banco de dados. Apenas um campo deve ser enviado. Qualquer campo quantificado pode ser usado. O nome deve ser o mesmo contido no banco de dados
+        content:
+          application/json:
+            schema:
+              type: object
+              format: "json"
+              properties:
+                assistance.id:
+                  type: string
+                  enum: 
+                    - ASC
+                    - DESC
+                assistance.date:
+                  type: string
+                  enum: 
+                    - ASC
+                    - DESC
+                    
+      - name: filter
+        in: query
+        description: Filtros adicionais, por exemplo id do curso. Pode ser utilizado de diversas formas, por exemplo \"{\"assistance.date" \:">2020-07-03"}" ou \"{\"assistance.date" \:"2020-07-03"}" ou \"{\"assistance.date" \:"like 2020-07-02T13:42:38.000Z"}". Todas as operações básicas estão disponíveis
+        content:
+          application/json:
+            schema:
+              type: object
+              format: "json"
+              properties:
+                assistance.id:
+                  type: string
+                assistance.date:
+                  type: string
+      - name: available
+        in: query
+        description: Retorna apenas monitorias ativas na busca
+        schema:
+          type: boolean
+      - name: fields
+        in: query
+        description: Campos a serem retornados, os valores são os mesmos do usuário no banco de dados. Os dados que podem ser buscados estão limitados, por exemplo, não é possível recuperar dados privados de uma monitoria que não foi criada pelo usuário realizando a busca. 
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+  /assistance/{id}/subscribers:
+    get:
+      summary: Retorna usuários
+      description: Retorna os usuários que estão cadastrados nesta monitoria.
+      tags:
+      - assistance
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Id da monitoria
+        schema:
+          type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+  /confirm-presence/{assistanceId}:
+    patch:
+      summary: Confirma a presença
+      description: Confirma a presença do usuário em dada monitoria. userCode pode ser obtido lendo o qrCode de um usuário.
+      tags:
+      - assistance
+      parameters:
+      - name: assistanceId
+        in: path
+        required: true
+        description: Id da monitoria
+        schema:
+          type: string
+ 
+      requestBody:
+        content:
+          application/json:
+            
+            schema:
+              type: object
+              properties:
+                userCode:
+                  type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+          
+  /assistance/disable/{id}:
+    patch:
+      summary: Suspende monitoria.
+      description: Suspende uma monitoria sem a excluir
+      tags:
+      - assistance
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Id da monitoria
+        schema:
+          type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+  /assistance/subscribe/{assistanceId}:
+    post:
+      summary: Inscrever monitoria
+      description: Inscreve usuário na monitoria Seu id sera adquirido pelo token 
+      tags:
+      - assistance
+      parameters:
+      - name: assistanceId
+        in: path
+        required: true
+        description: Id da monitoria
+        schema:
+          type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+        400: 
+          $ref: '#/components/responses/BadRequest'
+  /assistance/{assistanceId}/unsubscribe:
+    patch:
+      summary: Desvincula o usuário da monitoria
+      description: Usuário é encontrado pelo seu token e é desvinculado da monitoria
+      tags:
+      - assistance
+      parameters:
+      - name: assistanceId
+        in: path
+        required: true
+        description: id da monitoria
+        schema:
+          type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content: {}
+components:
+  schemas:
+    UserUpdate:
+      type: object
+      properties:
+            full_name:
+                type: string
+            is_assistant:
+                type: string
+            course_id:
+                type: string
+            idUFFS:
+                type: string
+            email:
+                type: string
+            phone_number:
+                type: string
+            password:
+                type: string
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        expiresIn:
+          type: string
+    Error:
+      description: Unauthorized
+      type: object 
+      properties:
+        error:
+          type: string
+            #TODO defualt error:
+            
+  responses: 
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: ""
+    Unauthorized: # 401
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict: #409
+      description: "Entradas duplicadas"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotAcceptable: #406
+      description: "Campo faltando"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    BadRequest: #400
+      description: "Falha na validação de inputs"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalServerError: #500
+      description: "Erro interno" 
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    
+    UnauthorizedError: #401
+      description: "Usuário não tem autorização" 
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    
+    TokenResponse:
+      description: "Cadastro realizado com sucesso"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthResponse"
+    
+  securitySchemes:
+    bearerAuth:            # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
